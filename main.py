@@ -347,6 +347,7 @@ def check_foreign_keys(cursor):
         fk_errors.append(msg)
     return fk_errors
 
+
 def main():
     checker = SqlChecker()
     # get base game entries.
@@ -376,8 +377,14 @@ def main():
                 with open(db_file, 'r', encoding='windows-1252') as file:
                     sql_contents = file.read()
             sql_statements[short_name] = sqlparse.split(sql_contents)
+
+    full_dump = []
+    [full_dump.extend([key] + val) for key, val in sql_statements.items()]
+    with open('sql_statements.log', 'w') as file:
+        file.write("\n".join(full_dump))
     checker.test_db(sql_statements, dlc)
     #  need test that runs only unmodded to verify database integrity.
+
 
 if __name__ == '__main__':
     main()
