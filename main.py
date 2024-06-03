@@ -7,6 +7,7 @@ import sqlite3
 import shutil
 import logging
 import sqlparse
+import json
 
 from xml_handler import read_xml
 
@@ -15,22 +16,31 @@ class SqlChecker():
         self.logger = logging.getLogger('SqlChecker')
         self.logger.setLevel(logging.WARNING)
         self.granularity = 'statement'
+        self.errors = []
+        config = json.load(open('config.json', 'r'))
+        self.log_folder = os.environ.get('CIV_LOG', f"{config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Logs")
+        self.civ_install = os.environ.get('CIV_INSTALL', config['CIV_INSTALL'])
+        self.workshop_folder = os.environ.get('WORKSHOP_FOLDER', config['WORKSHOP_FOLDER'])
+        self.local_mods_folder = os.environ.get('LOCAL_MODS_FOLDER',
+                                           f"{config['CIV_USER']}/Sid Meier's Civilization VI/Sid Meier's Civilization VI/Mods/")
+        if not os.path.exists('DebugGameplay_working.sqlite'):
+            copy_db_path = f"{config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite"
+            shutil.copy(copy_db_path, 'DebugGameplay.sqlite')
+        shutil.copy('DebugGameplay.sqlite', 'DebugGameplay_working.sqlite')  # restore backup db
+        self.db_path = 'DebugGameplay_working.sqlite'
+
         self.known_errors_list = ["UPDATE AiFavoredItems SET Value = '200' WHERE ListType = 'CatherineAltLuxuries' AND PseudoYieldType = 'PSEUDOYIELD_RESOURCE_LUXURY';"]
 
     def parse_mod_log(self):
-        log_folder = os.environ.get('CIV_LOG')
-        civ_install = os.environ.get('CIV_INSTALL')
-        workshop_folder = os.environ.get('WORKSHOP_FOLDER')
-        local_mods_folder = os.environ.get('LOCAL_MODS_FOLDER')
-
         string = '.modinfo'
-        filepath_dlc_mod_infos = [f for f in glob.glob(f'{civ_install}/**/*{string}*', recursive=True)]
-        filepath_mod_mod_infos = ([f for f in glob.glob(f'{workshop_folder}/**/*{string}*', recursive=True)] +
-                                  [f for f in glob.glob(f'{local_mods_folder}/**/*{string}*', recursive=True)])
+        filepath_base_game_infos = []
+        filepath_dlc_mod_infos = [f for f in glob.glob(f'{self.civ_install}/**/*{string}*', recursive=True)]
+        filepath_mod_mod_infos = ([f for f in glob.glob(f'{self.workshop_folder}/**/*{string}*', recursive=True)] +
+                                  [f for f in glob.glob(f'{self.local_mods_folder}/**/*{string}*', recursive=True)])
         filepath_mod_infos = filepath_dlc_mod_infos + filepath_mod_mod_infos
         uuid_map = {ET.parse(filepath).getroot().attrib['id']: "/".join(filepath.split('/')[:-1]) for filepath in
                     filepath_mod_infos}
-        with open(log_folder + '/Modding.log', 'r') as file:
+        with open(self.log_folder + '/Modding.log', 'r') as file:
             logs = file.readlines()
         uuid_pattern = re.compile(
             r'\b[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}\b')
@@ -75,12 +85,10 @@ class SqlChecker():
                     for remove_idx in remove_entries_index[::-1]:
                         entry['full_files'].pop(remove_idx)
                     break
-
         return database_entries
 
-    def convert_xml_to_sql(self, xml_file, line_by_line=False):
+    def convert_xml_to_sql(self, xml_file):
         sql_statements = []
-        tricky = []
         xml_ = read_xml(xml_file)
         if not xml_:
             raise AttributeError(f"{xml_file} was empty...")
@@ -125,12 +133,7 @@ class SqlChecker():
                     else:
                         self.logger.warning(f'unknown command: {command}')
         sql_strings = self.convert_to_sql(sql_statements)
-        if line_by_line:
-            return sql_strings
-        temp_filepath = tempfile.gettempdir() + '/' + xml_file.split('/')[-1].replace('.xml', '.sql')
-        with open(temp_filepath, 'w') as file:
-            file.write('\n'.join(sql_strings))
-        return temp_filepath
+        return sql_strings
 
     def convert_to_sql(self, statements):
         sql_list = []
@@ -169,125 +172,105 @@ class SqlChecker():
             sql_list.append(sql)
         return sql_list
 
-    def test_db(self, db_connection, file_list, dlc_map, line_by_line=False):
-        sql_scripts = {}
-        errors = []
-        if line_by_line:
-            cursor = db_connection.cursor()
-            db_connection.execute('BEGIN')
-            for filename, sql_scripts in file_list.items():
-                for idx, sql_script in enumerate(sql_scripts):
-                    try:
-                        cursor.executescript(sql_script)
-                    except sqlite3.Error as e:
-                        if '/'.join(filename.split('/')[1:]) not in dlc_map:
-                            print(e)
-                            continue
-                        if 'UNIQUE' in str(e):
-                            check_exists_script, update_dict = full_matcher_sql(sql_script)
-                            cursor.execute(check_exists_script)
-                            result = cursor.fetchall()
-                            if len(result) > 0:
-                                self.logger.info(f'Skipped inserting duplicate for {filename}:\n {sql_script}')
-                            else:
-                                cursor.execute(primary_key_matcher(sql_script, e))
-                                result_wider = cursor.fetchone()
-                                if result_wider is not None:
-                                    column_names = [description[0] for description in cursor.description]
-                                    result_dict = {col_name:value for col_name, value in zip(column_names, result_wider)}
-                                    common_keys = set(result_dict.keys()) & set(update_dict.keys())
-                                    different_keys = {}
-                                    for key in common_keys:
-                                        if str(result_dict[key]) != update_dict[key]:
-                                            different_keys[key] = {'old': str(result_dict[key]), 'new': update_dict[key]}
-                                    if len(different_keys) > 0:
-                                        msg = (f"Differences between INSERT and existing suggests it should be replaced. Replacing:"
-                                               f"\n{different_keys}")
-                                        self.logger.warning(msg)
-                                        replace_into_script = sql_script.replace('INSERT', 'INSERT OR REPLACE')
-                                        cursor.executescript(replace_into_script)
-
-                                else:
-                                    msg = (f"Unique constraint fail but row not found, really an update? {filename}."
-                                           f"Differences:\n{different_keys}")
-                                    self.logger.critical(msg)
-                                    errors.append(msg)
-
-                        elif sql_script in self.known_errors_list:
-                            self.logger.info(f'Skipping known error on {sql_script}')
-                        else:
-                            msg = f"f'Stupid RowId not added for {filename}:\n {sql_script}'"
-                            # query ddl of table
-                            table_name, wheres = get_query_details(sql_script)
-                            cursor.execute(f"PRAGMA table_info({table_name})")
-                            table_info = cursor.fetchall()
-                            column_names = [description[0] for description in cursor.description]
-                            pragmas = []
-                            for i in table_info:
-                                pragmas.append({col_name: value for col_name, value in zip(column_names, i)})
-                            if 'RowId' in [i['name'] for i in pragmas] and 'RowId' not in wheres:
-                                select_script = f'SELECT * FROM {table_name}'
-                                cursor.execute(select_script)
-                                full_table = cursor.fetchall()
-                                row_id_index = [description[0] for description in cursor.description].index('RowId')
-                                new_row_id = int(full_table[-1][row_id_index]) + 1
-                                col_start = sql_script.index(table_name) + len(table_name + ' (')
-                                val_start = sql_script.index('VALUES') + len('VALUES (')
-                                row_id_script = sql_script[:col_start] + 'RowId, ' + sql_script[col_start:val_start] + str(new_row_id) + ', ' + sql_script[val_start:]
-                                row_id_script = row_id_script[:row_id_script.index("'SELECT")] + wheres['SQL'] + ");"       # deals with nasty single quotes
-                                cursor.executescript(row_id_script)
-                            else:
-                                pragmas = {i['name']: i for i in pragmas}
-                                not_null = [i for i, j in pragmas.items() if j['notnull'] == 1]
-                                missing_not_nulls = [i for i in not_null if i not in wheres]        # doesnt take into account defaults
-                                msg = f"f'Missing definitions for {table_name}: {missing_not_nulls}'"
-                                self.logger.critical(msg)
-                                errors.append(msg)
-
-            db_connection.commit()
-            cursor.close()
-            print(errors)
-
-        elif isinstance(file_list, dict):
-            for component, file_paths in file_list.items():
-                for sql_file_path in file_paths:
-                    with open(sql_file_path, 'r') as file:
-                        sql_script = file.read()
-                    sql_scripts[sql_file_path] = sql_script
-                cursor = db_connection.cursor()
-                try:
-                    db_connection.execute('BEGIN')
-
-                    for filename, sql_script in sql_scripts.items():
-                        cursor.executescript(sql_script)
-                    self.logger.info(f"{component}.{filename} Success!")
-                    db_connection.rollback()  # rollback changes
-                except sqlite3.Error as e:
-                    # Rollback transaction if any script fails
-                    db_connection.rollback()
-                    self.logger.critical(f"{e} on file {filename.split('/')[-2:]} on Component {component}.")
-                finally:
-                    cursor.close()
+    def should_be_replace(self, cursor, sql_script, update_dict, filename, error):
+        cursor.execute(primary_key_matcher(sql_script, error))
+        result_wider = cursor.fetchone()
+        if result_wider is not None:
+            column_names = [description[0] for description in cursor.description]
+            result_dict = {col_name: value for col_name, value in zip(column_names, result_wider)}
+            common_keys = set(result_dict.keys()) & set(update_dict.keys())
+            different_keys = {}
+            for key in common_keys:
+                if str(result_dict[key]) != update_dict[key]:
+                    different_keys[key] = {'old': str(result_dict[key]), 'new': update_dict[key]}
+            if len(different_keys) > 0:
+                msg = (f"In {filename}, Differences between INSERT and existing suggests statement should be replace."
+                       f" Replacing:\n{different_keys}")
+                self.logger.warning(msg)
+                replace_into_script = sql_script.replace('INSERT', 'INSERT OR REPLACE')
+                cursor.execute(replace_into_script)
 
         else:
-            for sql_file_path in file_list:
-                with open(sql_file_path, 'r') as file:
-                    sql_script = file.read()
-                sql_scripts[sql_file_path] = sql_script
+            msg = f"Unique constraint fail but row not found, really an update? {filename}."
+            self.logger.critical(msg)
+            self.errors.append(msg)
 
-            cursor = db_connection.cursor()
-            try:
-                db_connection.execute('BEGIN')
-                for filename, sql_script in sql_scripts.items():
-                    cursor.executescript(sql_script)
+    def row_id_fix(self, cursor, sql_script):
+        table_name, wheres = get_query_details(sql_script)
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        table_info = cursor.fetchall()
+        column_names = [description[0] for description in cursor.description]
+        pragmas = []
+        for i in table_info:
+            pragmas.append({col_name: value for col_name, value in zip(column_names, i)})
+        if 'RowId' in [i['name'] for i in pragmas] and 'RowId' not in wheres:
+            select_script = f'SELECT * FROM {table_name}'
+            cursor.execute(select_script)
+            full_table = cursor.fetchall()
+            row_id_index = [description[0] for description in cursor.description].index('RowId')
+            new_row_id = int(full_table[-1][row_id_index]) + 1
+            col_start = sql_script.index(table_name) + len(table_name + ' (')
+            val_start = sql_script.index('VALUES') + len('VALUES (')
+            row_id_script = sql_script[:col_start] + 'RowId, ' + sql_script[col_start:val_start] + str(
+                new_row_id) + ', ' + sql_script[val_start:]
+            row_id_script = row_id_script[:row_id_script.index("'SELECT")] + wheres[
+                'SQL'] + ");"  # deals with nasty single quotes
+            cursor.execute(row_id_script)
+        else:
+            pragmas = {i['name']: i for i in pragmas}
+            not_null = [i for i, j in pragmas.items() if j['notnull'] == 1]
+            missing_not_nulls = [i for i in not_null if i not in wheres]  # doesnt take into account defaults
+            msg = f"f'Missing definitions for {table_name}: {missing_not_nulls}'"
+            self.logger.critical(msg)
+            self.errors.append(msg)
 
-                db_connection.rollback()                # rollback changes
-                cursor.close()
-            except sqlite3.Error as e:
-                # Rollback transaction if any script fails
-                db_connection.rollback()
-                self.logger.critical(f"{e} on file {filename.split('/')[-3:]}.")
-                cursor.close()
+    def test_db(self, file_list, dlc_map):
+        db_connection = sqlite3.connect(self.db_path)
+
+        def make_hash(value):
+            h = hash(value)
+            h = h % (2 ** 32)
+            if h >= 2 ** 31:
+                h -= 2 ** 32
+            return h
+        db_connection.create_function("Make_Hash", 1, make_hash)
+
+        cursor = db_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        cursor.execute("PRAGMA defer_foreign_keys = ON;")
+        db_connection.execute('BEGIN')
+        for filename, sql_scripts in file_list.items():
+            for idx, sql_script in enumerate(sql_scripts):
+                try:
+                    cursor.execute(sql_script)
+                except sqlite3.Error as e:
+                    if '/'.join(filename.split('/')[1:]) not in dlc_map:
+                        print(e)
+                        continue
+                    if 'UNIQUE' in str(e):
+                        check_exists_script, update_dict = full_matcher_sql(sql_script)
+                        cursor.execute(check_exists_script)
+                        result = cursor.fetchall()
+                        if len(result) > 0:
+                            self.logger.info(f'Skipped inserting duplicate for {filename}:\n {sql_script}')
+                        else:
+                            self.should_be_replace(cursor, sql_script, update_dict, filename, e)
+
+                    elif sql_script in self.known_errors_list:
+                        self.logger.info(f'Skipping known error on {sql_script}')
+                    else:
+                        self.row_id_fix(cursor, sql_script)
+
+        try:
+            prior_fk_errors = check_foreign_keys(cursor)
+            db_connection.commit()
+        except sqlite3.IntegrityError as e:
+            print(f"Integrity error occurred: {e}")
+            db_connection.rollback()
+        fk_errors = check_foreign_keys(cursor)
+        self.errors += fk_errors
+        cursor.close()
+        #print(errors)
 
 
 def get_query_details(script):
@@ -303,7 +286,6 @@ def get_query_details(script):
         split_space = script.split(' ')
         if len(split_space) > 1:
             table_name = split_space[1]
-
 
     values = ["'" + i.strip(" '").replace("'", '"') + "'" for i in values]
     wheres = {col.strip(): val for col, val in zip(columns, values)}
@@ -328,80 +310,69 @@ def primary_key_matcher(sql_script, error):
     check_exists = f"SELECT * FROM {table_name} WHERE " + assign_vals + ";"
     return check_exists
 
-GRANULARITY = 'statement_level'
-if os.path.exists('DebugGameplay_working.sqlite'):
-    shutil.copy('DebugGameplay.sqlite', 'DebugGameplay_working.sqlite')  # restore backup db
-    db_path = 'DebugGameplay_working.sqlite'
-else:
-    db_path = os.environ.get('DB_PATH')
 
-conn = sqlite3.connect(db_path)
+def check_foreign_keys(cursor):
+    fk_errors = []
+    cursor.execute("PRAGMA foreign_key_check;")
+    violations = cursor.fetchall()
+    tables_violated = set(i[0] for i in violations)
+    table_fks = {}
+    table_primary_keys = {}
+
+    for table_name in tables_violated:
+        cursor.execute(f"PRAGMA foreign_key_list({table_name});")
+        fk_constraints = cursor.fetchall()
+        col_names = [description[0] for description in cursor.description]
+        labeled_constraints = [{i: j for i, j in zip(col_names, k)} for k in fk_constraints]
+        table_fks[table_name] = labeled_constraints
+        cursor.execute(f"PRAGMA table_info({table_name});")
+        columns_info = cursor.fetchall()
+        primary_keys = [column_info[1] for column_info in columns_info if column_info[5] > 0]
+        table_primary_keys[table_name] = primary_keys
+
+    for table_name, row_id, foreign_table, fk_constraint_index in violations:
+        constraint = table_fks[table_name][fk_constraint_index]
+        query = f"SELECT * FROM {table_name} WHERE rowid = {row_id}"
+        cursor.execute(query)
+        record = cursor.fetchone()
+        record_col_names = [description[0] for description in cursor.description]
+        record_ = {key: val for key, val in zip(record_col_names, record)}
+        record_pk = {key: record_[key] for key in table_primary_keys[table_name] if key in record_}
+        msg = (f"ERROR: {table_name} record {record_pk} has Foreign Key: {constraint['from']} = {record_[constraint['from']]}"
+               f" but parent table {constraint['table']} lacks {constraint['to']} = {record_[constraint['from']]}.")
+        print(msg)
+        print('')
+        fk_errors.append(msg)
+    return fk_errors
 
 
-def make_hash(value):
-    h = hash(value)
-    h = h % (2 ** 32)
-    if h >= 2 ** 31:
-        h -= 2 ** 32
-    return h
-
-conn.create_function("Make_Hash", 1, make_hash)
 checker = SqlChecker()
+# get base game entries.
 database_entries = checker.parse_mod_log()
 dlc = []
 [dlc.extend(i['files']) for i in database_entries if 'DLC' in i['mod_dir']]
 modded = []
 modded = [modded.extend(i['files']) for i in database_entries if 'DLC' not in i['mod_dir']]         # later do change to environ set mod directory
-if GRANULARITY == 'mod_level':
-    jobs = {entry['component']: entry['full_files'] for entry in database_entries}
-    for key, val in jobs.items():
-        for db_file in val:
-            if db_file.endswith('.xml'):
-                try:
-                    db_file = checker.convert_xml_to_sql(db_file)
-                except AttributeError as e:
-                    print(e)
-                    continue
 
-    checker.test_db(conn, jobs)
-
-elif GRANULARITY == 'file_level':
-    jobs = []
-    [jobs.extend(i['full_files']) for i in database_entries]
-    converted_sql_filepaths = []
-
-    for db_file in jobs:
-        if db_file.endswith('.xml'):
-            try:
-                converted_sql_filepaths.append(checker.convert_xml_to_sql(db_file))
-            except AttributeError as e:
-                print(e)
-                continue
-
-    jobs = [i for i in jobs if '.xml' not in i] + converted_sql_filepaths
-    checker.test_db(conn, jobs, dlc)
-
-elif GRANULARITY == 'statement_level':
-    line_by_line = True
-    jobs = []
-    [jobs.extend(i['full_files']) for i in database_entries]
-    sql_statements = {}
-    for db_file in jobs:
-        short_name = '/'.join(db_file.split('/')[-3:])
-        if db_file.endswith('.xml'):
-            try:
-                sql_statements[short_name] = checker.convert_xml_to_sql(db_file, line_by_line)
-            except AttributeError as e:
-                print(e)
-                continue
-        if db_file.endswith('.sql'):
-            try:
-                with open(db_file, 'r') as file:
-                    sql_contents = file.read()
-            except UnicodeDecodeError as e:
-                print(f'Bad unicode, trying windows-1252: {e}')
-                with open(db_file, 'r', encoding='windows-1252') as file:
-                    sql_contents = file.read()
-            sql_statements[short_name] = [i + ';' for i in sql_contents.split(';') if len(i) > 5]
-    checker.test_db(conn, sql_statements, dlc, line_by_line)
-    #  we need to set up a test suite that runs only unmodded to verify database integrity.
+jobs = []
+[jobs.extend(i['full_files']) for i in database_entries]
+sql_statements = {}
+for db_file in jobs:
+    short_name = '/'.join(db_file.split('/')[-3:])
+    if db_file.endswith('.xml'):
+        try:
+            sql_statements[short_name] = checker.convert_xml_to_sql(db_file)
+        except AttributeError as e:
+            print(e)
+            continue
+    if db_file.endswith('.sql'):
+        try:
+            with open(db_file, 'r') as file:
+                sql_contents = file.read()
+        except UnicodeDecodeError as e:
+            print(f'Bad unicode, trying windows-1252: {e}')
+            with open(db_file, 'r', encoding='windows-1252') as file:
+                sql_contents = file.read()
+        sql_statements[short_name] = sqlparse.split(sql_contents)
+checker.test_db(sql_statements, dlc)
+#  need test that runs only unmodded to verify database integrity.
