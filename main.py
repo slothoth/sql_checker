@@ -22,7 +22,7 @@ class SqlChecker():
         self.civ_install = os.environ.get('CIV_INSTALL', config['CIV_INSTALL'])
         self.workshop_folder = os.environ.get('WORKSHOP_FOLDER', config['WORKSHOP_FOLDER'])
         self.local_mods_folder = os.environ.get('LOCAL_MODS_FOLDER',
-                                           f"{config['CIV_USER']}/Sid Meier's Civilization VI/Sid Meier's Civilization VI/Mods/")
+                                           f"C:/Users/Sam/Documents/my games/Sid Meier's Civilization VI/Mods/")
         if not os.path.exists('DebugGameplay_working.sqlite'):
             copy_db_path = f"{config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite"
             shutil.copy(copy_db_path, 'DebugGameplay.sqlite')
@@ -32,6 +32,7 @@ class SqlChecker():
         self.known_errors_list = ["UPDATE AiFavoredItems SET Value = '200' WHERE ListType = 'CatherineAltLuxuries' "
                                   "AND PseudoYieldType = 'PSEUDOYIELD_RESOURCE_LUXURY';"]
         # PseudoYieldType isnt a column, it should've been Item but Fireaxis is silly
+        self.file_pattern = re.compile(r'Loading (.*?)\n')
 
     def parse_mod_log(self):
         string = '.modinfo'
@@ -40,20 +41,77 @@ class SqlChecker():
         filepath_mod_mod_infos = ([f for f in glob.glob(f'{self.workshop_folder}/**/*{string}*', recursive=True)] +
                                   [f for f in glob.glob(f'{self.local_mods_folder}/**/*{string}*', recursive=True)])
         filepath_mod_infos = filepath_dlc_mod_infos + filepath_mod_mod_infos
-        uuid_map = {ET.parse(filepath).getroot().attrib['id']: "/".join(filepath.split('/')[:-1]) for filepath in
+        uuid_map = {}
+
+        uuid_map = {ET.parse(filepath).getroot().attrib['id']: "/".join(filepath.replace('\\', '/').split('/')[:-1]) for filepath in
                     filepath_mod_infos}
         with open(self.log_folder + '/Modding.log', 'r') as file:
             logs = file.readlines()
         uuid_pattern = re.compile(
             r'\b[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}\b')
-        file_pattern = re.compile(r'Loading (.*?)\n')
         component_pattern = re.compile(r'Applying Component - (.*?) \(UpdateDatabase\)')
         uuid_component_pattern = re.compile(r' \* (.*?) \(UpdateDatabase\)')
         database_entries = [{'text': i, 'line': idx} for idx, i in enumerate(logs) if
                             '(UpdateDatabase)' in i and 'Applying Component' not in i]
-        database_components = {component_pattern.search(i)[1]: {'text': i, 'line': idx} for idx, i in enumerate(logs) if
-                               '(UpdateDatabase)' in i and 'Applying Component' in i}
-        for component, i in database_components.items():
+        database_components = {}
+        dupes = {}
+        for idx, i in enumerate(logs):
+            if '(UpdateDatabase)' in i and 'Applying Component' in i:
+                search = component_pattern.findall(i)
+                record = {'text': i, 'line': idx}
+                record['component_name'] = search[0]
+                if len(search) > 1:
+                    print('dupe found')
+                elif search[0] in database_components:
+                    print(f'duplicate found {search[0]}')
+                    if search[0] not in dupes:
+                        dupes[search[0]] = [record]
+                    else:
+                        dupes[search[0]].append(record)
+                else:
+                    database_components[search[0]] = record
+
+        for dupe, details_list in dupes.items():
+            missed_first_one = database_components[dupe]
+            for record in [missed_first_one] + details_list:
+                component_effects = []
+                line_num = record['line']
+                for line in logs[line_num:]:
+                    if 'Applying Component' in line and record['component_name'] not in line:
+                        break
+                    component_effects.append(line)
+                file_names = [i.split('Loading ')[1].replace('\n', '') for i in component_effects if 'Loading ' in i]
+                historic_matches = []
+                for file_name in file_names:
+                    base_game_matches = [f for f in glob.glob(f'{self.civ_install}/**/{file_name}', recursive=True)]
+                    mod_matches = (
+                            [f for f in glob.glob(f'{self.workshop_folder}/**/{file_name}', recursive=True)] +
+                            [f for f in glob.glob(f'{self.local_mods_folder}/**/{file_name}', recursive=True)])
+                    matches = base_game_matches + mod_matches
+                    if len(matches) == 1:
+                        match = matches[0]
+                        if len(historic_matches) > 0:
+                            mod_info_match = glob.glob('/'.join(match.replace('\\', '/').split('/')[:-1]) + '/*.modinfo', recursive=True)
+                            if mod_info_match in historic_matches:
+                                database_components[f'{file_name}_{dupe}'] = details_list
+                                break
+                            else:
+                                continue
+                    elif len(matches) > 1:
+                        mod_info_match = [glob.glob(self.workshop_folder + '/' + i.replace(self.workshop_folder + '\\', '').replace('\\', '/').split('/')[0] + '/*.modinfo' , recursive=True) for i in mod_matches]
+                        if len(mod_info_match) > 0:
+                            historic_matches.extend([mod_info_match])
+                        continue
+                    else:
+                        raise FileNotFoundError(f'No file {file_name} exists in mod folders or base game')
+
+                # uh we need to capture the files collected, and find the .modinfo.
+
+        database_components = self.component_file_collect(database_components, logs)
+
+        dupes_list = []
+        [dupes_list.extend(i) for i in dupes.values()]
+        for i in dupes_list:
             line_list = []
             for idx, j in enumerate(logs[i['line'] + 1:]):
                 if 'Applying Component' in j or 'Finished Apply Components' in j:
@@ -65,7 +123,7 @@ class SqlChecker():
                 line_list.append(j)
             i['files'] = []
             for k in line_list:
-                match = file_pattern.search(k)
+                match = self.file_pattern.search(k)
                 if match is None:
                     raise Exception(f"Could not parse out filepath for {k}")
                 i['files'].append(match[1])
@@ -73,9 +131,11 @@ class SqlChecker():
         for entry in database_entries:
             for item in logs[:entry['line']][::-1]:
                 if uuid_pattern.search(item) is not None:
-                    entry['uuid'] = uuid_pattern.search(item)[0]
+                    entry['uuid'] = uuid_pattern.findall(item)[0]
                     entry['mod_dir'] = uuid_map[entry['uuid']]
                     entry['component'] = uuid_component_pattern.search(entry['text'])[1]
+                    if entry['component'] in dupes:
+                        print('We have a dupe, need to work out how to find the right substitute file from the dupe components')
                     entry['files'] = database_components[entry['component']]['files']
                     entry['full_files'] = [f"{entry['mod_dir']}/{i}" for i in entry['files']]
                     remove_entries_index = []
@@ -88,6 +148,25 @@ class SqlChecker():
                         entry['full_files'].pop(remove_idx)
                     break
         return database_entries
+
+    def component_file_collect(self, database_components, logs):
+        for component, i in database_components.items():
+            line_list = []
+            for idx, j in enumerate(logs[i['line'] + 1:]):
+                if 'Applying Component' in j or 'Finished Apply Components' in j:
+                    break
+                if 'Error' in j:
+                    continue
+                if 'Error' in logs[i['line'] + 1:][idx + 1]:
+                    continue
+                line_list.append(j)
+            i['files'] = []
+            for k in line_list:
+                match = self.file_pattern.search(k)
+                if match is None:
+                    raise Exception(f"Could not parse out filepath for {k}")
+                i['files'].append(match[1])
+        return database_components
 
     def convert_xml_to_sql(self, xml_file):
         sql_statements = []
