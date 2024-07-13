@@ -31,14 +31,15 @@ class SqlChecker():
 
         self.known_errors_list = ["UPDATE AiFavoredItems SET Value = '200' WHERE ListType = 'CatherineAltLuxuries' "
                                   "AND PseudoYieldType = 'PSEUDOYIELD_RESOURCE_LUXURY';"]
+        self.known_repeats = ['RulersOfEngland/Data/RulersOfEngland_RemoveData.xml', 'GreatNegotiators/Data/GreatNegotiators_RemoveData.xml',
+                              'GreatNegotiators/Data/GreatNegotiators_RemoveData.xml']
         # PseudoYieldType isnt a column, it should've been Item but Fireaxis is silly
 
     def parse_mod_log(self):
-        string = '.modinfo'
         filepath_base_game_infos = []
-        filepath_dlc_mod_infos = [f for f in glob.glob(f'{self.civ_install}/**/*{string}*', recursive=True)]
-        filepath_mod_mod_infos = ([f for f in glob.glob(f'{self.workshop_folder}/**/*{string}*', recursive=True)] +
-                                  [f for f in glob.glob(f'{self.local_mods_folder}/**/*{string}*', recursive=True)])
+        filepath_dlc_mod_infos = [f for f in glob.glob(f'{self.civ_install}/**/*.modinfo*', recursive=True)]
+        filepath_mod_mod_infos = ([f for f in glob.glob(f'{self.workshop_folder}/**/*.modinfo*', recursive=True)] +
+                                  [f for f in glob.glob(f'{self.local_mods_folder}/**/*.modinfo*', recursive=True)])
         filepath_mod_infos = filepath_dlc_mod_infos + filepath_mod_mod_infos
         uuid_map = {ET.parse(filepath).getroot().attrib['id']: "/".join(filepath.split('/')[:-1]) for filepath in
                     filepath_mod_infos}
@@ -49,8 +50,14 @@ class SqlChecker():
         file_pattern = re.compile(r'Loading (.*?)\n')
         component_pattern = re.compile(r'Applying Component - (.*?) \(UpdateDatabase\)')
         uuid_component_pattern = re.compile(r' \* (.*?) \(UpdateDatabase\)')
-        database_entries = [{'text': i, 'line': idx} for idx, i in enumerate(logs) if
-                            '(UpdateDatabase)' in i and 'Applying Component' not in i]
+        dupes = []
+        database_entries = []
+        for idx, i in enumerate(logs):
+            if '(UpdateDatabase)' in i and 'Applying Component' not in i:
+                if i not in dupes:
+                    database_entries.append({'text': i, 'line': idx})
+                else:
+                    dupes.append({'text': i, 'line': idx})
         database_components = {component_pattern.search(i)[1]: {'text': i, 'line': idx} for idx, i in enumerate(logs) if
                                '(UpdateDatabase)' in i and 'Applying Component' in i}
         for component, i in database_components.items():
@@ -96,6 +103,9 @@ class SqlChecker():
             raise AttributeError(f"{xml_file} was empty...")
         xml_ = xml_.get('GameInfo', xml_.get('GameData'))
         for table_name, sql_commands in xml_.items():
+            if sql_commands is None:
+                self.logger.warning(f'None value in SQL command. No commands for table {table_name}.')
+                continue
             if isinstance(sql_commands, str):
                 self.logger.info(f'Likely empty xml, this was the value found in table element: {sql_commands}'
                       f'. File: {xml_file}.')
@@ -222,7 +232,7 @@ class SqlChecker():
             pragmas = {i['name']: i for i in pragmas}
             not_null = [i for i, j in pragmas.items() if j['notnull'] == 1]
             missing_not_nulls = [i for i in not_null if i not in wheres]  # doesnt take into account defaults
-            msg = f"f'Missing definitions for {table_name}: {missing_not_nulls}'"
+            msg = f"Missing definitions for {table_name}: {missing_not_nulls}"
             self.logger.critical(msg)
             self.errors.append(msg)
 
@@ -238,10 +248,13 @@ class SqlChecker():
         db_connection.create_function("Make_Hash", 1, make_hash)
 
         cursor = db_connection.cursor()
+
+        unique_fk_errors = set()
         cursor.execute("PRAGMA foreign_keys = ON;")
         cursor.execute("PRAGMA defer_foreign_keys = ON;")
         db_connection.execute('BEGIN')
         for filename, sql_scripts in file_list.items():
+
             for idx, sql_script in enumerate(sql_scripts):
                 try:
                     cursor.execute(sql_script)
@@ -260,20 +273,73 @@ class SqlChecker():
 
                     elif sql_script in self.known_errors_list:
                         self.logger.info(f'Skipping known error on {sql_script}')
+                    elif str(e) == 'FOREIGN KEY constraint failed':
+                        self.logger.info(f'FOREIGN KEY CONSTRAINT fail.')
+                        table_name = sql_script.split('(')[0].split(' ')[-2]
+                        labeled_constraints, primary_keys = foreign_key_check(cursor, table_name)
+                        foreign_key_pretty_notify(cursor,table_name,uh, labeled_constraints, primary_keys)
                     else:
                         self.row_id_fix(cursor, sql_script)
-
         try:
             prior_fk_errors = check_foreign_keys(cursor)
+            unique_fk_errors.update(prior_fk_errors)
+            self.logger.warning(f'FOREIGN KEY CONSTRAINTS: {len(prior_fk_errors)}')
+            #self.logger.warning(f'{filename} added to db with {len(prior_fk_errors)} FOREIGN KEY Constraint errors.')
             db_connection.commit()
+
         except sqlite3.IntegrityError as e:
-            print(f"Integrity error occurred: {e}")
+            self.logger.debug(f"Integrity error occurred: {e}")
             db_connection.rollback()
         fk_errors = check_foreign_keys(cursor)
         self.errors += fk_errors
         cursor.close()
         #print(errors)
 
+    def load_files(self, jobs):
+        jobs_short_ref = [('/'.join(i.split('/')[-3:]), i) for i in jobs]
+        missed_files = []
+        sql_statements = {}
+        ensure_ordered_sql = []
+        for short_name, db_file in jobs_short_ref:
+            existing_short = [i[0] for i in ensure_ordered_sql if i[0] == short_name]
+            if len(existing_short) > 0:
+                self.logger.warning(f'Duplicate file: {short_name} already in list:\n2nd ref: {db_file}. Existing ref: '
+                                    f'{existing_short}')
+                if '':
+                    print('')
+            if db_file.endswith('.xml'):
+                try:
+                    sql_statements[short_name] = self.convert_xml_to_sql(db_file)
+                    ensure_ordered_sql.append((short_name, sql_statements[short_name]))
+                except AttributeError as e:
+                    print(e)
+                    missed_files.append(short_name)
+                    continue
+            if db_file.endswith('.sql'):
+                try:
+                    with open(db_file, 'r') as file:
+                        sql_contents = file.read()
+                except UnicodeDecodeError as e:
+                    print(f'Bad unicode, trying windows-1252: {e}')
+                    with open(db_file, 'r', encoding='windows-1252') as file:
+                        sql_contents = file.read()
+                sql_statements[short_name] = sqlparse.split(sql_contents)
+                ensure_ordered_sql.append((short_name, sql_statements[short_name]))
+
+        # check that order is maintained in dict (should after python 3.7 ish
+        if not [i for i in sql_statements] == [j[1] for j in ensure_ordered_sql]:
+            missing = [k for k in ensure_ordered_sql if [i[0] for i in ensure_ordered_sql].count(k[0])>1]           # base files repeat removing data with the same file in some DLC
+
+            raise Exception('SQL Dict is not ordered and cant be trusted for modding operations')
+        return sql_statements, missed_files
+
+    def build_vanilla_db(self):
+        files = [f for f in glob.glob(f'{self.civ_install}/Assets/Base/Assets/Gameplay/Data/*.xml', recursive=True)]
+        schema = [f for f in glob.glob(f'{self.civ_install}/Assets/Base/Assets/Gameplay/Data/Schema/*', recursive=True)]
+        database_entries = [{'component': 'Schema', 'full_files': schema}, {'component': 'Data', 'full_files': files}]
+        jobs = []
+        [jobs.extend(i['full_files']) for i in database_entries]
+        return jobs
 
 def get_query_details(script):
     table_name_pattern = r'\b(\w+)\s*\('
@@ -292,6 +358,7 @@ def get_query_details(script):
     values = ["'" + i.strip(" '").replace("'", '"') + "'" for i in values]
     wheres = {col.strip(): val for col, val in zip(columns, values)}
     return table_name, wheres
+
 
 def full_matcher_sql(sql_script):
     table_name, wheres = get_query_details(sql_script)
@@ -322,30 +389,37 @@ def check_foreign_keys(cursor):
     table_primary_keys = {}
 
     for table_name in tables_violated:
-        cursor.execute(f"PRAGMA foreign_key_list({table_name});")
-        fk_constraints = cursor.fetchall()
-        col_names = [description[0] for description in cursor.description]
-        labeled_constraints = [{i: j for i, j in zip(col_names, k)} for k in fk_constraints]
-        table_fks[table_name] = labeled_constraints
-        cursor.execute(f"PRAGMA table_info({table_name});")
-        columns_info = cursor.fetchall()
-        primary_keys = [column_info[1] for column_info in columns_info if column_info[5] > 0]
-        table_primary_keys[table_name] = primary_keys
+        if table_name in table_fks:
+            continue
+        table_fks[table_name], table_primary_keys[table_name] = foreign_key_check(cursor, table_name)
 
     for table_name, row_id, foreign_table, fk_constraint_index in violations:
         constraint = table_fks[table_name][fk_constraint_index]
-        query = f"SELECT * FROM {table_name} WHERE rowid = {row_id}"
-        cursor.execute(query)
-        record = cursor.fetchone()
-        record_col_names = [description[0] for description in cursor.description]
-        record_ = {key: val for key, val in zip(record_col_names, record)}
-        record_pk = {key: record_[key] for key in table_primary_keys[table_name] if key in record_}
-        msg = (f"ERROR: {table_name} record {record_pk} has Foreign Key: {constraint['from']} = {record_[constraint['from']]}"
-               f" but parent table {constraint['table']} lacks {constraint['to']} = {record_[constraint['from']]}.")
-        print(msg)
-        print('')
+        msg = foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_primary_keys[table_name])
         fk_errors.append(msg)
     return fk_errors
+
+
+def foreign_key_check(cursor, table_name):
+    cursor.execute(f"PRAGMA foreign_key_list({table_name});")
+    fk_constraints = cursor.fetchall()
+    col_names = [description[0] for description in cursor.description]
+    labeled_constraints = [{i: j for i, j in zip(col_names, k)} for k in fk_constraints]
+    cursor.execute(f"PRAGMA table_info({table_name});")
+    columns_info = cursor.fetchall()
+    primary_keys = [column_info[1] for column_info in columns_info if column_info[5] > 0]
+    return labeled_constraints, primary_keys
+
+
+def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk):
+    cursor.execute(f"SELECT * FROM {table_name} WHERE rowid = {row_id}")
+    record = cursor.fetchone()
+    record_col_names = [description[0] for description in cursor.description]
+    record_ = {key: val for key, val in zip(record_col_names, record)}
+    record_pk = {key: record_[key] for key in table_pk if key in record_}
+    return (f"ERROR: {table_name} record {record_pk} has Foreign Key: {constraint['from']} = "
+            f"{record_[constraint['from']]} but parent table {constraint['table']} lacks {constraint['to']} = "
+            f"{record_[constraint['from']]}.")
 
 
 def main():
@@ -359,29 +433,17 @@ def main():
 
     jobs = []
     [jobs.extend(i['full_files']) for i in database_entries]
-    sql_statements = {}
-    for db_file in jobs:
-        short_name = '/'.join(db_file.split('/')[-3:])
-        if db_file.endswith('.xml'):
-            try:
-                sql_statements[short_name] = checker.convert_xml_to_sql(db_file)
-            except AttributeError as e:
-                print(e)
-                continue
-        if db_file.endswith('.sql'):
-            try:
-                with open(db_file, 'r') as file:
-                    sql_contents = file.read()
-            except UnicodeDecodeError as e:
-                print(f'Bad unicode, trying windows-1252: {e}')
-                with open(db_file, 'r', encoding='windows-1252') as file:
-                    sql_contents = file.read()
-            sql_statements[short_name] = sqlparse.split(sql_contents)
-
+    sql_statements, missed_dlc = checker.load_files(jobs)
+    missed_sql_statements = [i for i in dlc if i not in ["/".join(j.split('/')[1:]) for j in sql_statements]]
     full_dump = []
-    [full_dump.extend([key] + val) for key, val in sql_statements.items()]
+    dashs = '--------------------'
+    [full_dump.extend([dashs + key + dashs] + val) for key, val in sql_statements.items()]
     with open('sql_statements.log', 'w') as file:
         file.write("\n".join(full_dump))
+
+    vanilla_jobs = checker.build_vanilla_db()
+    vanilla_sql_statements, missed_vanilla = checker.load_files(vanilla_jobs)
+    checker.test_db(vanilla_sql_statements, ['Vanilla'])
     checker.test_db(sql_statements, dlc)
     #  need test that runs only unmodded to verify database integrity.
 
