@@ -5,10 +5,13 @@ import xml.etree.ElementTree as ET
 import sqlite3
 import shutil
 import logging
+from copy import deepcopy
+
 import sqlparse
 import json
 import time
 from xml_handler import read_xml
+
 
 class SqlChecker:
     def __init__(self):
@@ -43,9 +46,10 @@ class SqlChecker:
                                   [f for f in glob.glob(f'{self.local_mods_folder}/**/*.modinfo*', recursive=True)])
         filepath_mod_infos = filepath_dlc_mod_infos + filepath_mod_mod_infos
         uuid_map = {}
-
-        uuid_map = {ET.parse(filepath).getroot().attrib['id']: "/".join(filepath.replace('\\', '/').split('/')[:-1]) for filepath in
-                    filepath_mod_infos}
+        for filepath in filepath_mod_infos:
+            uuid_ = ET.parse(filepath).getroot().attrib['id']
+            filepath = "/".join(filepath.replace('\\', '/').split('/')[:-1])
+            uuid_map[uuid_] = filepath
         with open(self.log_folder + '/Modding.log', 'r') as file:
             logs = file.readlines()
         uuid_pattern = re.compile(
@@ -60,35 +64,90 @@ class SqlChecker:
         for idx, i in enumerate(logs):
             if '(UpdateDatabase)' in i and 'Applying Component' in i:
                 search = component_pattern.findall(i)
-                record = {'text': i, 'line': idx}
-                record['component_name'] = search[0]
+                record = {'text': i, 'line': idx, 'component_name': search[0]}
                 if len(search) > 1:
                     print('dupe found')
                 elif search[0] in database_components:
                     print(f'duplicate found {search[0]}')
                     if search[0] not in dupes:
-                        dupes[search[0]] = [record]
+                        dupes[search[0]] = [database_components.pop(search[0])]      # apply original found in dict to dupes
+                        dupes[search[0]].append(record)                          # as found first, order is preserved
                     else:
                         dupes[search[0]].append(record)
 
                 else:
                     database_components[search[0]] = record
 
+        mod_order_start = next((idx for idx, string in enumerate(logs) if 'Target in-game actions (in order of application):' in string), None) + 1
+        mod_order_end = next((idx for idx, string in enumerate(logs) if 'Game content needs to change to match target config' in string), None)
+        mod_order = ["]".join(i.split(']')[1:]) for i in logs[mod_order_start:mod_order_end]]
+
+        ordered_mods = []
+        current_sublist = []
+        new_entry = {}
+        for item in mod_order:
+            if item[:3] != '  *':
+                if len(new_entry) > 0:          # add old entry before starting new one
+                    ordered_mods.append(new_entry)
+                space_split = item.strip().split(' ')
+                unique_id = space_split[0]
+                current_name = " ".join(space_split[1:])
+                new_entry = {'id': unique_id, 'name': current_name, 'components': [], 'not_db_components': []}
+            else:
+                if 'UpdateDatabase' in item:
+                    formatted_item = item.replace('  * ', '').replace(' (UpdateDatabase)\n', '')
+                    new_entry['components'].append(formatted_item)
+                else:
+                    new_entry['not_db_components'].append(item)
+        ordered_mods.append(new_entry)                # final entry
+
+        mod_component_start = next(
+            (idx for idx, string in enumerate(logs) if 'Modding Framework - Applying Components' in string),
+            None) + 1
+        mod_component_end = next(
+            (idx for idx, string in enumerate(logs) if 'Applied all components of enabled mods.' in string),
+            None)
+        mod_component_order = ["]".join(i.split(']')[1:]) for i in logs[mod_component_start:mod_component_end]]
+        mod_component_order = [i for i in mod_component_order if not ('Successfully released save point.' in i or 'Creating database save point.' in i)]
+        files_to_apply = []
+        for i in ordered_mods:
+            template_component = {'uuid': i['id'], 'mod_dir': uuid_map[i['id']], 'files': [], 'full_files': [], 'name': i['name']}
+            for j in i['components']:
+                complete_component = template_component.copy()
+                component_string = f' Applying Component - {j} '
+                complete_component['component'] = component_string
+                component_start, found = [(idx + 1, k) for idx, k in enumerate(mod_component_order) if component_string in k][0]
+                component_end = next((idx for idx, string in enumerate(mod_component_order[component_start:]) if 'Applying Component' in string), None) + component_start
+                component = mod_component_order[component_start:component_end]
+                if len(component) > 0:
+                    del mod_component_order[component_start-1:component_end]
+                else:
+                    del mod_component_order[component_start-1]
+                complete_component['files'] = [k.replace(' UpdateDatabase - Loading ', '').replace('\n', '') for k in component if 'UpdateDatabase' in k]
+                complete_component['aux_files'] = [k for k in component if 'UpdateDatabase' not in k]
+                complete_component['full_files'] = [f'{complete_component["mod_dir"]}/{k}' for k in complete_component['files']]
+                files_to_apply.append(complete_component)
+
+        no_files = [i for i in files_to_apply if len(i['aux_files'] + i['files']) ==0]
         for dupe, details_list in dupes.items():
-            missed_first_one = database_components[dupe]
-            for record in [missed_first_one] + details_list:
+            for idx, record in enumerate(details_list):
                 component_effects = []
                 line_num = record['line']
                 for line in logs[line_num:]:
                     if 'Applying Component' in line and record['component_name'] not in line:
                         break
                     component_effects.append(line)
-                file_names = [i.split('Loading ')[1].replace('\n', '') for i in component_effects if 'Loading ' in i]
+                file_names = [i.split('Loading ')[1].replace('\n', '') for i in component_effects if 'Loading ' in i and 'Error Loading SQL' not in i]
                 historic_matches = []
                 for file_name in file_names:
+                    if '[' in file_name:
+                        file_name = file_name.replace('[', 'SLTH_LB')       # DEALING WITH [STR] input
+                    if ']' in file_name:
+                        file_name = file_name.replace(']', 'SLTH_RB')
+                    file_name = file_name.replace('SLTH_LB', '[[]').replace('SLTH_RB', '[]]')
                     base_game_matches = [f for f in glob.glob(f'{self.civ_install}/**/{file_name}', recursive=True)]
                     mod_matches = (
-                            [f for f in glob.glob(f'{self.workshop_folder}/**/{file_name}', recursive=True)] +
+                            [f for f in glob.glob(f'{self.workshop_folder}/*/{file_name}', recursive=True)] +
                             [f for f in glob.glob(f'{self.local_mods_folder}/**/{file_name}', recursive=True)])
                     matches = base_game_matches + mod_matches
                     if len(matches) == 1:
@@ -96,17 +155,27 @@ class SqlChecker:
                         if len(historic_matches) > 0:
                             mod_info_match = glob.glob('/'.join(match.replace('\\', '/').split('/')[:-1]) + '/*.modinfo', recursive=True)
                             if mod_info_match in historic_matches:
-                                database_components[f'{dupe}_{file_name}_DUPE'] = details_list
+                                database_components[f'{dupe}_DUPE_{idx}'] = details_list[idx]
                                 break
                             else:
                                 continue
                         else:
-                            database_components[f'{dupe}_{file_name}_DUPE'] = details_list[0]       # first value
+                            database_components[f'{dupe}_DUPE_{idx}'] = details_list[idx]       # first value
+                            break
                     elif len(matches) > 1:
-                        mod_info_match = [glob.glob(self.workshop_folder + '/' + i.replace(self.workshop_folder + '\\', '').replace('\\', '/').split('/')[0] + '/*.modinfo' , recursive=True) for i in mod_matches]
-                        if len(mod_info_match) > 0:
-                            historic_matches.extend([mod_info_match])
-                        continue
+                        workshop_checks = [i for i in mod_matches if self.workshop_folder in i]
+                        workshop_checks = [i.replace(self.workshop_folder, '') for i in workshop_checks]
+                        workshop_checks = [i.split('/')[1] for i in workshop_checks]
+                        workshop_checks = [f'{self.workshop_folder}/{i}/*.modinfo' for i in workshop_checks]
+                        mod_info_match = [glob.glob(j, recursive=True) for j in workshop_checks]
+                        local_checks = [i for i in mod_matches if self.local_mods_folder in i]
+                        local_checks = [i.replace(self.local_mods_folder, '') for i in local_checks]
+                        local_checks = [i.split('/')[1] if i[0] == '/' else i.split('/')[0] for i in local_checks]
+                        local_checks = [f'{self.local_mods_folder}{i}/*.modinfo' for i in local_checks]
+                        mod_info_match_local = [glob.glob(j, recursive=True) for j in local_checks]
+                        for j in mod_info_match + mod_info_match_local:
+                            if len(j) > 0:
+                                historic_matches.append(j)
                     else:
                         raise FileNotFoundError(f'No file {file_name} exists in mod folders or base game')
 
@@ -114,25 +183,6 @@ class SqlChecker:
 
         database_components, load_fails = self.component_file_collect(database_components, logs)
 
-        dupes_list = []
-        [dupes_list.extend(i) for i in dupes.values()]
-        for i in dupes_list:
-            line_list = []
-            for idx, j in enumerate(logs[i['line'] + 1:]):
-                if 'Applying Component' in j or 'Finished Apply Components' in j:
-                    break
-                if 'Error' in j:
-                    continue
-                if 'Error' in logs[i['line'] + 1:][idx + 1]:
-                    continue
-                line_list.append(j)
-            i['files'] = []
-            for k in line_list:
-                match = self.file_pattern.search(k)
-                if match is None:
-                    raise Exception(f"Could not parse out filepath for {k}")
-                i['files'].append(match[1])
-        behaviour = []
         for entry in database_entries:
             for item in logs[:entry['line']][::-1]:
                 if uuid_pattern.search(item) is not None:
@@ -140,35 +190,26 @@ class SqlChecker:
                     entry['mod_dir'] = uuid_map[entry['uuid']]
                     entry['component'] = uuid_component_pattern.search(entry['text'])[1]
                     if entry['component'] in dupes:
-
-                        if entry['line'] in [i[0]['line'] for i in dupes.values()]:
-                            flag = 'dupe used'
-                            entry['files'] = database_components[entry['component']]['files']
-                            behaviour.append({'item': item, 'entry': entry, 'logic': flag})
-                        else:
-                            print(f'Its a dupe, but the default is in database_components')
-                            flag = 'dupe, used default in db_components'
-                            behaviour.append({'item': item, 'entry': entry, 'logic': flag})
-                            entry['files'] = dupes[entry['component']][0]['files']
+                        actual = [i for i in dupes[entry['component']] if 'consumed' not in i][0]
+                        actual['consumed'] = True
+                        entry['files'] = actual.get('files', None)
                     else:
-                        flag = 'used default'
                         entry['files'] = database_components[entry['component']]['files']
                     entry['full_files'] = [f"{entry['mod_dir']}/{i}" for i in entry['files']]
                     remove_entries_index = []
                     for idx, filepath in enumerate(entry['full_files']):
                         if not os.path.exists(filepath):
                             raise Exception(f'File {filepath} not found.')
-                        #if 'schema' in filepath.lower():
-                        #    remove_entries_index.append(idx)
                     for remove_idx in remove_entries_index[::-1]:
                         entry['full_files'].pop(remove_idx)
                     break
         return database_entries, load_fails
 
     def component_file_collect(self, database_components, logs):
+        new_db = deepcopy(database_components)
         load_fails = []
         known_load_fails = ['UpdateDatabase - Loading Data/RulersOfTheSahara_RemoveData.xml\n', 'UpdateDatabase - Loading Data/RulersOfTheSahara_RemoveData.xml\n', 'UpdateDatabase - Loading Data/JuliusCaesar_Districts.xml\n', 'UpdateDatabase - Loading Data/JuliusCaesar_Modifiers.xml\n', 'UpdateDatabase - Loading Data/JuliusCaesar_Units.xml\n']
-        for component, i in database_components.items():
+        for component, i in new_db.items():
             line_list = []
             for idx, j in enumerate(logs[i['line'] + 1:]):
                 if 'Applying Component' in j or 'Finished Apply Components' in j:
@@ -188,7 +229,7 @@ class SqlChecker:
                     raise Exception(f"Could not parse out filepath for {k}")
                 i['files'].append(match[1])
         print(f'Modding.log show fails at: \n {load_fails}')
-        return database_components, load_fails
+        return new_db, load_fails
 
     def convert_xml_to_sql(self, xml_file, job_type):
         sql_statements = []
@@ -731,14 +772,11 @@ def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, 
 
 def main():
     checker = SqlChecker()
-    # get base game entries.
     database_entries, load_fails = checker.parse_mod_log()
     modded_short, modded, dlc, dlc_files = [], [], [], []
     [dlc.extend(i['files']) for i in database_entries if 'DLC' in i['mod_dir']]
     [dlc_files.extend(i['full_files']) for i in database_entries if 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
     [modded.extend(i['full_files']) for i in database_entries if 'Mods' in i['mod_dir'] or 'workshop' in i['mod_dir']]     # later do change to environ set mod directory
-    # jobs = []
-    # [jobs.extend(i['full_files']) for i in database_entries]
     sql_statements_dlc, missed_dlc = checker.load_files(dlc_files, 'DLC')
     sql_statements_mods, missed_mods = checker.load_files(modded, 'Mod')
     missed_sql_statements = [i for i in dlc if i not in ["/".join(j.split('/')[1:]) for j in sql_statements_dlc]]
