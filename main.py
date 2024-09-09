@@ -37,6 +37,7 @@ class SqlChecker:
                               'GreatNegotiators/Data/GreatNegotiators_RemoveData.xml']
         # PseudoYieldType isnt a column, it should've been Item but Fireaxis is silly
         self.file_pattern = re.compile(r'Loading (.*?)\n')
+        self.errors_out = {'syntax': [], 'found_command': [], 'no_table': [], 'comment': [], 'mystery': []}
 
     def parse_mod_log(self):
         string = '.modinfo'
@@ -110,11 +111,11 @@ class SqlChecker:
         mod_component_order = ["]".join(i.split(']')[1:]) for i in logs[mod_component_start:mod_component_end]]
         mod_component_order = [i for i in mod_component_order if not ('Successfully released save point.' in i or 'Creating database save point.' in i)]
         files_to_apply = []
-        for i in ordered_mods:
+        for idx, i in enumerate(ordered_mods):
             template_component = {'uuid': i['id'], 'mod_dir': uuid_map[i['id']], 'files': [], 'full_files': [], 'name': i['name']}
             for j in i['components']:
                 complete_component = template_component.copy()
-                component_string = f' Applying Component - {j} '
+                component_string = f' Applying Component - {j} (UpdateDatabase)'
                 complete_component['component'] = component_string
                 component_start, found = [(idx + 1, k) for idx, k in enumerate(mod_component_order) if component_string in k][0]
                 component_end = next((idx for idx, string in enumerate(mod_component_order[component_start:]) if 'Applying Component' in string), None) + component_start
@@ -129,81 +130,8 @@ class SqlChecker:
                 files_to_apply.append(complete_component)
 
         no_files = [i for i in files_to_apply if len(i['aux_files'] + i['files']) ==0]
-        for dupe, details_list in dupes.items():
-            for idx, record in enumerate(details_list):
-                component_effects = []
-                line_num = record['line']
-                for line in logs[line_num:]:
-                    if 'Applying Component' in line and record['component_name'] not in line:
-                        break
-                    component_effects.append(line)
-                file_names = [i.split('Loading ')[1].replace('\n', '') for i in component_effects if 'Loading ' in i and 'Error Loading SQL' not in i]
-                historic_matches = []
-                for file_name in file_names:
-                    if '[' in file_name:
-                        file_name = file_name.replace('[', 'SLTH_LB')       # DEALING WITH [STR] input
-                    if ']' in file_name:
-                        file_name = file_name.replace(']', 'SLTH_RB')
-                    file_name = file_name.replace('SLTH_LB', '[[]').replace('SLTH_RB', '[]]')
-                    base_game_matches = [f for f in glob.glob(f'{self.civ_install}/**/{file_name}', recursive=True)]
-                    mod_matches = (
-                            [f for f in glob.glob(f'{self.workshop_folder}/*/{file_name}', recursive=True)] +
-                            [f for f in glob.glob(f'{self.local_mods_folder}/**/{file_name}', recursive=True)])
-                    matches = base_game_matches + mod_matches
-                    if len(matches) == 1:
-                        match = matches[0]
-                        if len(historic_matches) > 0:
-                            mod_info_match = glob.glob('/'.join(match.replace('\\', '/').split('/')[:-1]) + '/*.modinfo', recursive=True)
-                            if mod_info_match in historic_matches:
-                                database_components[f'{dupe}_DUPE_{idx}'] = details_list[idx]
-                                break
-                            else:
-                                continue
-                        else:
-                            database_components[f'{dupe}_DUPE_{idx}'] = details_list[idx]       # first value
-                            break
-                    elif len(matches) > 1:
-                        workshop_checks = [i for i in mod_matches if self.workshop_folder in i]
-                        workshop_checks = [i.replace(self.workshop_folder, '') for i in workshop_checks]
-                        workshop_checks = [i.split('/')[1] for i in workshop_checks]
-                        workshop_checks = [f'{self.workshop_folder}/{i}/*.modinfo' for i in workshop_checks]
-                        mod_info_match = [glob.glob(j, recursive=True) for j in workshop_checks]
-                        local_checks = [i for i in mod_matches if self.local_mods_folder in i]
-                        local_checks = [i.replace(self.local_mods_folder, '') for i in local_checks]
-                        local_checks = [i.split('/')[1] if i[0] == '/' else i.split('/')[0] for i in local_checks]
-                        local_checks = [f'{self.local_mods_folder}{i}/*.modinfo' for i in local_checks]
-                        mod_info_match_local = [glob.glob(j, recursive=True) for j in local_checks]
-                        for j in mod_info_match + mod_info_match_local:
-                            if len(j) > 0:
-                                historic_matches.append(j)
-                    else:
-                        raise FileNotFoundError(f'No file {file_name} exists in mod folders or base game')
 
-                # uh we need to capture the files collected, and find the .modinfo.
-
-        database_components, load_fails = self.component_file_collect(database_components, logs)
-
-        for entry in database_entries:
-            for item in logs[:entry['line']][::-1]:
-                if uuid_pattern.search(item) is not None:
-                    entry['uuid'] = uuid_pattern.findall(item)[0]
-                    entry['mod_dir'] = uuid_map[entry['uuid']]
-                    entry['component'] = uuid_component_pattern.search(entry['text'])[1]
-                    if entry['component'] in dupes:
-                        actual = [i for i in dupes[entry['component']] if 'consumed' not in i][0]
-                        actual['consumed'] = True
-                        entry['files'] = actual.get('files', None)
-                    else:
-                        entry['files'] = database_components[entry['component']]['files']
-                    entry['full_files'] = [f"{entry['mod_dir']}/{i}" for i in entry['files']]
-                    remove_entries_index = []
-                    for idx, filepath in enumerate(entry['full_files']):
-                        if not os.path.exists(filepath):
-                            raise Exception(f'File {filepath} not found.')
-                    for remove_idx in remove_entries_index[::-1]:
-                        entry['full_files'].pop(remove_idx)
-                    break
-        return database_entries, load_fails
+        return files_to_apply, no_files
 
     def component_file_collect(self, database_components, logs):
         new_db = deepcopy(database_components)
@@ -261,7 +189,16 @@ class SqlChecker:
                 sql_string += f"PRIMARY KEY({', '.join([i for i in pks])}));"
                 sql_strings.append(sql_string)
             return sql_strings
+        # filter out empty strings
+        for key, val in xml_.items():
+            if isinstance(val, list):
+                new_val = [j for j in val if not isinstance(j, str)]
+                xml_[key] = new_val
+
+
         for table_name, sql_commands in xml_.items():
+            if table_name == 'Row':
+                continue                # some orphaned xml with no table
             if sql_commands is None:
                 message = f'None value in SQL command. No commands for table {table_name}.'
                 if job_type in ['DLC', 'vanilla']:
@@ -466,8 +403,16 @@ class SqlChecker:
                 adjacencies = file.readlines()
             file_list_tuples = [('dummy', lines)] + file_list_tuples + [('dummy2', adjacencies)]
         for filename, sql_scripts in file_list_tuples:
+            commenting = 0
             for idx, sql_script in enumerate(sql_scripts):
                 if sql_script in known_script_errors and 'Vanilla' not in dlc_map:
+                    continue
+                if '/*' in sql_script:
+                    commenting += 1
+                if '*/' in sql_script:
+                    commenting -= 1
+                if commenting > 0:
+                    self.errors_out['comment'].append((filename, sql_script))
                     continue
                 try:
                     cursor.execute(sql_script)
@@ -475,12 +420,14 @@ class SqlChecker:
                     errors.append(sql_script)
                     if '/'.join(filename.split('/')[1:]) not in dlc_map:
                         str_errors = str(e)
-                        self.individual_line_run(sql_script, cursor)
+                        commands_used = self.individual_line_run(sql_script, cursor, filename)
+                        if len(commands_used) == 0:
+                            print(f'Errored on {filename}, but no commands found in SQL file')
                         continue
                     self.unique_error_handler(e, filename, cursor, sql_script)
 
         try:
-            prior_fk_errors = check_foreign_keys(cursor, file_list)
+            prior_fk_errors = check_foreign_keys(cursor, file_list, True)
             unique_fk_errors.update(prior_fk_errors)
             if is_dlc:
                 to_fix = [(i.split('parent table ')[1].split('=')[0].replace(' lacks ', '.'), i.split('= ')[2].replace('.', '')) for i in
@@ -527,12 +474,16 @@ class SqlChecker:
         cursor.close()
         if len(fk_errors) > 0:
             self.logger.warning(fk_errors)
+        self.show_errors()
 
     def load_files(self, jobs, job_type):
         jobs_short_ref = [('/'.join(i.split('/')[-3:]), i) for i in jobs]
         missed_files = []
         sql_statements = {}
         ensure_ordered_sql = []
+        firaxis_fails = ['RulersOfTheSahara_RemoveData.xml', 'JuliusCaesar_Districts.xml', 'JuliusCaesar_Modifiers.xml', 'JuliusCaesar_Units.xml']
+        known_mod_fails = ['871861883/custom.sql', '871861883/custom.xml', 'HiddenAgendas/Tourist.sql'] # YnAMP and BearsAgendas
+        known_fails = firaxis_fails + known_mod_fails
         for short_name, db_file in jobs_short_ref:
             existing_short = [i[0] for i in ensure_ordered_sql if i[0] == short_name]
             if len(existing_short) > 0:
@@ -541,7 +492,7 @@ class SqlChecker:
                     self.logger.info(error_msg)
                 else:
                     self.logger.warning(error_msg)
-            if db_file.endswith('.xml'):
+            if db_file.endswith('.xml') and not any(i in db_file for i in known_fails):
                 statements = self.convert_xml_to_sql(db_file, job_type)
                 if isinstance(statements, str):
                     missed_files.append(short_name)
@@ -552,7 +503,7 @@ class SqlChecker:
                     continue
                 sql_statements[short_name] = self.convert_xml_to_sql(db_file, job_type)
                 ensure_ordered_sql.append((short_name, sql_statements[short_name]))
-            if db_file.endswith('.sql'):
+            if db_file.endswith('.sql') and not any(i in db_file for i in known_fails):
                 try:
                     with open(db_file, 'r') as file:
                         sql_contents = file.read()
@@ -565,11 +516,11 @@ class SqlChecker:
                 ensure_ordered_sql.append((short_name, sql_statements[short_name]))
 
         # check that order is maintained in dict (should after python 3.7 ish)
-        if not [i for i in sql_statements] == [j[1] for j in ensure_ordered_sql]:
+        """if not [i for i in sql_statements] == [j[1] for j in ensure_ordered_sql]:
             missing = [k for k in ensure_ordered_sql if [i[0] for i in ensure_ordered_sql].count(k[0])>1]           # base files repeat removing data with the same file in some DLC
             concat_missing = set([(k[0], '\n'.join(k[1])) for k in missing])        # checks for dupes
             if not len(missing) / 2 == len(concat_missing):
-                raise Exception('SQL Dict is not ordered and cant be trusted for modding operations. ')
+                raise Exception('SQL Dict is not ordered and cant be trusted for modding operations. ')"""
         return sql_statements, missed_files
 
     def build_vanilla_db(self):
@@ -622,7 +573,7 @@ class SqlChecker:
         else:
             self.row_id_fix(cursor, sql_script)
 
-    def individual_line_run(self, sql_script, cursor):
+    def individual_line_run(self, sql_script, cursor, filename=None):
         table_name_pattern = r'\b(\w+)\s*\('
         columns_pattern = r'\(([^)]+)\)'
         values_pattern = r'VALUES\s*\((.*?)\);$'
@@ -644,23 +595,50 @@ class SqlChecker:
             try:
                 cursor.execute(command)
             except Exception as e:
-                if 'SYNTAX' in str(e):
+                string_error = str(e)
+                if any(j in string_error for j in ['SYNTAX', 'Syntax', 'syntax']):
                     self.logger.warning(e)
+                    self.errors_out['syntax'].append((filename, e, command))
                     continue
-                unsplit = re.search(r'VALUES\s*\((.*?)\);$', command)[1]
-                vals = [i.replace("'", "").strip() for i in unsplit.split(',')]
-                col_plus_val = {key: val for key, val in zip(columns, vals)}
-                column_fails = str(e).split('failed: ')[1].replace(table_name + '.', '')
-                if len(column_fails.split(',')) > 1:
-                    split_fails = [i.strip() for i in column_fails.split(',')]
-                    error = str(e) + ' for: ' + str([col_plus_val[i] for i in split_fails])
+                if 'no such table' in string_error:
+                    self.logger.warning(e)
+                    self.errors_out['no_table'].append((filename, e, command))
+                    continue
+                column_fails = string_error.split('failed: ')[1].replace(table_name + '.', '')
+                unsplit_search = re.search(r'VALUES\s*\((.*?)\);$', command)
+                if unsplit_search is not None:
+                    unsplit = unsplit_search[0]
+                    vals = [i.replace("'", "").strip() for i in unsplit.split(',')]
+                    col_plus_val = {key: val for key, val in zip(columns, vals)}
+                    if len(column_fails.split(',')) > 1:
+                        split_fails = [i.strip() for i in column_fails.split(',')]          # fails on empty strings RunOnce
+                        error = str(e) + ' for: ' + str([col_plus_val[i] for i in split_fails])
+                    else:
+                        error = str(e) + ' on ' + col_plus_val[column_fails]
+                    print(f'{error} caused by:\n{command}')
+                    self.errors_out['found_command'].append(f'{error} caused by:\n{command} in {filename}')
                 else:
-                    error = str(e) + ' on ' + col_plus_val[column_fails]
-                print(f'{error} caused by:\n{command}')
+                    print(f'could not find values of command for {command} in {filename}')
+                    self.errors_out['mystery'].append(command)
         return commands
 
     def kill_df(self):
         os.remove(self.db_path)
+
+    def show_errors(self):
+        fails = 0
+        for key, val in self.errors_out.items():
+            if len(val) == 0:
+                continue
+            print(key)
+            for error in val:
+                print(error)
+                fails += 1
+        if fails == 0:
+            print('no errors')
+
+
+
 
 
 
@@ -703,7 +681,7 @@ def primary_key_matcher(sql_script, error):
     return check_exists
 
 
-def check_foreign_keys(cursor, file_list):
+def check_foreign_keys(cursor, file_list, do_complex=False):
     fk_errors = []
     cursor.execute("PRAGMA foreign_key_check;")
     violations = cursor.fetchall()
@@ -720,8 +698,10 @@ def check_foreign_keys(cursor, file_list):
 
     for table_name, row_id, foreign_table, fk_constraint_index in violations:
         constraint = table_fks[table_name][fk_constraint_index]
-        msg = foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_primary_keys[table_name], file_list)
+        msg = foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_primary_keys[table_name],
+                                        file_list, do_complex)
         fk_errors.append(msg)
+
     return fk_errors
 
 
@@ -736,23 +716,41 @@ def foreign_key_check(cursor, table_name):
     return labeled_constraints, primary_keys
 
 
-def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, file_list):
+def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, file_list, do_complex):
     cursor.execute(f"SELECT * FROM {table_name} WHERE rowid = {row_id}")
     record = cursor.fetchone()
     record_col_names = [description[0] for description in cursor.description]
     record_ = {key: val for key, val in zip(record_col_names, record)}
     record_pk = {key: record_[key] for key in table_pk if key in record_}
-    pk_col, pk_val = [(i, j) for i, j in record_pk.items()][0]
-    if not isinstance(pk_val, str):
-        pk_val = str(pk_val)
-    intermediate = {key: val for key, val in file_list.items() if any(pk_val in item for item in val)}
-    found_pk_use = {key: [(idx, item) for idx, item in enumerate(val) if pk_val in item] for key, val in intermediate.items()}
+    pk_set = [(i, j) for i, j in record_pk.items()]
+    if not do_complex:
+        message = (f"ERROR: {table_name} record {record_pk} has Foreign Key: {constraint['from']} = "
+            f"{record_[constraint['from']]} but parent table {constraint['table']} lacks {constraint['to']} = "
+            f"{record_[constraint['from']]}.")
+        return message
+    intermediate = file_list
+    for pk_col, pk_val in pk_set:
+        intermediate = {key: val for key, val in intermediate.items() if any(str(pk_val) in item for item in val)}
+    found_pk_use = {key: [(idx, item) for idx, item in enumerate(val) if all(str(j_pk) in item for col, j_pk in pk_set)] for key, val in intermediate.items()}
     sql_objects = [[name] + [sqlparse.parse(j[1])[0] for j in i] for name, i in found_pk_use.items()]
     sql_objects_tuple = [(sublist[0], element) for sublist in sql_objects for element in sublist if sublist[0] != element]
-    table = [(i[0], i[1].normalized.split('(')[0].replace('INSERT INTO ', '').replace('UPDATE ', '').split('SET')[0], i[1].normalized) for i in sql_objects_tuple if i[1].is_group]
+    table = [[i[0], "".join([j.normalized for j in i[1].tokens if type(j) != sqlparse.sql.Comment and j.ttype != sqlparse.tokens.Token.Comment.Multiline])] for i in sql_objects_tuple if i[1].is_group] # parse out comments
+    table = [i for i in table if len(i[1]) > 0 and '--' not in i[1]]
+    table = [i for i in table if 'CREATE' not in i[1] and not ('ALTER' in i[1] and 'ADD' in i[1])]          # filtering out CREATE TRIGGER for now
+    table = [i for i in table if 'WITH' not in i[1] and '/*' not in i]           # filters poki's weird WITH
+    if len(table) > 200:
+        return f'There are {len(table)} records matching on {pk_set} for error. We aint doing that'
+    for i in table:         # later should we make a map of all the DDL constraints mapped? so can use column instead of value search
+        i.append(i[1].split('(')[0].replace('\t', ' ').replace('INSERT INTO', '').replace('UPDATE', '').replace('DELETE FROM', '')
+                 .replace('INSERT OR REPLACE INTO', '').replace('INSERT OR IGNORE INTO', '').replace('OR IGNORE', '').replace('DROP TABLE' ,'')
+                 .replace('REPLACE INTO', '').split('SET')[0].split('WHERE')[0].split('VALUES')[0].split('SELECT')[0]
+                 .strip())
     possible_culprits = []
     for i in table:
-        cursor.execute(f"PRAGMA table_info({i[1]})")
+        try:
+            cursor.execute(f"PRAGMA table_info({i[2]})")
+        except Exception as e:
+             continue
         columns_info = cursor.fetchall()
         primary_keys = [column[1] for column in columns_info if column[5] == 1]
         for pk in primary_keys:
@@ -760,7 +758,7 @@ def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, 
                 possible_culprits.append(i)
     culprits = []
     for i in possible_culprits:
-        line_list = i[2].split('\n')
+        line_list = i[1].split('\n')
         line_indices = [idx + 1 for idx, i in enumerate(line_list) if pk_val in i]
         culprits.append((f'{i[0]}: Lines:', line_indices))
     message = (f"ERROR: {table_name} record {record_pk} has Foreign Key: {constraint['from']} = "

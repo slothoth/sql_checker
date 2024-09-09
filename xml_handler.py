@@ -1,7 +1,7 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
 from collections import defaultdict
-
+import tempfile
 
 def dict_to_etree(d, root):
     for k, v in d.items():
@@ -47,7 +47,44 @@ def save_pretty_xml_to_file(xml_string, filename):
 
 
 def read_xml(filepath):
-    tree = ET.parse(filepath)
+    try:
+        tree = ET.parse(filepath)
+    except ET.ParseError as e:
+        with open(filepath, 'r') as f:
+            file = f.readlines()
+        current_error, pretty_file, test = None, None, None
+        new_error = e
+        line, position = e.position
+        tries = 0
+        while test is None and current_error != new_error and tries < 10:
+            try:
+                tries += 1
+                line_fail = file[line - 1]
+                new_file = file
+                if line_fail[position - 1] == '"':              # deals with no space between elements
+                    line_fail = line_fail[:position - 1] + '\t' + line_fail[position:]
+                    new_file[line - 1] = line_fail
+                main_tag_idx = [idx for idx, i in enumerate(new_file) if '<' in i and '>' in i][0]
+                if main_tag_idx != 0:
+                    new_file = new_file[main_tag_idx:]
+                bad_comments = [(idx, i) for idx, i in enumerate(new_file) if '-' in i and '<' not in i and '>' not in i]
+                for i in bad_comments:
+                    new_file[i[0]] = '$$$REMOVE$$$'
+                pretty_file = "".join(new_file)
+                pretty_file = pretty_file.replace('$$$REMOVE$$$', '')
+                test = ET.XML(pretty_file)
+            except ET.ParseError as e:
+                new_error = e
+                print(f'on file: {filepath}')
+                print(e)
+                line, position = e.position
+        if test is None:
+            print('couldnt find a way to parse xml')
+            raise new_error
+        with tempfile.TemporaryFile() as fp:
+            fp.write(pretty_file.encode('utf-8'))
+            fp.seek(0)
+            tree = ET.parse(fp)
     t = tree.getroot()
     return etree_to_dict(t)
 
