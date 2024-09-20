@@ -481,7 +481,7 @@ class SqlChecker:
         missed_files = []
         sql_statements = {}
         ensure_ordered_sql = []
-        firaxis_fails = ['RulersOfTheSahara_RemoveData.xml', 'JuliusCaesar_Districts.xml', 'JuliusCaesar_Modifiers.xml', 'JuliusCaesar_Units.xml']
+        firaxis_fails = ['RulersOfTheSahara_RemoveData.xml', 'JuliusCaesar_Districts.xml', 'JuliusCaesar_Modifiers.xml', 'JuliusCaesar_Units.xml', 'CatherineDeMedici_Modifiers.xml']
         known_mod_fails = ['871861883/custom.sql', '871861883/custom.xml', 'HiddenAgendas/Tourist.sql'] # YnAMP and BearsAgendas
         known_fails = firaxis_fails + known_mod_fails
         for short_name, db_file in jobs_short_ref:
