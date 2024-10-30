@@ -646,13 +646,14 @@ def get_query_details(script):
     table_name_pattern = r'\b(\w+)\s*\('
     columns_pattern = r'\(([^)]+)\)'
     values_pattern = r'VALUES\s*\((.*?)\);$'
-    search = re.findall(table_name_pattern, script)
+    script_ = script.replace('"', "'")
+    search = re.findall(table_name_pattern, script_)
     if len(search) > 0:
         table_name = search[0]
-        columns = re.search(columns_pattern, script)[1].split(',')
-        values = re.search(values_pattern, script)[1].split("',")
+        columns = re.search(columns_pattern, script_)[1].split(',')
+        values = re.search(values_pattern, script_)[1].split("',")
     else:
-        split_space = script.split(' ')
+        split_space = script_.split(' ')
         if len(split_space) > 1:
             table_name = split_space[1]
 
@@ -664,10 +665,10 @@ def get_query_details(script):
 def full_matcher_sql(sql_script):
     table_name, wheres = get_query_details(sql_script)
     wheres.pop('SQL', None)  # ughhh, its hard to parse metaSQL and quotation marks
-    assign_vals = "\n AND ".join([f'{col} = {val}' for col, val in wheres.items()])
+    equals_format = [f"{col} = '{val.strip()}'" for col, val in wheres.items()]
+    assign_vals = "\n AND ".join(equals_format)
     script = f"SELECT *\n FROM {table_name}\n WHERE " + assign_vals + ";"
     return script, {i: j.strip("'").strip('"') for i, j in wheres.items()}
-
 
 def primary_key_matcher(sql_script, error):
     table_name, wheres = get_query_details(sql_script)
