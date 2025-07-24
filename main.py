@@ -19,18 +19,12 @@ class SqlChecker:
         self.logger.setLevel(logging.WARNING)
         self.granularity = 'statement'
         self.errors = []
-        config = json.load(open('config.json', 'r'))
-        self.log_folder = os.environ.get('CIV_LOG', f"{config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Logs")
-        self.civ_install = os.environ.get('CIV_INSTALL', config['CIV_INSTALL'])
-        self.workshop_folder = os.environ.get('WORKSHOP_FOLDER', config['WORKSHOP_FOLDER'])
+        self.config = json.load(open('config.json', 'r'))
+        self.log_folder = os.environ.get('CIV_LOG', f"{self.config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Logs")
+        self.civ_install = os.environ.get('CIV_INSTALL', self.config['CIV_INSTALL'])
+        self.workshop_folder = os.environ.get('WORKSHOP_FOLDER', self.config['WORKSHOP_FOLDER'])
         self.local_mods_folder = os.environ.get('LOCAL_MODS_FOLDER',
-                                           f"{config['CIV_USER']}/Sid Meier's Civilization VI/Sid Meier's Civilization VI/Mods/")
-        if not os.path.exists('DebugGameplay_working.sqlite'):
-            copy_db_path = f"{config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite"
-            shutil.copy(copy_db_path, 'DebugGameplay.sqlite')
-        shutil.copy('DebugGameplay.sqlite', 'DebugGameplay_working.sqlite')  # restore backup db
-        self.db_path = f'{int(time.time())}.sqlite'
-
+                                           f"{self.config['CIV_USER']}/Sid Meier's Civilization VI/Sid Meier's Civilization VI/Mods/")
         self.known_errors_list = ["UPDATE AiFavoredItems SET Value = '200' WHERE ListType = 'CatherineAltLuxuries' "
                                   "AND PseudoYieldType = 'PSEUDOYIELD_RESOURCE_LUXURY';"]
         self.known_repeats = ['RulersOfEngland/Data/RulersOfEngland_RemoveData.xml', 'GreatNegotiators/Data/GreatNegotiators_RemoveData.xml',
@@ -38,6 +32,20 @@ class SqlChecker:
         # PseudoYieldType isnt a column, it should've been Item but Fireaxis is silly
         self.file_pattern = re.compile(r'Loading (.*?)\n')
         self.errors_out = {'syntax': [], 'found_command': [], 'no_table': [], 'comment': [], 'mystery': []}
+
+    def setup_db_new(self):
+        if not os.path.exists('DebugGameplay_working.sqlite'):
+            copy_db_path = f"{self.config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite"
+            shutil.copy(copy_db_path, 'DebugGameplay.sqlite')
+        shutil.copy('DebugGameplay.sqlite', 'DebugGameplay_working.sqlite')  # restore backup db
+        self.db_path = f'{int(time.time())}.sqlite'
+
+    def setup_db_existing(self):
+        copy_db_path = f"{self.config['CIV_USER']}/Sid Meier's Civilization VI/Mods/builder/data/DebugGameplay.sqlite"
+        shutil.copy(copy_db_path, 'DebugFrozenGameplay.sqlite')
+        self.db_path = f'{int(time.time())}.sqlite'
+        shutil.copy('DebugFrozenGameplay.sqlite', self.db_path)  # restore backup db
+
 
     def parse_mod_log(self):
         string = '.modinfo'
@@ -430,8 +438,7 @@ class SqlChecker:
             prior_fk_errors = check_foreign_keys(cursor, file_list, True)
             unique_fk_errors.update(prior_fk_errors)
             if is_dlc:
-                to_fix = [(i.split('parent table ')[1].split('=')[0].replace(' lacks ', '.'), i.split('= ')[2].replace('.', '')) for i in
-                 prior_fk_errors]
+                to_fix = [i for i in prior_fk_errors]
                 not_collects_not_effects = [i for i in set(to_fix) if 'EFFECT' not in i[1] and 'COLLECTION' not in i[1]]
                 fixes = {}
                 for i in set(to_fix):
@@ -771,32 +778,42 @@ def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, 
 
 def main():
     checker = SqlChecker()
+    config = json.load(open('config.json', 'r'))
+    if config.get('USE_EXISTING', False):
+        checker.setup_db_existing()
+    else:
+        checker.setup_db_new()
     database_entries, load_fails = checker.parse_mod_log()
     modded_short, modded, dlc, dlc_files = [], [], [], []
-    [dlc.extend(i['files']) for i in database_entries if 'DLC' in i['mod_dir']]
-    [dlc_files.extend(i['full_files']) for i in database_entries if 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
-    [modded.extend(i['full_files']) for i in database_entries if 'Mods' in i['mod_dir'] or 'workshop' in i['mod_dir']]     # later do change to environ set mod directory
-    sql_statements_dlc, missed_dlc = checker.load_files(dlc_files, 'DLC')
-    sql_statements_mods, missed_mods = checker.load_files(modded, 'Mod')
-    missed_sql_statements = [i for i in dlc if i not in ["/".join(j.split('/')[1:]) for j in sql_statements_dlc]]
     full_dump = []
     dashs = '--------------------'
-    [full_dump.extend([dashs + key + dashs] + val) for key, val in sql_statements_mods.items()]
+    if config.get('USE_EXISTING', False):
+        [modded.extend(i['full_files']) for i in database_entries if 'Mods' in i['mod_dir'] or 'workshop' in i['mod_dir']]     # later do change to environ set mod directory
+        sql_statements_mods, missed_mods = checker.load_files(modded, 'Mod')
+        [full_dump.extend([dashs + key + dashs] + val) for key, val in sql_statements_mods.items()]
+    else:
+        [dlc.extend(i['files']) for i in database_entries if 'DLC' in i['mod_dir']]
+        [dlc_files.extend(i['full_files']) for i in database_entries if 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
+        sql_statements_dlc, missed_dlc = checker.load_files(dlc_files, 'DLC')
+        missed_sql_statements = [i for i in dlc if i not in ["/".join(j.split('/')[1:]) for j in sql_statements_dlc]]
+
     with open('sql_statements.log', 'w') as file:
         file.write("\n".join(full_dump))
 
-    vanilla_jobs = checker.build_vanilla_db()
-    vanilla_sql_statements, missed_vanilla = checker.load_files(vanilla_jobs, 'vanilla')
-    dlc_sql_dump = [j for i in sql_statements_dlc.values() for j in i]
-    silly_parse_error = [j for j in dlc_sql_dump if ',;' in j] + [j for j in dlc_sql_dump if ', ;' in j]
-    if len(silly_parse_error) > 0:
-        print(f'had some ,; errors: {silly_parse_error}')
-    checker.prepare_db()
-    checker.test_db(vanilla_sql_statements, ['Vanilla'], True)
-    checker.test_db(sql_statements_dlc, dlc, True)
-    checker.test_db(sql_statements_mods, modded_short, False)
-    checker.kill_df()
+    if config.get('USE_EXISTING', False):
+        checker.test_db(sql_statements_mods, modded_short, False)
+    else:
+        checker.prepare_db()
+        vanilla_jobs = checker.build_vanilla_db()
+        vanilla_sql_statements, missed_vanilla = checker.load_files(vanilla_jobs, 'vanilla')
+        checker.test_db(vanilla_sql_statements, ['Vanilla'], True)
+        checker.test_db(sql_statements_dlc, dlc, True)
+        dlc_sql_dump = [j for i in sql_statements_dlc.values() for j in i]
+        silly_parse_error = [j for j in dlc_sql_dump if ',;' in j] + [j for j in dlc_sql_dump if ', ;' in j]
+        if len(silly_parse_error) > 0:
+            print(f'had some ,; errors: {silly_parse_error}')
 
+    checker.kill_df()
     #  need test that runs only unmodded to verify database integrity.
 
 
