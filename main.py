@@ -126,7 +126,16 @@ class SqlChecker:
                 component_string = f' Applying Component - {j} (UpdateDatabase)'
                 complete_component['component'] = component_string
                 component_start, found = [(idx + 1, k) for idx, k in enumerate(mod_component_order) if component_string in k][0]
-                component_end = next((idx for idx, string in enumerate(mod_component_order[component_start:]) if 'Applying Component' in string), None) + component_start
+                component_end = next((idx for idx, string in enumerate(mod_component_order[component_start:]) if 'Applying Component' in string), None)
+                if component_end is not None:
+                    component_end = component_end + component_start
+                else:
+                    component_end = next((idx for idx, string in enumerate(mod_component_order[component_start:]) if
+                                          'Finished Apply Components' in string), None)
+                    if component_end is not None:
+                        component_end = component_end + component_start
+                    else:
+                        raise('Could not find component end')
                 component = mod_component_order[component_start:component_end]
                 if len(component) > 0:
                     del mod_component_order[component_start-1:component_end]
@@ -780,6 +789,7 @@ def main():
     checker = SqlChecker()
     config = json.load(open('config.json', 'r'))
     if config.get('USE_EXISTING', False):
+        print('using existing database')
         checker.setup_db_existing()
     else:
         checker.setup_db_new()
@@ -792,8 +802,12 @@ def main():
         sql_statements_mods, missed_mods = checker.load_files(modded, 'Mod')
         [full_dump.extend([dashs + key + dashs] + val) for key, val in sql_statements_mods.items()]
     else:
-        [dlc.extend(i['files']) for i in database_entries if 'DLC' in i['mod_dir']]
-        [dlc_files.extend(i['full_files']) for i in database_entries if 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
+        if config.get('CHECK_DLC_DEPENDENCIES', False):
+            [dlc.extend(i['files']) for i in database_entries if 'DLC/Expansion' in i['mod_dir']]
+            [dlc_files.extend(i['full_files']) for i in database_entries if 'DLC/Expansion' in i['mod_dir'] and 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
+        else:
+            [dlc.extend(i['files']) for i in database_entries if 'DLC' in i['mod_dir']]
+            [dlc_files.extend(i['full_files']) for i in database_entries if 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
         sql_statements_dlc, missed_dlc = checker.load_files(dlc_files, 'DLC')
         missed_sql_statements = [i for i in dlc if i not in ["/".join(j.split('/')[1:]) for j in sql_statements_dlc]]
 
