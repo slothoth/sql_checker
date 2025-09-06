@@ -19,12 +19,12 @@ class SqlChecker:
         self.logger.setLevel(logging.WARNING)
         self.granularity = 'statement'
         self.errors = []
-        self.config = json.load(open('config.json', 'r'))
-        self.log_folder = os.environ.get('CIV_LOG', f"{self.config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Logs")
+        self.config = json.load(open('mac_config.json', 'r'))
+        self.log_folder = os.environ.get('CIV_LOG', f"/Users/samuelmayo/Library/Application Support/Civilization VII/Logs")
         self.civ_install = os.environ.get('CIV_INSTALL', self.config['CIV_INSTALL'])
         self.workshop_folder = os.environ.get('WORKSHOP_FOLDER', self.config['WORKSHOP_FOLDER'])
         self.local_mods_folder = os.environ.get('LOCAL_MODS_FOLDER',
-                                           f"{self.config['CIV_USER']}/Sid Meier's Civilization VI/Sid Meier's Civilization VI/Mods/")
+                                           f"/Users/samuelmayo/Library/Application Support/Civilization VII/Mods")
         self.known_errors_list = ["UPDATE AiFavoredItems SET Value = '200' WHERE ListType = 'CatherineAltLuxuries' "
                                   "AND PseudoYieldType = 'PSEUDOYIELD_RESOURCE_LUXURY';"]
         self.known_repeats = ['RulersOfEngland/Data/RulersOfEngland_RemoveData.xml', 'GreatNegotiators/Data/GreatNegotiators_RemoveData.xml',
@@ -35,7 +35,7 @@ class SqlChecker:
 
     def setup_db_new(self):
         if not os.path.exists('DebugGameplay_working.sqlite'):
-            copy_db_path = f"{self.config['CIV_USER']}/Firaxis Games/Sid Meier's Civilization VI/Cache/DebugGameplay.sqlite"
+            copy_db_path = f"/Users/samuelmayo/Library/Application Support/Civilization VII"
             shutil.copy(copy_db_path, 'DebugGameplay.sqlite')
         shutil.copy('DebugGameplay.sqlite', 'DebugGameplay_working.sqlite')  # restore backup db
         self.db_path = f'{int(time.time())}.sqlite'
@@ -56,9 +56,19 @@ class SqlChecker:
         filepath_mod_infos = filepath_dlc_mod_infos + filepath_mod_mod_infos
         uuid_map = {}
         for filepath in filepath_mod_infos:
-            uuid_ = ET.parse(filepath).getroot().attrib['id']
-            filepath = "/".join(filepath.replace('\\', '/').split('/')[:-1])
-            uuid_map[uuid_] = filepath
+            try:
+                uuid_ = ET.parse(filepath).getroot().attrib['id']
+                filepath = "/".join(filepath.replace('\\', '/').split('/')[:-1])
+                uuid_map[uuid_] = filepath
+            except:
+                with open(filepath, encoding="utf-8") as f:
+                    text = f.read()
+
+                m = re.search(r'<Mod\s+id="([^"]+)"', text)
+                if m:
+                    filepath = "/".join(filepath.replace('\\', '/').split('/')[:-1])
+                    uuid_ = m.group(1)
+                    uuid_map[uuid_] = filepath
         with open(self.log_folder + '/Modding.log', 'r') as file:
             logs = file.readlines()
         uuid_pattern = re.compile(
@@ -95,7 +105,7 @@ class SqlChecker:
         current_sublist = []
         new_entry = {}
         for item in mod_order:
-            if item[:3] != '  *':
+            if item[:3].strip() != '*':
                 if len(new_entry) > 0:          # add old entry before starting new one
                     ordered_mods.append(new_entry)
                 space_split = item.strip().split(' ')
@@ -103,15 +113,12 @@ class SqlChecker:
                 current_name = " ".join(space_split[1:])
                 new_entry = {'id': unique_id, 'name': current_name, 'components': [], 'not_db_components': []}
             else:
-                if 'UpdateDatabase' in item:
-                    formatted_item = item.replace('  * ', '').replace(' (UpdateDatabase)\n', '')
-                    new_entry['components'].append(formatted_item)
-                else:
-                    new_entry['not_db_components'].append(item)
+                formatted_item = item.replace('*', '').replace(' (UpdateDatabase)\n', '').strip()
+                new_entry['components'].append(formatted_item)
         ordered_mods.append(new_entry)                # final entry
 
         mod_component_start = next(
-            (idx for idx, string in enumerate(logs) if 'Modding Framework - Applying Components' in string),
+            (idx for idx, string in enumerate(logs) if 'Modding Framework - Apply Actions' in string),
             None) + 1
         mod_component_end = next(
             (idx for idx, string in enumerate(logs) if 'Applied all components of enabled mods.' in string),
@@ -123,10 +130,14 @@ class SqlChecker:
             template_component = {'uuid': i['id'], 'mod_dir': uuid_map[i['id']], 'files': [], 'full_files': [], 'name': i['name']}
             for j in i['components']:
                 complete_component = template_component.copy()
-                component_string = f' Applying Component - {j} (UpdateDatabase)'
+                component_string = f'{j} (UpdateDatabase)'
                 complete_component['component'] = component_string
-                component_start, found = [(idx + 1, k) for idx, k in enumerate(mod_component_order) if component_string in k][0]
-                component_end = next((idx for idx, string in enumerate(mod_component_order[component_start:]) if 'Applying Component' in string), None)
+                found_val = [(idx + 1, k) for idx, k in enumerate(mod_component_order) if component_string in k]
+                if len(found_val) == 0:
+                    print('component_string not found!!', component_string)
+                    continue
+                component_start, found = found_val[0]
+                component_end = next((idx for idx, string in enumerate(mod_component_order[component_start:]) if 'Loading' not in string), None)
                 if component_end is not None:
                     component_end = component_end + component_start
                 else:
@@ -149,6 +160,36 @@ class SqlChecker:
         no_files = [i for i in files_to_apply if len(i['aux_files'] + i['files']) ==0]
 
         return files_to_apply, no_files
+
+    def query_mod_db(self):
+        with open('query_VII_mods.sql', 'r') as f:
+            query = f.read()
+        conn = sqlite3.connect("/Users/samuelmayo/Library/Application Support/Civilization VII/Mods.sqlite")
+        conn.row_factory = sqlite3.Row  # enables column access by name
+        cur = conn.cursor()
+        cur.execute(query)
+        rows = cur.fetchall()
+        conn.close()
+        files_to_apply = []
+        # first we need the modinfos of each mod
+        filepath_dlc_mod_infos = [f for f in glob.glob(f'{self.civ_install}/**/*.modinfo*', recursive=True)]
+        filepath_mod_mod_infos = ([f for f in glob.glob(f'{self.workshop_folder}/**/*.modinfo*', recursive=True)] +
+                                  [f for f in glob.glob(f'{self.local_mods_folder}/**/*.modinfo*', recursive=True)])
+        filepath_mod_infos = filepath_dlc_mod_infos + filepath_mod_mod_infos
+        modinfo_uuids = {}
+        for filepath in filepath_mod_infos:
+            with open(filepath, 'r') as f:
+                text = f.read()
+            match = re.search(r'<Mod id="([^"]+)"', text)
+            if match:
+                folder_path = os.path.dirname(filepath)
+                modinfo_uuids[match.group(1)] = folder_path
+        for row in rows:
+            file_info = dict(row)
+            file_info['full_path'] = os.path.join(modinfo_uuids[file_info['ModId']], file_info['ExecutedFile'])
+            files_to_apply.append(file_info)
+
+        return files_to_apply
 
     def component_file_collect(self, database_components, logs):
         new_db = deepcopy(database_components)
@@ -540,8 +581,8 @@ class SqlChecker:
         return sql_statements, missed_files
 
     def build_vanilla_db(self):
-        files = [f for f in glob.glob(f'{self.civ_install}/Assets/Base/Assets/Gameplay/Data/*.xml', recursive=True)]
-        schema = [f for f in glob.glob(f'{self.civ_install}/Assets/Base/Assets/Gameplay/Data/Schema/*', recursive=True)]
+        files = [f for f in glob.glob(f"/Users/samuelmayo/Library/Application Support/Steam/steamapps/common/Sid Meier's Civilization VII/CivilizationVII.app/Contents/Resources/Base/modules/Gameplay/Data/*.xml", recursive=True)]
+        schema = [f for f in glob.glob(f"/Users/samuelmayo/Library/Application Support/Steam/steamapps/common/Sid Meier's Civilization VII/CivilizationVII.app/Contents/Resources/Base/Assets/schema/gameplay/*.sql", recursive=True)]
         database_entries = [{'component': 'Schema', 'full_files': schema}, {'component': 'Data', 'full_files': files}]
         jobs = []
         [jobs.extend(i['full_files']) for i in database_entries]
@@ -787,13 +828,13 @@ def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, 
 
 def main():
     checker = SqlChecker()
-    config = json.load(open('config.json', 'r'))
+    config = json.load(open('mac_config.json', 'r'))
     if config.get('USE_EXISTING', False):
         print('using existing database')
         checker.setup_db_existing()
     else:
         checker.setup_db_new()
-    database_entries, load_fails = checker.parse_mod_log()
+    database_entries, load_fails = checker.query_mod_db()
     modded_short, modded, dlc, dlc_files = [], [], [], []
     full_dump = []
     dashs = '--------------------'
@@ -803,11 +844,8 @@ def main():
         [full_dump.extend([dashs + key + dashs] + val) for key, val in sql_statements_mods.items()]
     else:
         if config.get('CHECK_DLC_DEPENDENCIES', False):
-            [dlc.extend(i['files']) for i in database_entries if 'DLC/Expansion' in i['mod_dir']]
-            [dlc_files.extend(i['full_files']) for i in database_entries if 'DLC/Expansion' in i['mod_dir'] and 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
-        else:
-            [dlc.extend(i['files']) for i in database_entries if 'DLC' in i['mod_dir']]
-            [dlc_files.extend(i['full_files']) for i in database_entries if 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
+            [dlc.extend(i['files']) for i in database_entries if 'DLC/' in i['mod_dir']]
+            [dlc_files.extend(i['full_files']) for i in database_entries if 'DLC/' in i['mod_dir'] and 'Mods' not in i['mod_dir'] and 'workshop' not in i['mod_dir']]
         sql_statements_dlc, missed_dlc = checker.load_files(dlc_files, 'DLC')
         missed_sql_statements = [i for i in dlc if i not in ["/".join(j.split('/')[1:]) for j in sql_statements_dlc]]
 
