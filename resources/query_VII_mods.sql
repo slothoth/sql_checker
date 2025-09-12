@@ -1,6 +1,7 @@
 SELECT DISTINCT
   T_Mods.ModId,
-  T_Items.Item AS ExecutedFile
+  T_Items.Item AS File,
+  T_Mods.Disabled
 FROM
   Mods AS T_Mods
   LEFT JOIN ModProperties AS T_ModProps
@@ -44,7 +45,7 @@ WHERE
                 AND EXISTS (
                   SELECT 1 FROM Mods M
                   WHERE M.ModId = CP2.Value
-                    AND (M.Disabled IS NULL OR M.Disabled = 0)
+                    AND M.Disabled = 0
                 )
             )
             OR (C2.CriterionType = 'ModInUse'
@@ -52,7 +53,7 @@ WHERE
                 AND NOT EXISTS (
                   SELECT 1 FROM Mods M
                   WHERE M.ModId = CP2.Value
-                    AND (M.Disabled IS NULL OR M.Disabled = 0)
+                    AND M.Disabled = 0
                 )
             )
           )
@@ -75,7 +76,7 @@ WHERE
                 AND EXISTS (
                   SELECT 1 FROM Mods M
                   WHERE M.ModId = CP2.Value
-                    AND (M.Disabled IS NULL OR M.Disabled = 0)
+                    AND  M.Disabled = 0
                 )
             )
             OR (C2.CriterionType = 'ModInUse'
@@ -83,7 +84,7 @@ WHERE
                 AND NOT EXISTS (
                   SELECT 1 FROM Mods M
                   WHERE M.ModId = CP2.Value
-                    AND (M.Disabled IS NULL OR M.Disabled = 0)
+                    AND M.Disabled = 0
                 )
             )
           )
