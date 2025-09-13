@@ -13,6 +13,7 @@ if sys.platform == 'win32':
 
 from model import model_run
 
+
 class App(QWidget):
     def __init__(self):
         super().__init__()
@@ -113,6 +114,7 @@ class App(QWidget):
         except queue.Empty:
             pass
 
+
 def find_steam_install():
     if sys.platform == 'win32':
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Valve\Steam")
@@ -150,14 +152,14 @@ def find_workshop():
 
 
 def find_civ_config():
-    if sys.platform == 'win32' or 'win64':
-        civ_install = None                      # TODO what is this path in windows anyways
+    if sys.platform == 'win32':
+        civ_install = "Users\Sam\AppData\Local\Firaxis Games\Sid Meier's Civilization VII"
     elif sys.platform == 'darwin':
         user_home = Path.home()
         civ_install = str(user_home / "Library" / "Application Support" / "Civilization VII")
     else:
         return None
-    return "/Users/samuelmayo/Library/Application Support/Civilization VII/"
+    return civ_install
 
 
 if __name__ == "__main__":

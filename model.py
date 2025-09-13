@@ -4,14 +4,35 @@ import glob
 import sqlite3
 import shutil
 import logging
+import sys
+import tempfile
+import time
 
 import sqlparse
-import json
 
 from xml_handler import read_xml
 
 from gameeffects import game_effects, req_build, req_set_build
 from sql_errors import get_query_details, full_matcher_sql, primary_key_matcher, check_foreign_keys, foreign_key_check, foreign_key_pretty_notify
+
+DEBUG_LOGFILE = os.path.expanduser('~/CivVII_backend_debug.log')
+logging.basicConfig(filename=DEBUG_LOGFILE, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
+
+
+class NonBlockingQueue:
+    def __init__(self, q, fallback_path=DEBUG_LOGFILE):
+        self._q = q
+        self._fallback = fallback_path
+
+    def put(self, item):
+        try:
+            self._q.put(item, block=False)
+        except Exception:
+            try:
+                with open(self._fallback, 'a') as f:
+                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} QUEUE_FALLBACK: {repr(item)}\n")
+            except Exception:
+                pass
 
 
 class SqlChecker:
@@ -19,7 +40,6 @@ class SqlChecker:
         self.logger = logging.getLogger('SqlChecker')
         self.logger.setLevel(logging.WARNING)
         self.log_queue = log_queue
-        self.granularity = 'statement'
         self.errors = []
         self.civ_install = civ_install
         self.workshop_folder = workshop_folder
@@ -30,25 +50,27 @@ class SqlChecker:
         self.db_path = ''
 
     def setup_db_existing(self):
-        copy_db_path = "resources/gameplay-copy-cached-base-content.sqlite"
-        shutil.copy(copy_db_path, 'resources/discardable-gameplay-copy.sqlite')
-        self.db_path = f'resources/discardable-gameplay-copy.sqlite'
+        logging.debug("setup_db_existing start")
+        copy_db_path = resource_path("resources/gameplay-copy-cached-base-content.sqlite")
+        self.db_path = os.path.join(tempfile.gettempdir(), 'discardable-gameplay-copy.sqlite')
+        try:
+            shutil.copy(copy_db_path, self.db_path)
+            logging.debug("copied db from %s to %s size=%s", copy_db_path, self.db_path, os.path.getsize(self.db_path))
+            self.log_queue.put(f"Copied DB to {self.db_path}")
+        except Exception as exc:
+            logging.exception("copy failed")
+            self.log_queue.put(f"DB copy failed: {exc}")
+            raise
 
     def query_mod_db(self):
-        with open('resources/query_VII_mods.sql', 'r') as f:
+        with open(resource_path('resources/query_VII_mods.sql'), 'r') as f:
             query = f.read()
-        with open('resources/query_VII_dependencies.sql', 'r') as f:
-            query_depend = f.read()
         conn = sqlite3.connect(f"{self.civ_config_folder}/Mods.sqlite")
         conn.row_factory = sqlite3.Row  # enables column access by name
         cur = conn.cursor()
         cur.execute(query)
         rows = cur.fetchall()
 
-        cur = conn.cursor()
-        cur.execute(query_depend)
-        query_dep_rows = cur.fetchall()
-        conn.close()
         files_to_apply = []
         # first we need the modinfos of each mod
         filepath_dlc_mod_infos = [f for f in glob.glob(f'{self.civ_install}/**/*.modinfo*', recursive=True)]
@@ -141,16 +163,18 @@ class SqlChecker:
             if sql_commands is None:
                 message = f'None value in SQL command. No commands for table {table_name}.'
                 if job_type in ['DLC', 'vanilla']:
-                    self.logger.info(message)
+                    # self.log_queue.put(message)
+                    print('ignoring message for user as probably on firaxis', message)
                 else:
-                    self.logger.warning(message)
+                    self.log_queue.put(message)
                 continue
             if isinstance(sql_commands, str):
                 message = f'Likely empty xml, this was the value found in table element: {sql_commands}. File: {xml_file}.'
                 if job_type in ['DLC', 'vanilla']:
-                    self.logger.info(message)
+                    #self.log_queue.put(message)
+                    print('ignoring message for user as probably on firaxis', message)
                 else:
-                    self.logger.warning(message)
+                    self.log_queue.put(message)
                 continue
             if not isinstance(sql_commands, list):
                 sql_commands = [sql_commands]
@@ -200,9 +224,9 @@ class SqlChecker:
                             columns, values = [i for i in record], [j for j in record.values()]
                             sql_statements.append({"type": "INSERT IGNORE", "table": table_name, "columns": columns, "values": values})
                     elif command == '#text':
-                        self.logger.info(f'Firaxis typo lol on {xml_file}')
+                        self.log_queue.put(f'Firaxis typo lol on {xml_file}')
                     else:
-                        self.logger.warning(f'unknown command: {command}')
+                        self.log_queue.put(f'unknown command: {command}')
         sql_strings = convert_to_sql(sql_statements)
         return sql_strings
 
@@ -220,7 +244,7 @@ class SqlChecker:
             if len(different_keys) > 0:
                 msg = (f"In {filename}, Differences between INSERT and existing suggests statement should be replace."
                        f" Replacing:\n{different_keys}")
-                self.logger.warning(msg)
+                self.log_queue.put(msg)
                 replace_into_script = sql_script.replace('INSERT', 'INSERT OR REPLACE')
                 try:
                     cursor.execute(replace_into_script)
@@ -234,7 +258,7 @@ class SqlChecker:
 
         else:
             msg = f"Unique constraint fail but row not found, really an update? {filename}."
-            self.logger.critical(msg)
+            self.log_queue.put(msg)
             self.errors.append(msg)
 
     def row_id_fix(self, cursor, sql_script):
@@ -263,7 +287,7 @@ class SqlChecker:
             not_null = [i for i, j in pragmas.items() if j['notnull'] == 1]
             missing_not_nulls = [i for i in not_null if i not in wheres]  # doesnt take into account defaults
             msg = f"Missing definitions for {table_name}: {missing_not_nulls}"
-            self.logger.critical(msg)
+            self.log_queue.put(msg)
             self.errors.append(msg)
 
     def test_db(self, file_list, dlc_map, is_base):
@@ -309,11 +333,11 @@ class SqlChecker:
             prior_fk_errors = check_foreign_keys(cursor, file_list, True)
             unique_fk_errors.update(prior_fk_errors)
             if len(prior_fk_errors) > 0:
-                self.logger.warning(f'FOREIGN KEY CONSTRAINT ERRORS: {len(prior_fk_errors)}')
+                self.log_queue.put(f'FOREIGN KEY CONSTRAINT ERRORS: {len(prior_fk_errors)}')
             db_connection.commit()
 
         except sqlite3.IntegrityError as e:
-            self.logger.debug(f"Integrity error occurred: {e}")
+            self.log_queue.put(f"Integrity error occurred: {e}")
             fk_ch = check_foreign_keys(cursor, file_list)
             db_connection.rollback()
         fk_errors = check_foreign_keys(cursor, file_list)
@@ -321,7 +345,7 @@ class SqlChecker:
         self.errors += fk_errors
         cursor.close()
         if len(fk_errors) > 0:
-            self.logger.warning(fk_errors)
+            self.log_queue.put(fk_errors)
         if not is_vanilla:
             self.show_errors()
 
@@ -338,17 +362,17 @@ class SqlChecker:
             if len(existing_short) > 0:
                 error_msg = f'Duplicate file: {short_name} already in list:\n2nd ref: {db_file}. Existing ref: {existing_short}'
                 if job_type in ['DLC', 'vanilla']:
-                    self.logger.info(error_msg)
+                    self.log_queue.put(error_msg)
                 else:
-                    self.logger.warning(error_msg)
+                    self.log_queue.put(error_msg)
             if db_file.endswith('.xml') and not any(i in db_file for i in known_fails):
                 statements = self.convert_xml_to_sql(db_file, job_type)
                 if isinstance(statements, str):
                     missed_files.append(short_name)
                     if job_type in ['DLC', 'vanilla']:
-                        self.logger.info(statements)
+                        print('ignore as its just firaxis')
                     else:
-                        self.logger.warning(statements)
+                        self.log_queue.put(statements)
                     continue
                 sql_statements[short_name] = self.convert_xml_to_sql(db_file, job_type)
                 ensure_ordered_sql.append((short_name, sql_statements[short_name]))
@@ -371,19 +395,19 @@ class SqlChecker:
             cursor.execute(check_exists_script)
             result = cursor.fetchall()
             if len(result) > 1:
-                self.logger.info(f'Skipped inserting duplicate for {filename}:\n {sql_script}')
+                self.log_queue.put(f'Skipped inserting duplicate for {filename}:\n {sql_script}')
             elif len(result) == 0:
-                self.logger.info(f'Skipped inserting duplicate for {filename}:\n, Unique, but the value wasnt found')
+                self.log_queue.put(f'Skipped inserting duplicate for {filename}:\n, Unique, but the value wasnt found')
             else:
                 if result[0][0] == list(update_dict.values())[0]:
-                    self.logger.info(
+                    self.log_queue.put(
                         f'Skipped inserting duplicate as value is already set correctly for {filename}: {sql_script}')
                 else:
                     self.should_be_replace(cursor, sql_script, update_dict, filename, e)
         elif sql_script in self.known_errors_list:
-            self.logger.info(f'Skipping known error on {sql_script}')
+            self.log_queue.put(f'Skipping known error on {sql_script}')
         elif str(e) == 'FOREIGN KEY constraint failed':
-            self.logger.info(f'FOREIGN KEY CONSTRAINT fail.')
+            self.log_queue.put(f'FOREIGN KEY CONSTRAINT fail.')
             table_name = sql_script.split('(')[0].split(' ')[-2]
             labeled_constraints, primary_keys = foreign_key_check(cursor, table_name)
             foreign_key_pretty_notify(cursor, table_name, 'uh', labeled_constraints, primary_keys)
@@ -414,11 +438,11 @@ class SqlChecker:
             except Exception as e:
                 string_error = str(e)
                 if any(j in string_error for j in ['SYNTAX', 'Syntax', 'syntax']):
-                    self.logger.warning(e)
+                    self.log_queue.put(e)
                     self.errors_out['syntax'].append((filename, e, command))
                     continue
                 if 'no such table' in string_error:
-                    self.logger.warning(e)
+                    self.log_queue.put(e)
                     self.errors_out['no_table'].append((filename, e, command))
                     continue
                 column_fails = string_error.split('failed: ')[1].replace(table_name + '.', '')
@@ -440,7 +464,8 @@ class SqlChecker:
         return commands
 
     def kill_df(self):
-        print('wrote to sqlite db', self.db_path)
+        self.log_queue.put('--------- Finished -----------')
+        self.log_queue.put(f'wrote to example sqlite db {self.db_path}')
 
     def show_errors(self):
         fails = 0
@@ -519,28 +544,56 @@ def make_hash(value):       # SHA1 hash, copies how firaxis does insert into Typ
     return h
 
 
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+
+
 def model_run(civ_install, civ_config, workshop, log_queue):
-    checker = SqlChecker(civ_install, civ_config, workshop, log_queue)
+    start_time = time.time()
+    wrapped_q = NonBlockingQueue(log_queue)
+    logging.debug("model_run start civ_install=%s civ_config=%s workshop=%s", civ_install, civ_config, workshop)
+    checker = SqlChecker(civ_install, civ_config, workshop, wrapped_q)
     checker.setup_db_existing()
     database_entries = checker.query_mod_db()
+    wrapped_q.put(f"Modding database had {len(database_entries)} entries")
     modded_short, modded, dlc, dlc_files, full_dump = [], [], [], [], []
     DASHS = '--------------------'
-    [dlc.append(i['File']) for i in database_entries if 'Base/' in i['full_path']]
-    [dlc_files.append(i['full_path']) for i in database_entries if 'Base/' in i['full_path']]
-    [dlc.append(i['File']) for i in database_entries if 'DLC/' in i['full_path']]
-    [dlc_files.append(i['full_path']) for i in database_entries if 'DLC/' in i['full_path']]
+    for i in database_entries:
+        if 'Base/' in i['full_path']:
+            dlc.append(i['File'])
+            dlc_files.append(i['full_path'])
+        if 'DLC/' in i['full_path']:
+            dlc.append(i['File'])
+            dlc_files.append(i['full_path'])
+        if 'Mods' in i['full_path'] or 'workshop' in i['full_path']:
+            modded.append(i['full_path'])
+    wrapped_q.put(f"Collected dlc ({len(dlc_files)}) and mod files ({len(modded)})")
     sql_statements_dlc, missed_dlc = checker.load_files(dlc_files, 'DLC')
-    [modded.append(i['full_path']) for i in database_entries if 'Mods' in i['full_path'] or 'workshop' in i['full_path']]
+    wrapped_q.put(f"Loaded dlc files: {len(sql_statements_dlc)}. Excluded empty files: {len(missed_dlc)}")
     sql_statements_mods, missed_mods = checker.load_files(modded, 'Mod')
-    [full_dump.extend([DASHS + key + DASHS] + val) for key, val in sql_statements_mods.items()]
-
-    with open('sql_statements.log', 'w') as file:
-        file.write("\n".join(full_dump))
-
+    wrapped_q.put(f"Loaded mod files: {len(sql_statements_mods)}. Missed: {len(missed_mods)}")
+    full_dump = []
+    for key, val in sql_statements_mods.items():
+        full_dump.extend([DASHS + key + DASHS] + val)
+    try:
+        log_path = os.path.join(tempfile.gettempdir(), 'sql_statements.log')
+        with open(log_path, 'w') as file:
+            file.write("\n".join(full_dump))
+        wrapped_q.put(f"Wrote transformed SQL as a single file to {log_path}")
+    except Exception:
+        logging.exception("failed to write sql_statements.log")
+        wrapped_q.put("failed to write sql_statements.log")
     dlc_sql_dump = [j for i in sql_statements_dlc.values() for j in i]
     silly_parse_error = [j for j in dlc_sql_dump if ',;' in j] + [j for j in dlc_sql_dump if ', ;' in j]
     if len(silly_parse_error) > 0:
-        log_queue.put(f'had some ,; errors: {silly_parse_error}')
+        wrapped_q.put(f'had some ,; errors: {len(silly_parse_error)}')
+    wrapped_q.put("Running SQL on Vanilla civ files...")
     checker.test_db(sql_statements_dlc, ['Vanilla'], True)
+    wrapped_q.put("Finished running Vanilla Files")
+    wrapped_q.put("Running SQL on Modded files...")
     checker.test_db(sql_statements_mods, modded_short, False)
+    wrapped_q.put("Finished running Modded Files")
     checker.kill_df()
+    wrapped_q.put(f"model_run finished in {time.time()-start_time:.1f}s")
