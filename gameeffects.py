@@ -1,11 +1,11 @@
-def game_effects(sql_statements, sql_commands_dict):
+def game_effects(sql_statements, sql_commands_dict, xml_file):
     sql_statements.append({"type": "INSERT", "table": 'DynamicModifiers',
                            "columns": ['ModifierType', 'CollectionType', 'EffectType'],
                            "values": [f"{sql_commands_dict['@id']}_TYPE", sql_commands_dict['@collection'],
                                       sql_commands_dict['@effect']]})
     sql_statements.append({"type": "INSERT", "table": 'Types', "columns": ['Type', 'Kind'],
                            "values": [f"{sql_commands_dict['@id']}_TYPE", 'KIND_MODIFIER']})
-    columns, values = [], []
+    columns, values, errors = [], [], []
     modifier_id, subject_req_set, owner_req_set, subject_req_args, owner_req_args, mod_args = None, None, None, None, None, None
     for col, val in sql_commands_dict.items():
         if col == '@id':
@@ -30,12 +30,19 @@ def game_effects(sql_statements, sql_commands_dict):
             values.append(owner_req_set)
             owner_req_args = val
             continue
+        elif col == '{GameEffects}Requirement':         # bad input by modder
+            errors.append(f'Requirements Tag in wrong place in file: {xml_file}. This requirement will not be seen by Firaxis parser')
+            continue
+        elif col == '#text':         # bad input by modder
+            errors.append(f'random input in odd position, but not blocking, in file: {xml_file}')
+            continue
+
         columns.append(col)
         values.append(val)
 
     columns = col_replacer(columns, {'@id': 'ModifierId', '@permanent': 'Permanent',
                                           '@run-once': 'RunOnce', '@subject-stack-limit': 'SubjectStackLimit',
-                                          '@owner-stack-limit': 'OwnerStackLimit', })
+                                          '@owner-stack-limit': 'OwnerStackLimit', '@new-only': 'NewOnly'})
     sql_statements.append({"type": "INSERT", "table": 'Modifiers', "columns": columns, "values": values})
 
     if '{GameEffects}Argument' in sql_commands_dict:
@@ -55,7 +62,7 @@ def game_effects(sql_statements, sql_commands_dict):
         req_set_build(sql_statements, sql_commands_dict['{GameEffects}OwnerRequirements'], owner_req_set)
     if subject_req_args is not None:
         req_set_build(sql_statements, sql_commands_dict['{GameEffects}SubjectRequirements'], subject_req_set)
-    return sql_statements
+    return sql_statements, errors
 
 
 def req_set_build(sql_statements, sql_commands_dict, reqsetID):

@@ -80,7 +80,7 @@ class SqlChecker:
         modinfo_uuids, err_string, dlc_mods, mod_mods = {}, '', [], []
 
         for filepath in filepath_mod_infos:
-            with open(filepath, 'r') as f:
+            with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
                 text = f.read()
             match = re.search(r'<Mod id="([^"]+)"', text)
             if match:
@@ -97,6 +97,7 @@ class SqlChecker:
                     mod_mods.append(uuid)
 
         if len(err_string) > 0:
+            print(err_string)
             raise err_string
         for row in rows:
             file_info = dict(row)
@@ -156,17 +157,18 @@ class SqlChecker:
             if isinstance(val, list):
                 new_val = [j for j in val if not isinstance(j, str)]
                 xml_[key] = new_val
-
+        xml_errors = {}
         for table_name, sql_commands in xml_.items():
             if table_name == 'Row':
                 continue                # some orphaned xml with no table
             if sql_commands is None:
-                message = f'None value in SQL command. No commands for table {table_name}.'
+                message = f'Table {table_name} was referenced, but did not contain any commands within.'
                 if job_type in ['DLC', 'vanilla']:
                     # self.log_queue.put(message)
                     print('ignoring message for user as probably on firaxis', message)
                 else:
-                    self.log_queue.put(message)
+                    # self.log_queue.put(message)
+                    print('ignoring message for user', message)
                 continue
             if isinstance(sql_commands, str):
                 message = f'Likely empty xml, this was the value found in table element: {sql_commands}. File: {xml_file}.'
@@ -174,13 +176,19 @@ class SqlChecker:
                     #self.log_queue.put(message)
                     print('ignoring message for user as probably on firaxis', message)
                 else:
-                    self.log_queue.put(message)
+                    # self.log_queue.put(message)
+                    print('ignoring message for user', message)
                 continue
             if not isinstance(sql_commands, list):
                 sql_commands = [sql_commands]
             for sql_commands_dict in sql_commands:
                 if table_name == '{GameEffects}Modifier':
-                    sql_statements = game_effects(sql_statements, sql_commands_dict)
+                    sql_statements, errors = game_effects(sql_statements, sql_commands_dict, xml_file)
+                    if len(errors) > 0:
+                        if xml_errors.get(table_name, False):
+                            xml_errors[table_name].append(errors)
+                        else:
+                            xml_errors[table_name] = [errors]
                     continue
                 if table_name == '{GameEffects}RequirementSet':
                     req_set_id = sql_commands_dict['@id']
@@ -228,7 +236,7 @@ class SqlChecker:
                     else:
                         self.log_queue.put(f'unknown command: {command}')
         sql_strings = convert_to_sql(sql_statements)
-        return sql_strings
+        return sql_strings, xml_errors
 
     def should_be_replace(self, cursor, sql_script, update_dict, filename, error):
         cursor.execute(primary_key_matcher(sql_script, error))
@@ -293,7 +301,7 @@ class SqlChecker:
     def test_db(self, file_list, dlc_map, is_base):
         db_connection = sqlite3.connect(self.db_path)
         is_vanilla = dlc_map == ['Vanilla']
-        known_script_errors = ['INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("NO_GOVERNMENTBONUS");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_WONDER_CONSTRUCTION");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_COMBAT_EXPERIENCE");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_GREAT_PEOPLE");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_ENVOYS");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_FAITH_PURCHASES");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_GOLD_PURCHASES");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_UNIT_PRODUCTION");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_OVERALL_PRODUCTION");', 'INSERT INTO GovernmentBonusNames (GovernmentBonusType) VALUES ("GOVERNMENTBONUS_DISTRICT_PROJECTS");']
+        known_script_errors = []
 
         db_connection.create_function("Make_Hash", 1, make_hash)
 
@@ -334,18 +342,23 @@ class SqlChecker:
             unique_fk_errors.update(prior_fk_errors)
             if len(prior_fk_errors) > 0:
                 self.log_queue.put(f'FOREIGN KEY CONSTRAINT ERRORS: {len(prior_fk_errors)}')
+                for error in unique_fk_errors:
+                    self.log_queue.put(error)
             db_connection.commit()
 
         except sqlite3.IntegrityError as e:
             self.log_queue.put(f"Integrity error occurred: {e}")
             fk_ch = check_foreign_keys(cursor, file_list)
+            for error in fk_ch:
+                self.log_queue.put(error)
             db_connection.rollback()
         fk_errors = check_foreign_keys(cursor, file_list)
         current_state = check_state(cursor)
         self.errors += fk_errors
         cursor.close()
         if len(fk_errors) > 0:
-            self.log_queue.put(fk_errors)
+            for error in fk_errors:
+                self.log_queue.put(error)
         if not is_vanilla:
             self.show_errors()
 
@@ -372,7 +385,8 @@ class SqlChecker:
                     if job_type in ['DLC', 'vanilla']:
                         print('ignore as its just firaxis')
                     else:
-                        self.log_queue.put(statements)
+                        print('ignore as its just modders having empty files')
+                        # self.log_queue.put(statements)
                     continue
                 sql_statements[short_name] = self.convert_xml_to_sql(db_file, job_type)
                 ensure_ordered_sql.append((short_name, sql_statements[short_name]))
@@ -561,10 +575,10 @@ def model_run(civ_install, civ_config, workshop, log_queue):
     modded_short, modded, dlc, dlc_files, full_dump = [], [], [], [], []
     DASHS = '--------------------'
     for i in database_entries:
-        if 'Base/' in i['full_path']:
+        if 'Base/' in i['full_path'] or 'Base\\' in i['full_path']:
             dlc.append(i['File'])
             dlc_files.append(i['full_path'])
-        if 'DLC/' in i['full_path']:
+        if 'DLC/' in i['full_path'] or 'DLC\\' in i['full_path']:
             dlc.append(i['File'])
             dlc_files.append(i['full_path'])
         if 'Mods' in i['full_path'] or 'workshop' in i['full_path']:
@@ -575,6 +589,8 @@ def model_run(civ_install, civ_config, workshop, log_queue):
     sql_statements_mods, missed_mods = checker.load_files(modded, 'Mod')
     wrapped_q.put(f"Loaded mod files: {len(sql_statements_mods)}. Missed: {len(missed_mods)}")
     full_dump = []
+    for key, val in sql_statements_dlc.items():
+        full_dump.extend([DASHS + key + DASHS] + val)
     for key, val in sql_statements_mods.items():
         full_dump.extend([DASHS + key + DASHS] + val)
     try:

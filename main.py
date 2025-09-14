@@ -118,10 +118,10 @@ class App(QWidget):
 def find_steam_install():
     if sys.platform == 'win32':
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Valve\Steam")
-        steam_path, _ = winreg.QueryValueEx(key, "InstallPath")
+        steam_path, _ = winreg.QueryValueEx(key, "SteamPath")
     elif sys.platform == 'win64':
         key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Wow6432Node\Valve\Steam")
-        steam_path, _ = winreg.QueryValueEx(key, "InstallPath")
+        steam_path, _ = winreg.QueryValueEx(key, "SteamPath")
     elif sys.platform == 'darwin':
         user_home = Path.home()
         steam_path = str(user_home / "Library" / "Application Support" / "Steam")
@@ -147,13 +147,14 @@ def find_workshop():
     steam_path = find_steam_install()
     if steam_path is None:
         return None
-    civ_install = os.path.join(steam_path, "steamapps/workshop/content/1295560/")
-    return civ_install
+    return f"{steam_path}/steamapps/workshop/content/1295660/"
 
 
 def find_civ_config():
     if sys.platform == 'win32':
-        civ_install = "Users\Sam\AppData\Local\Firaxis Games\Sid Meier's Civilization VII"
+        local_appdata = os.getenv('LOCALAPPDATA')
+        civ_install = f"{local_appdata}\Firaxis Games\Sid Meier's Civilization VII"
+        print(civ_install)
     elif sys.platform == 'darwin':
         user_home = Path.home()
         civ_install = str(user_home / "Library" / "Application Support" / "Civilization VII")

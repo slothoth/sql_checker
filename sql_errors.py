@@ -1,3 +1,4 @@
+import sqlparse
 
 def get_query_details(script):
     table_name_pattern = r'\b(\w+)\s*\('
@@ -121,8 +122,8 @@ def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, 
         line_indices = [idx + 1 for idx, i in enumerate(line_list) if pk_val in i]
         culprits.append((f'{i[0]}: Lines:', line_indices))
     message = (f"ERROR: {table_name} record {record_pk} has Foreign Key: {constraint['from']} = "
-            f"{record_[constraint['from']]} but parent table {constraint['table']} lacks {constraint['to']} = "
-            f"{record_[constraint['from']]}. Likely cause: {culprits}")
+               f"{record_[constraint['from']]} but parent table {constraint['table']} lacks {constraint['to']} = "
+               f"{record_[constraint['from']]}. Likely cause: {culprits}")
     if 'YieldChangeId' not in record_col_names:         # the yieldAdjacency issues
         print(message)
-    return (message, constraint['table'], constraint['to'], record_[constraint['from']])
+    return message, constraint['table'], constraint['to'], record_[constraint['from']]
