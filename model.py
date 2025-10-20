@@ -15,6 +15,11 @@ from xml_handler import read_xml
 from gameeffects import game_effects, req_build, req_set_build
 from sql_errors import get_query_details, full_matcher_sql, primary_key_matcher, check_foreign_keys, foreign_key_check, foreign_key_pretty_notify
 
+# I FORGOT HOW i got the original database with all the define definitions and initial types ahhhhhh
+# When I figure out how i did that, I will make a process detailing it, as its outside python.
+# ITS NOT just loading up civ and using the existing empty one in shell. as that misses collections added as types
+# What it ended up being was loading an antiquity civ game, except editing the modinfo for it so the criteria is AGE_EXPLORATION for those entries
+# that arent always (those are needed for shell to start antiquity), then copying the db after it fails to load.
 DEBUG_LOGFILE = os.path.expanduser('~/CivVII_backend_debug.log')
 logging.basicConfig(filename=DEBUG_LOGFILE, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
@@ -102,14 +107,15 @@ class SqlChecker:
         for row in rows:
             file_info = dict(row)
             mod_folder_path = modinfo_uuids[file_info['ModId']]
-            if file_info['Disabled'] is None:
-                if 'workshop' in mod_folder_path or 'Mods' in mod_folder_path:
-                    continue
+            # if file_info['Disabled'] is None:
+            #    if 'workshop' in mod_folder_path or 'Mods' in mod_folder_path:
+            #        continue
+            ## removed as mods were alse returning NULL in Mods.Disabled even when they were on. Sighhh
             file_info['full_path'] = os.path.join(mod_folder_path, file_info['File'])
             del file_info['Disabled']
             files_to_apply.append(file_info)
 
-        # custom order from modding.log: core-game, base-standard,
+        # custom order from modding.log: core-game, base-standard
         custom_index = ['core-game', 'base-standard']
         index = {mod: i for i, mod in enumerate(custom_index)}
         files_to_apply = sorted(files_to_apply, key=lambda d: index.get(d["ModId"], len(custom_index)))
@@ -125,11 +131,12 @@ class SqlChecker:
     def convert_xml_to_sql(self, xml_file, job_type):
         sql_statements = []
         xml_ = read_xml(xml_file)
+        error_messages, skips = self.validate_xml(xml_)
         if not xml_ or xml_ == '':
-            return f"{xml_file} was empty..."
+            return f"{xml_file} was empty...", {}
         xml_ = xml_.get('Database', xml_.get('{GameEffects}GameEffects'))
         if not xml_ or xml_ == '':
-            return f"{xml_file} was empty..."
+            return f"{xml_file} was empty...", {}
         if 'Table' in xml_:
             if not isinstance(xml_['Table'], list):
                 xml_['Table'] = [xml_['Table']]
@@ -151,7 +158,7 @@ class SqlChecker:
                     sql_string += column_string + ", "
                 sql_string += f"PRIMARY KEY({', '.join([i for i in pks])}));"
                 sql_strings.append(sql_string)
-            return sql_strings
+            return sql_strings, {}
         # filter out empty strings
         for key, val in xml_.items():
             if isinstance(val, list):
@@ -183,7 +190,7 @@ class SqlChecker:
                 sql_commands = [sql_commands]
             for sql_commands_dict in sql_commands:
                 if table_name == '{GameEffects}Modifier':
-                    sql_statements, errors = game_effects(sql_statements, sql_commands_dict, xml_file)
+                    sql_statements, errors = game_effects(sql_statements, sql_commands_dict, xml_file, skips)
                     if len(errors) > 0:
                         if xml_errors.get(table_name, False):
                             xml_errors[table_name].append(errors)
@@ -237,6 +244,26 @@ class SqlChecker:
                         self.log_queue.put(f'unknown command: {command}')
         sql_strings = convert_to_sql(sql_statements)
         return sql_strings, xml_errors
+
+    def validate_xml(self, xml_dict):
+        error_msgs, xml_skips = [], {}
+        if '{GameEffects}GameEffects' in xml_dict:
+            game_effects = xml_dict['{GameEffects}GameEffects']
+            if '{GameEffects}Modifier' in game_effects:
+                modifier_list = game_effects['{GameEffects}Modifier']
+                if not isinstance(modifier_list, list):
+                    modifier_list = [modifier_list]
+                for modifier_dict in modifier_list:
+                    mod_name = modifier_dict['@id']
+                    if '{GameEffects}SubjectRequirements' in modifier_dict:
+                        requirement_list = modifier_dict['{GameEffects}SubjectRequirements']
+                        if isinstance(requirement_list, list):
+                            msg = f'ERROR: Requirements list for {mod_name} had two requirement lists nested, due to bad xml. This will silently error on firaxis side, and only will use the first requirement.'
+                            print(msg)
+                            error_msgs.append(msg)
+                            xml_skips[mod_name] = {'error_type': 'NestedRequirements', 'additional': 'subject'}
+
+        return error_msgs, xml_skips
 
     def should_be_replace(self, cursor, sql_script, update_dict, filename, error):
         cursor.execute(primary_key_matcher(sql_script, error))
@@ -379,7 +406,7 @@ class SqlChecker:
                 else:
                     self.log_queue.put(error_msg)
             if db_file.endswith('.xml') and not any(i in db_file for i in known_fails):
-                statements = self.convert_xml_to_sql(db_file, job_type)
+                statements, xml_errors = self.convert_xml_to_sql(db_file, job_type)
                 if isinstance(statements, str):
                     missed_files.append(short_name)
                     if job_type in ['DLC', 'vanilla']:
@@ -388,7 +415,7 @@ class SqlChecker:
                         print('ignore as its just modders having empty files')
                         # self.log_queue.put(statements)
                     continue
-                sql_statements[short_name] = self.convert_xml_to_sql(db_file, job_type)
+                sql_statements[short_name], xml_errors = self.convert_xml_to_sql(db_file, job_type)
                 ensure_ordered_sql.append((short_name, sql_statements[short_name]))
             if db_file.endswith('.sql') and not any(i in db_file for i in known_fails):
                 try:

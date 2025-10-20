@@ -1,7 +1,8 @@
-def game_effects(sql_statements, sql_commands_dict, xml_file):
+def game_effects(sql_statements, sql_commands_dict, xml_file, skips):
+    collection_ = sql_commands_dict.get('@collection', 'COLLECTION_OWNER')
     sql_statements.append({"type": "INSERT", "table": 'DynamicModifiers',
                            "columns": ['ModifierType', 'CollectionType', 'EffectType'],
-                           "values": [f"{sql_commands_dict['@id']}_TYPE", sql_commands_dict['@collection'],
+                           "values": [f"{sql_commands_dict['@id']}_TYPE", collection_,
                                       sql_commands_dict['@effect']]})
     sql_statements.append({"type": "INSERT", "table": 'Types', "columns": ['Type', 'Kind'],
                            "values": [f"{sql_commands_dict['@id']}_TYPE", 'KIND_MODIFIER']})
@@ -59,8 +60,18 @@ def game_effects(sql_statements, sql_commands_dict, xml_file):
     # if '{GameEffects}String???' in sql_commands_dict:
 
     if owner_req_args is not None:
+        if modifier_id in skips:
+            skip = skips[modifier_id]
+            if skip['error_type'] == 'NestedRequirements' and skip['additional'] == 'owner':
+                if len(sql_commands_dict['{GameEffects}OwnerRequirements']) > 1:
+                    sql_commands_dict['{GameEffects}OwnerRequirements'] = sql_commands_dict['{GameEffects}OwnerRequirements'][0]
         req_set_build(sql_statements, sql_commands_dict['{GameEffects}OwnerRequirements'], owner_req_set)
     if subject_req_args is not None:
+        if modifier_id in skips:
+            skip = skips[modifier_id]
+            if skip['error_type'] == 'NestedRequirements' and skip['additional'] == 'subject':
+                if len(sql_commands_dict['{GameEffects}SubjectRequirements']) > 1:
+                    sql_commands_dict['{GameEffects}SubjectRequirements'] = sql_commands_dict['{GameEffects}SubjectRequirements'][0]
         req_set_build(sql_statements, sql_commands_dict['{GameEffects}SubjectRequirements'], subject_req_set)
     return sql_statements, errors
 
