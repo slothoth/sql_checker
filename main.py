@@ -12,6 +12,7 @@ if sys.platform == 'win32':
     import winreg
 
 from model import model_run
+from graph.graph_app import MainWindow as GraphEditorWindow
 
 
 class App(QWidget):
@@ -20,6 +21,7 @@ class App(QWidget):
         self.setWindowTitle("Database Analyzer")
         self.setGeometry(100, 100, 700, 520)
         self.log_queue = queue.Queue()
+        self.graph_editor_window = None
         self.init_ui()
         self.timer = self.startTimer(100)
 
@@ -53,6 +55,12 @@ class App(QWidget):
         self.run_button.clicked.connect(self.start_analysis)
         main_layout.addWidget(self.run_button)
 
+        # Graph planner button
+        self.planner_button = QPushButton("Graph Planner")
+        self.planner_button.setStyleSheet("background-color:#0078d7; color:#ffffff; font-weight:bold;")
+        self.planner_button.clicked.connect(self.popout_graph_planner)
+        main_layout.addWidget(self.planner_button)
+
         # Log Output
         log_label = QLabel("Log Output:")
         main_layout.addWidget(log_label)
@@ -61,6 +69,8 @@ class App(QWidget):
         self.log_display.setStyleSheet("background-color:#ffffff; color:#000000; font-family:Courier New;")
         self.log_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         main_layout.addWidget(self.log_display)
+
+
 
         self.setLayout(main_layout)
 
@@ -113,6 +123,13 @@ class App(QWidget):
                     self.log_display.append(str(message))
         except queue.Empty:
             pass
+
+    def popout_graph_planner(self):
+        if self.graph_editor_window is None:
+            self.graph_editor_window = GraphEditorWindow()
+        self.graph_editor_window.show()
+        self.graph_editor_window.raise_()
+        self.graph_editor_window.activateWindow()
 
 
 def find_steam_install():
