@@ -1,7 +1,9 @@
-from graph.view import EdgeItem, NodeItem
 from PyQt5.QtWidgets import QGraphicsScene, QMenu, QAction
 from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtCore import QPointF
+import sqlite3
+
+from graph.view import EdgeItem, NodeItem
 
 
 class GraphController(QGraphicsScene):
@@ -11,20 +13,23 @@ class GraphController(QGraphicsScene):
         self.node_counter = 0
         self.setBackgroundBrush(QBrush(QColor("#f0f0f0")))
 
-    def add_node(self, pos, text1=None, text2=None, node_id=None):
+    def add_node(self, pos, texts=None, node_id=None):
+        if texts is None:
+            texts = [None, None]
         if node_id is None:
             self.node_counter += 1
             node_id = f"node_{self.node_counter}"
-        node = NodeItem(node_id, text1 or "New Node", text2 or "Click to edit...")
+        node = NodeItem(node_id, texts=texts)
         node.setPos(pos)
         self.addItem(node)
         return node
 
-    def add_edge(self, start_node, end_node):
-        edge = EdgeItem(start_node, end_node)
+    def add_edge(self, start_node, start_field_index, end_node):
+        edge = EdgeItem(start_node, start_field_index, end_node)
+        self.addItem(edge)
         start_node.edges.append(edge)
         end_node.edges.append(edge)
-        self.addItem(edge)
+        return edge
 
     def contextMenuEvent(self, event):
         item = self.itemAt(event.scenePos(), self.views()[0].transform())
@@ -47,7 +52,7 @@ class GraphController(QGraphicsScene):
 
     def add_connecting_node(self, node, pos):
         end_node = self.add_node(pos + QPointF(50, 50))
-        self.add_edge(node, end_node)
+        self.add_edge(node, 0, end_node)
 
     def delete_node(self, node):
         for edge in list(node.edges):
@@ -67,14 +72,14 @@ class GraphController(QGraphicsScene):
             if isinstance(item, NodeItem):
                 nodes.append({
                     "id": item.node_id,
-                    "text1": item.text1_item.toPlainText(),
-                    "text2": item.text2_item.toPlainText(),
+                    "texts": [i.toPlainText() for i in item.text_items],
                     "pos": {"x": item.pos().x(), "y": item.pos().y()}
                 })
             elif isinstance(item, EdgeItem):
-                if item.start_node.node_id < item.end_node.node_id:
+                if item.start_node.node_id != item.end_node.node_id:
                     edges.append({
                         "start_node_id": item.start_node.node_id,
+                        "start_field_index": item.start_field_index,
                         "end_node_id": item.end_node.node_id
                     })
         return {"nodes": nodes, "edges": edges}
@@ -83,10 +88,16 @@ class GraphController(QGraphicsScene):
         self.clear_scene()
         nodes = {}
         for node_data in data.get("nodes", []):
-            n = self.add_node(QPointF(node_data["pos"]["x"], node_data["pos"]["y"]),
-                              node_data["text1"], node_data["text2"], node_data["id"])
+            n = self.add_node(
+                QPointF(node_data["pos"]["x"], node_data["pos"]["y"]),
+                texts=node_data["texts"],
+                node_id=node_data["id"]
+            )
             nodes[n.node_id] = n
+
         for edge_data in data.get("edges", []):
-            s, e = nodes.get(edge_data["start_node_id"]), nodes.get(edge_data["end_node_id"])
+            s = nodes.get(edge_data["start_node_id"])
+            e = nodes.get(edge_data["end_node_id"])
+            idx = edge_data.get("start_field_index", 0)
             if s and e:
-                self.add_edge(s, e)
+                self.add_edge(s, idx, e)

@@ -69,11 +69,7 @@ class App(QWidget):
         self.log_display.setStyleSheet("background-color:#ffffff; color:#000000; font-family:Courier New;")
         self.log_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         main_layout.addWidget(self.log_display)
-
-
-
         self.setLayout(main_layout)
-
 
     def create_file_row(self, label_text, default_value="", browse_func=None):
         layout = QHBoxLayout()

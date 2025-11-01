@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt, QRectF, QLineF, pyqtSignal
+from PyQt5.QtCore import Qt, QRectF, QLineF, pyqtSignal, QPointF
 from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QFont, QPainterPath
 
 from PyQt5.QtWidgets import (QGraphicsView, QGraphicsItem, QGraphicsObject, QGraphicsTextItem,
@@ -24,47 +24,63 @@ class NodeEditDialog(QDialog):
 
 
 class EdgeItem(QGraphicsLineItem):
-    def __init__(self, start_node, end_node, parent=None):
+    def __init__(self, start_node, start_field_index, end_node, parent=None):
         super().__init__(parent)
         self.start_node = start_node
+        self.start_field_index = start_field_index
         self.end_node = end_node
         self.setPen(QPen(QColor("#333"), 2))
         self.setZValue(-1)
+
         self.start_node.position_changed.connect(self.update_position)
         self.end_node.position_changed.connect(self.update_position)
         self.update_position()
 
     def update_position(self):
-        line = QLineF(self.start_node.sceneBoundingRect().center(), self.end_node.sceneBoundingRect().center())
-        self.setLine(line)
+        start_point = self.start_node.get_field_scene_pos(self.start_field_index)
+        end_rect = self.end_node.sceneBoundingRect()
+        end_point = QPointF(end_rect.left(), end_rect.center().y())
+        self.setLine(QLineF(start_point, end_point))
 
 
 class NodeItem(QGraphicsObject):
     position_changed = pyqtSignal()
     NODE_WIDTH = 150
-    NODE_HEIGHT = 70
     HEADER_HEIGHT = 25
     PADDING = 5
+    LINE_SPACING = 5
 
-    def __init__(self, node_id, text1="Title", text2="Description", parent=None):
+    def __init__(self, node_id, texts=None, parent=None):
         super().__init__(parent)
         self.node_id = node_id
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
         self.edges = []
-        self.text1_item = QGraphicsTextItem(self)
-        self.text1_item.setPlainText(text1)
-        self.text1_item.setDefaultTextColor(Qt.white)
-        self.text1_item.setFont(QFont("Inter", 10, QFont.Bold))
-        self.text1_item.setTextWidth(self.NODE_WIDTH - 2 * self.PADDING)
-        self.text1_item.setPos(self.PADDING, self.PADDING / 2)
-        self.text2_item = QGraphicsTextItem(self)
-        self.text2_item.setPlainText(text2)
-        self.text2_item.setDefaultTextColor(Qt.black)
-        self.text2_item.setFont(QFont("Inter", 9))
-        self.text2_item.setTextWidth(self.NODE_WIDTH - 2 * self.PADDING)
-        self.text2_item.setPos(self.PADDING, self.HEADER_HEIGHT + self.PADDING)
+
+        if texts is None:
+            texts = ["Title", "Description"]
+
+        self.text_items = []
+        y = self.PADDING / 2
+
+        for i, text in enumerate(texts):
+            item = QGraphicsTextItem(self)
+            item.setPlainText(text)
+            item.setTextInteractionFlags(Qt.TextEditorInteraction)
+            if i == 0:
+                item.setDefaultTextColor(Qt.white)
+                item.setFont(QFont("Inter", 10, QFont.Bold))
+            else:
+                item.setDefaultTextColor(Qt.black)
+                item.setFont(QFont("Inter", 9))
+            item.setTextWidth(self.NODE_WIDTH - 2 * self.PADDING)
+            item.setPos(self.PADDING, y)
+            self.text_items.append(item)
+            y += item.boundingRect().height() + self.LINE_SPACING
+
+        total_height = y + self.PADDING
+        self.NODE_HEIGHT = max(total_height, self.HEADER_HEIGHT + 2 * self.PADDING)
 
     def boundingRect(self):
         return QRectF(0, 0, self.NODE_WIDTH, self.NODE_HEIGHT).adjusted(-1, -1, 1, 1)
@@ -89,13 +105,20 @@ class NodeItem(QGraphicsObject):
             self.position_changed.emit()
         return super().itemChange(change, value)
 
-    def mouseDoubleClickEvent(self, event):
-        dialog = NodeEditDialog(self.text1_item.toPlainText(), self.text2_item.toPlainText())
-        if dialog.exec_() == QDialog.Accepted:
-            text1, text2 = dialog.get_data()
-            self.text1_item.setPlainText(text1)
-            self.text2_item.setPlainText(text2)
-        super().mouseDoubleClickEvent(event)
+    def relayout(self):
+        y = self.PADDING / 2
+        for item in self.text_items:
+            item.setPos(self.PADDING, y)
+            y += item.boundingRect().height() + self.LINE_SPACING
+        self.NODE_HEIGHT = max(y + self.PADDING, self.HEADER_HEIGHT + 2 * self.PADDING)
+
+    def get_field_scene_pos(self, index):
+        if 0 <= index < len(self.text_items):
+            item = self.text_items[index]
+            rect = item.boundingRect()
+            right_edge = item.mapToScene(QPointF(rect.right(), rect.center().y()))
+            return right_edge
+        return self.mapToScene(QPointF(self.NODE_WIDTH, self.NODE_HEIGHT / 2))
 
 
 class GraphView(QGraphicsView):

@@ -1,7 +1,7 @@
 import json
 from PyQt5.QtWidgets import QMainWindow, QAction, QFileDialog
 # project imports
-from graph.model import GraphModel
+from graph.model import GraphModel, BaseDB, load_db_graph
 from graph.view import GraphView
 from graph.controller import GraphController
 
@@ -26,10 +26,22 @@ class MainWindow(QMainWindow):
         save_action.triggered.connect(self.save_graph)
         load_action = QAction("&Load", self)
         load_action.triggered.connect(self.load_graph)
+
+        edit_menu = self.menuBar().addMenu("&Edit")
+
+        edit_antiquity_action = QAction("&EditAntiquity", self)
+        edit_antiquity_action.triggered.connect(self.load_antiquity)
+        edit_exploration_action = QAction("&EditExploration", self)
+        edit_exploration_action.triggered.connect(self.load_exploration)
+        edit_modern_action = QAction("&EditModern", self)
+        edit_modern_action.triggered.connect(self.load_modern)
+
         exit_action = QAction("E&xit", self)
         exit_action.triggered.connect(self.close)
         for a in (new_action, save_action, load_action, exit_action):
             file_menu.addAction(a)
+        for a in (edit_antiquity_action, edit_exploration_action, edit_modern_action):
+            edit_menu.addAction(a)
 
     def new_graph(self):
         self.controller.clear_scene()
@@ -55,3 +67,17 @@ class MainWindow(QMainWindow):
             self.controller.load_graph_data(data)
         except Exception as e:
             print(f"Error loading file: {e}")
+
+    def load_antiquity(self):
+        print('loading antiquity')
+        data = load_db_graph('antiquity-db.sqlite')
+        self.controller.load_graph_data(data)
+
+    def load_exploration(self):
+        data = load_db_graph('exploration-db.sqlite')
+        self.controller.load_graph_data(data)
+
+
+    def load_modern(self):
+        data = load_db_graph('modern-db.sqlite')
+        self.controller.load_graph_data(data)
