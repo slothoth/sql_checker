@@ -24,11 +24,12 @@ class NodeEditDialog(QDialog):
 
 
 class EdgeItem(QGraphicsLineItem):
-    def __init__(self, start_node, start_field_index, end_node, parent=None):
+    def __init__(self, start_node, start_field_index, end_node, end_field_index=0, parent=None):
         super().__init__(parent)
         self.start_node = start_node
         self.start_field_index = start_field_index
         self.end_node = end_node
+        self.end_field_index = end_field_index
         self.setPen(QPen(QColor("#333"), 2))
         self.setZValue(-1)
 
@@ -37,10 +38,10 @@ class EdgeItem(QGraphicsLineItem):
         self.update_position()
 
     def update_position(self):
-        start_point = self.start_node.get_field_scene_pos(self.start_field_index)
-        end_rect = self.end_node.sceneBoundingRect()
-        end_point = QPointF(end_rect.left(), end_rect.center().y())
+        start_point = self.start_node.get_field_scene_pos(self.start_field_index, right=True)
+        end_point = self.end_node.get_field_scene_pos(self.end_field_index, right=False)
         self.setLine(QLineF(start_point, end_point))
+
 
 
 class NodeItem(QGraphicsObject):
@@ -112,13 +113,17 @@ class NodeItem(QGraphicsObject):
             y += item.boundingRect().height() + self.LINE_SPACING
         self.NODE_HEIGHT = max(y + self.PADDING, self.HEADER_HEIGHT + 2 * self.PADDING)
 
-    def get_field_scene_pos(self, index):
+    def get_field_scene_pos(self, index, right=True):
         if 0 <= index < len(self.text_items):
             item = self.text_items[index]
             rect = item.boundingRect()
-            right_edge = item.mapToScene(QPointF(rect.right(), rect.center().y()))
-            return right_edge
-        return self.mapToScene(QPointF(self.NODE_WIDTH, self.NODE_HEIGHT / 2))
+            x = rect.right() if right else rect.left()
+            point = item.mapToScene(QPointF(x, rect.center().y()))
+            return point
+        # fallback to node edge
+        rect = self.boundingRect()
+        x = rect.right() if right else rect.left()
+        return self.mapToScene(QPointF(x, rect.center().y()))
 
 
 class GraphView(QGraphicsView):

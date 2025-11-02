@@ -38,9 +38,11 @@ def load_db_graph(db_path):
     table_to_id = {t: i + 1 for i, t in enumerate(tables)}
 
     nodes = []
+    table_columns = {}
     for table, node_id in table_to_id.items():
         cursor.execute(f"PRAGMA table_info({table})")
         columns = [col[1] for col in cursor.fetchall()]
+        table_columns[table] = columns
         nodes.append({
             "id": node_id,
             "texts": [table] + columns,
@@ -52,15 +54,17 @@ def load_db_graph(db_path):
         cursor.execute(f"PRAGMA foreign_key_list({table})")
         for ref in cursor.fetchall():
             ref_table = ref[2]
+            ref_column = ref[3]  # the column in the foreign table
             if ref_table in table_to_id:
-                start_id = node_id
-                end_id = table_to_id[ref_table]
-                edge = {
-                    "start_node_id": min(start_id, end_id),
-                    "end_node_id": max(start_id, end_id)
-                }
-                if edge not in edges:
-                    edges.append(edge)
+                start_field_index = table_columns[table].index(ref[3]) + 1  # +1 because 0 is the table name
+                edges.append({
+                    "start_node_id": node_id,
+                    "start_field_index": start_field_index,
+                    "end_node_id": table_to_id[ref_table],
+                    "end_field_index": 0  # connect to table name of target
+                })
 
     conn.close()
     return {"nodes": nodes, "edges": edges}
+
+

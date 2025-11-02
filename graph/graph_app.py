@@ -72,6 +72,7 @@ class MainWindow(QMainWindow):
         print('loading antiquity')
         data = load_db_graph('antiquity-db.sqlite')
         self.controller.load_graph_data(data)
+        self.controller.sort_graph()
 
     def load_exploration(self):
         data = load_db_graph('exploration-db.sqlite')
