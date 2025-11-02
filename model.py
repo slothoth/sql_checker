@@ -41,14 +41,16 @@ class NonBlockingQueue:
 
 
 class SqlChecker:
-    def __init__(self, civ_install, civ_config_folder, workshop_folder, log_queue):
+    def __init__(self, civ_install, civ_config_folder, workshop_folder, age_type, log_queue):
         self.logger = logging.getLogger('SqlChecker')
         self.logger.setLevel(logging.WARNING)
         self.log_queue = log_queue
         self.errors = []
+        self.unique_errors = []
         self.civ_install = civ_install
         self.workshop_folder = workshop_folder
         self.civ_config_folder = civ_config_folder
+        self.age_type = age_type
         self.known_errors_list, self.known_repeats = [], []
         self.file_pattern = re.compile(r'Loading (.*?)\n')
         self.errors_out = {'syntax': [], 'found_command': [], 'no_table': [], 'comment': [], 'mystery': []}
@@ -103,7 +105,7 @@ class SqlChecker:
 
         if len(err_string) > 0:
             print(err_string)
-            raise err_string
+            raise Exception("\n".join(err_string))
         for row in rows:
             file_info = dict(row)
             mod_folder_path = modinfo_uuids[file_info['ModId']]
@@ -111,9 +113,10 @@ class SqlChecker:
             #    if 'workshop' in mod_folder_path or 'Mods' in mod_folder_path:
             #        continue
             ## removed as mods were alse returning NULL in Mods.Disabled even when they were on. Sighhh
-            file_info['full_path'] = os.path.join(mod_folder_path, file_info['File'])
-            del file_info['Disabled']
-            files_to_apply.append(file_info)
+            if file_info['Age'] is None or file_info['Age'] == self.age_type:
+                file_info['full_path'] = os.path.join(mod_folder_path, file_info['File'])
+                del file_info['Disabled']
+                files_to_apply.append(file_info)
 
         # custom order from modding.log: core-game, base-standard
         custom_index = ['core-game', 'base-standard']
@@ -284,7 +287,7 @@ class SqlChecker:
                 try:
                     cursor.execute(replace_into_script)
                 except Exception as e:
-                    self.log_queue.put(e)
+                    self.red_log(e)
                     table_name = replace_into_script.split(' (')[0].split('INSERT OR REPLACE INTO ')[1]
                     cursor.execute(f"PRAGMA table_info({table_name});")
                     columns = cursor.fetchall()
@@ -322,7 +325,7 @@ class SqlChecker:
             not_null = [i for i, j in pragmas.items() if j['notnull'] == 1]
             missing_not_nulls = [i for i in not_null if i not in wheres]  # doesnt take into account defaults
             msg = f"Missing definitions for {table_name}: {missing_not_nulls}"
-            self.log_queue.put(msg)
+            self.red_log(msg)
             self.errors.append(msg)
 
     def test_db(self, file_list, dlc_map, is_base):
@@ -370,14 +373,14 @@ class SqlChecker:
             if len(prior_fk_errors) > 0:
                 self.log_queue.put(f'FOREIGN KEY CONSTRAINT ERRORS: {len(prior_fk_errors)}')
                 for error in unique_fk_errors:
-                    self.log_queue.put(error)
+                    self.red_log(error)
             db_connection.commit()
 
         except sqlite3.IntegrityError as e:
-            self.log_queue.put(f"Integrity error occurred: {e}")
+            self.red_log(f"Integrity error occurred: {e}")
             fk_ch = check_foreign_keys(cursor, file_list)
             for error in fk_ch:
-                self.log_queue.put(error)
+                self.red_log(error)
             db_connection.rollback()
         fk_errors = check_foreign_keys(cursor, file_list)
         current_state = check_state(cursor)
@@ -385,7 +388,7 @@ class SqlChecker:
         cursor.close()
         if len(fk_errors) > 0:
             for error in fk_errors:
-                self.log_queue.put(error)
+                self.red_log(error)
         if not is_vanilla:
             self.show_errors()
 
@@ -402,9 +405,9 @@ class SqlChecker:
             if len(existing_short) > 0:
                 error_msg = f'Duplicate file: {short_name} already in list:\n2nd ref: {db_file}. Existing ref: {existing_short}'
                 if job_type in ['DLC', 'vanilla']:
-                    self.log_queue.put(error_msg)
+                    self.red_log(error_msg)
                 else:
-                    self.log_queue.put(error_msg)
+                    self.red_log(error_msg)
             if db_file.endswith('.xml') and not any(i in db_file for i in known_fails):
                 statements, xml_errors = self.convert_xml_to_sql(db_file, job_type)
                 if isinstance(statements, str):
@@ -448,7 +451,7 @@ class SqlChecker:
         elif sql_script in self.known_errors_list:
             self.log_queue.put(f'Skipping known error on {sql_script}')
         elif str(e) == 'FOREIGN KEY constraint failed':
-            self.log_queue.put(f'FOREIGN KEY CONSTRAINT fail.')
+            self.red_log(f'FOREIGN KEY CONSTRAINT fail.')
             table_name = sql_script.split('(')[0].split(' ')[-2]
             labeled_constraints, primary_keys = foreign_key_check(cursor, table_name)
             foreign_key_pretty_notify(cursor, table_name, 'uh', labeled_constraints, primary_keys)
@@ -479,11 +482,11 @@ class SqlChecker:
             except Exception as e:
                 string_error = str(e)
                 if any(j in string_error for j in ['SYNTAX', 'Syntax', 'syntax']):
-                    self.log_queue.put(e)
+                    self.red_log(e)
                     self.errors_out['syntax'].append((filename, e, command))
                     continue
                 if 'no such table' in string_error:
-                    self.log_queue.put(e)
+                    self.red_log(e)
                     self.errors_out['no_table'].append((filename, e, command))
                     continue
                 column_fails = string_error.split('failed: ')[1].replace(table_name + '.', '')
@@ -497,7 +500,7 @@ class SqlChecker:
                         error = str(e) + ' for: ' + str([col_plus_val[i] for i in split_fails])
                     else:
                         error = str(e) + ' on ' + col_plus_val[column_fails]
-                    self.log_queue.put(f'{error} caused by:\n{command}')
+                    self.red_log(f'{error} caused by:\n{command}')
                     self.errors_out['found_command'].append(f'{error} caused by:\n{command} in {filename}')
                 else:
                     self.log_queue.put(f'could not find values of command for {command} in {filename}')
@@ -516,10 +519,16 @@ class SqlChecker:
                 continue
             self.log_queue.put(key)
             for error in val:
-                self.log_queue.put(error)
+                self.red_log(error)
                 fails += 1
         if fails == 0:
             self.log_queue.put('no errors')
+
+    def red_log(self, msg):
+        new_msg = f'<span style="color: red;">{msg}</span>\n'
+        if new_msg not in self.unique_errors:
+            self.log_queue.put(new_msg)
+            self.unique_errors.append(new_msg)
 
 
 def convert_to_sql(statements):
@@ -591,11 +600,11 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 
-def model_run(civ_install, civ_config, workshop, log_queue):
+def model_run(civ_install, civ_config, workshop, age_type, log_queue):
     start_time = time.time()
     wrapped_q = NonBlockingQueue(log_queue)
     logging.debug("model_run start civ_install=%s civ_config=%s workshop=%s", civ_install, civ_config, workshop)
-    checker = SqlChecker(civ_install, civ_config, workshop, wrapped_q)
+    checker = SqlChecker(civ_install, civ_config, workshop, age_type, wrapped_q)
     checker.setup_db_existing()
     database_entries = checker.query_mod_db()
     wrapped_q.put(f"Modding database had {len(database_entries)} entries")
@@ -631,7 +640,7 @@ def model_run(civ_install, civ_config, workshop, log_queue):
     dlc_sql_dump = [j for i in sql_statements_dlc.values() for j in i]
     silly_parse_error = [j for j in dlc_sql_dump if ',;' in j] + [j for j in dlc_sql_dump if ', ;' in j]
     if len(silly_parse_error) > 0:
-        wrapped_q.put(f'had some ,; errors: {len(silly_parse_error)}')
+        wrapped_q.put(f'had some ",;" errors: {len(silly_parse_error)}')
     wrapped_q.put("Running SQL on Vanilla civ files...")
     checker.test_db(sql_statements_dlc, ['Vanilla'], True)
     wrapped_q.put("Finished running Vanilla Files")

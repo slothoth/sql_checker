@@ -13,6 +13,20 @@ if sys.platform == 'win32':
 
 from model import model_run
 
+class TriStateButton(QPushButton):
+    def __init__(self, states, parent=None):
+        super().__init__(states[0], parent)
+        self.states = states
+        self.index = 0
+        self.clicked.connect(self.next_state)
+
+    def next_state(self):
+        self.index = (self.index + 1) % len(self.states)
+        self.setText(self.states[self.index])
+
+    def state(self):
+        return self.states[self.index]
+
 
 class App(QWidget):
     def __init__(self):
@@ -20,6 +34,7 @@ class App(QWidget):
         self.setWindowTitle("Database Analyzer")
         self.setGeometry(100, 100, 700, 520)
         self.log_queue = queue.Queue()
+        self.age_choice_button = None
         self.init_ui()
         self.timer = self.startTimer(100)
 
@@ -46,6 +61,10 @@ class App(QWidget):
         )
         main_layout.addLayout(self.entry3)
         main_layout.addWidget(btn3)
+
+        # age choice button
+        self.age_choice_button = TriStateButton(["AGE_ANTIQUITY", "AGE_EXPLORATION", "AGE_MODERN"])
+        main_layout.addWidget(self.age_choice_button)
 
         # Run Analysis button
         self.run_button = QPushButton("Run Analysis")
@@ -101,7 +120,8 @@ class App(QWidget):
         civ_config = self.folder_path_civ_config
         workshop = self.folder_path_workshop_input
         self.run_button.setEnabled(False)
-        threading.Thread(target=model_run, args=(civ_install, civ_config, workshop, self.log_queue), daemon=True).start()
+        threading.Thread(target=model_run, args=(civ_install, civ_config, workshop, self.age_choice_button.state(), self.log_queue), daemon=True).start()
+
 
     def timerEvent(self, event):
         try:
@@ -113,6 +133,8 @@ class App(QWidget):
                     self.log_display.append(str(message))
         except queue.Empty:
             pass
+            self.run_button.setEnabled(True)
+
 
 
 def find_steam_install():

@@ -1,7 +1,8 @@
 SELECT DISTINCT
   T_Mods.ModId,
   T_Items.Item AS File,
-  T_Mods.Disabled
+  T_Mods.Disabled,
+  CP.Value as Age
 FROM
   Mods AS T_Mods
   LEFT JOIN ModProperties AS T_ModProps
@@ -38,8 +39,7 @@ WHERE
           AND NOT (
             (C2.CriterionType = 'AlwaysMet')
             OR (C2.CriterionType = 'AgeInUse'
-                AND CP2.Name = 'Value'
-                AND CP2.Value = 'AGE_ANTIQUITY')
+                AND CP2.Name = 'Value')
             OR (C2.CriterionType = 'ModInUse'
                 AND (C2.Inverse = 0 OR C2.Inverse IS NULL)
                 AND EXISTS (
@@ -69,8 +69,7 @@ WHERE
           AND (
             (C2.CriterionType = 'AlwaysMet')
             OR (C2.CriterionType = 'AgeInUse'
-                AND CP2.Name = 'Value'
-                AND CP2.Value = 'AGE_ANTIQUITY')
+                AND CP2.Name = 'Value')
             OR (C2.CriterionType = 'ModInUse'
                 AND (C2.Inverse = 0 OR C2.Inverse IS NULL)
                 AND EXISTS (
