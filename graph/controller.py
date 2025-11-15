@@ -1,8 +1,8 @@
-from PyQt5.QtWidgets import QGraphicsScene, QMenu, QAction, QGraphicsTextItem
+from PyQt5.QtWidgets import QGraphicsScene, QMenu, QAction, QGraphicsTextItem, QDialog
 from PyQt5.QtGui import QBrush, QColor
 from PyQt5.QtCore import QPointF
 
-from graph.view import EdgeItem, NodeItem
+from graph.view import EdgeItem, NodeItem, NodeSearchDialog
 
 
 class GraphController(QGraphicsScene):
@@ -33,6 +33,19 @@ class GraphController(QGraphicsScene):
         end_node.edges.append(edge)
         return edge
 
+    def add_custom_node(self, pos, primary_texts=None, secondary_texts=None, node_id=None):
+        if primary_texts is None:
+            primary_texts = [None, None]
+        if secondary_texts is None:
+            secondary_texts = [None, None]
+        if node_id is None:
+            self.node_counter += 1
+            node_id = f"node_{self.node_counter}"
+        node = NodeItem(node_id, primary_texts=primary_texts, secondary_texts=secondary_texts)
+        node.setPos(pos)
+        self.addItem(node)
+        return node
+
     def contextMenuEvent(self, event):
         item = self.itemAt(event.scenePos(), self.views()[0].transform())
         field_index = None
@@ -40,8 +53,8 @@ class GraphController(QGraphicsScene):
         # find if the click is on a text field
         if isinstance(item, QGraphicsTextItem) and isinstance(item.parentItem(), NodeItem):
             node_item = item.parentItem()
-            if item in node_item.text_items:
-                field_index = node_item.text_items.index(item)
+            if item in node_item.primary_texts:
+                field_index = node_item.primary_texts.index(item)
         else:
             # find the node by walking up parents
             while item and not isinstance(item, NodeItem):
@@ -63,9 +76,13 @@ class GraphController(QGraphicsScene):
             menu.addSeparator()
             menu.addAction(delete)
         else:
-            add_node = QAction("Add Node", menu)
+            add_node = QAction("Add Blank Node", menu)
             add_node.triggered.connect(lambda: self.add_node(event.scenePos()))
             menu.addAction(add_node)
+            # node specific one
+            add_custom = QAction("Add From Templates", menu)
+            add_custom.triggered.connect(lambda: self.open_node_search(event.scenePos()))
+            menu.addAction(add_custom)
 
         menu.exec_(event.screenPos())
 
@@ -94,7 +111,8 @@ class GraphController(QGraphicsScene):
             if isinstance(item, NodeItem):
                 nodes.append({
                     "id": item.node_id,
-                    "texts": [i.toPlainText() for i in item.text_items],
+                    "primary_texts": [i.toPlainText() for i in item.primary_texts],
+                    "secondary_texts": [i.toPlainText() for i in item.secondary_texts],
                     "pos": {"x": item.pos().x(), "y": item.pos().y()}
                 })
             elif isinstance(item, EdgeItem):
@@ -177,3 +195,11 @@ class GraphController(QGraphicsScene):
         for item in self.items():
             if isinstance(item, EdgeItem):
                 item.update_position()
+
+    def open_node_search(self, pos):
+        dlg = NodeSearchDialog(self.model.DatabaseModel.tables)
+        if dlg.exec_() == QDialog.Accepted:
+            name = dlg.selected()
+            if name:
+                data = self.model.DatabaseModel.table_data[name]
+                node = self.add_node(pos, data["primary_texts"], data["secondary_texts"])

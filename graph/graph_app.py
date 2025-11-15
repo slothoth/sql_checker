@@ -14,8 +14,8 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Graph Editor")
         self.setGeometry(100, 100, 1000, 800)
-        self.model = GraphModel()
-        self.controller = GraphController(self.model)
+        self.model = GraphModel('antiquity-db.sqlite')              # just use antiquity database, should all have
+        self.controller = GraphController(self.model)               # same schema, unless firaxis is just bad
         self.view = GraphDropdownView(controller=self.controller)
         self.setCentralWidget(self.view)
         # self.view = GraphView(self.controller)

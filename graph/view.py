@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QFont, QPainterPath, QPo
 
 from PyQt5.QtWidgets import (QGraphicsView, QGraphicsItem, QGraphicsObject, QGraphicsTextItem,
                              QGraphicsLineItem, QDialog, QFormLayout, QLineEdit, QDialogButtonBox,
-                             QWidget, QVBoxLayout, QComboBox)
+                             QWidget, QVBoxLayout, QComboBox, QListWidget)
 
 
 class NodeEditDialog(QDialog):
@@ -273,3 +273,57 @@ class GraphDropdownView(QWidget):
         self.view.scene().load_graph_data(data)
         # self.view.scene().sort_graph()
 
+
+class NodeSearchDialog(QDialog):
+    def __init__(self, items, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Search Nodes")
+        self.search = QLineEdit()
+        self.list = QListWidget()
+        self.list.addItems(items)
+        self.search.textChanged.connect(self.filter)
+        ok = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        ok.accepted.connect(self.accept)
+        ok.rejected.connect(self.reject)
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.search)
+        layout.addWidget(self.list)
+        layout.addWidget(ok)
+
+    def filter(self, text):
+        for i in range(self.list.count()):
+            item = self.list.item(i)
+            item.setHidden(text.lower() not in item.text().lower())
+
+    def selected(self):
+        item = self.list.currentItem()
+        return item.text() if item else None
+
+class DragHandle(QGraphicsObject):
+    dragged = pyqtSignal(str, QPointF)
+
+    def __init__(self, field_name, parent=None):
+        super().__init__(parent)
+        self.field_name = field_name
+        self.setCursor(Qt.OpenHandCursor)
+        self.setAcceptedMouseButtons(Qt.LeftButton)
+        self.start = None
+
+    def boundingRect(self):
+        return QRectF(0, 0, 14, 14)
+
+    def paint(self, p, o, w):
+        p.setBrush(QColor("#777"))
+        p.setPen(Qt.NoPen)
+        p.drawEllipse(0, 0, 14, 14)
+
+    def mousePressEvent(self, e):
+        self.setCursor(Qt.ClosedHandCursor)
+        self.start = e.scenePos()
+
+    def mouseMoveEvent(self, e):
+        if (e.scenePos() - self.start).manhattanLength() > 10:
+            self.dragged.emit(self.field_name, e.scenePos())
+
+    def mouseReleaseEvent(self, e):
+        self.setCursor(Qt.OpenHandCursor)

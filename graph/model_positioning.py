@@ -3,6 +3,7 @@ import networkx as nx
 import json
 import graphviz
 
+
 def load_db_graph(db_path):
     full_path = f'resources/{db_path}'
     conn = sqlite3.connect(full_path)
