@@ -1,5 +1,6 @@
 import sqlite3
 
+
 class GraphModel:
     def __init__(self):
         self.nodes = []
@@ -27,44 +28,63 @@ class BaseDB:
         # query db for tables
 
 
-def load_db_graph(db_path):
-    full_path = f'resources/{db_path}'
-    conn = sqlite3.connect(full_path)
-    cursor = conn.cursor()
+def name_views_hub(views):
+    named_views = []
+    for i, view in enumerate(views, start=1):
+        node_edge_counts = {}
+        for edge in view["edges"]:
+            node_edge_counts[edge["start_node_id"]] = node_edge_counts.get(edge["start_node_id"], 0) + 1
+            node_edge_counts[edge["end_node_id"]] = node_edge_counts.get(edge["end_node_id"], 0) + 1
 
-    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
-    tables = [row[0] for row in cursor.fetchall()]
+        hub_node = None
+        if node_edge_counts:
+            hub_node_id, max_edges = max(node_edge_counts.items(), key=lambda x: x[1])
+            if max_edges > 1:  # ensure it actually has more edges than others
+                for n in view["nodes"]:
+                    if n["id"] == hub_node_id:
+                        hub_node = n["texts"][0]  # first line = table name
+                        break
 
-    table_to_id = {t: i + 1 for i, t in enumerate(tables)}
+        node_count = len(view["nodes"])
+        base_name = f"View_{i:02d}"
+        if hub_node:
+            name = f"{hub_node} ({node_count})"
+        elif node_count < 3:
+            name = f"{'->'.join(n['texts'][0] for n in view['nodes'])}({node_count})"
+        else:
+            name = f"{base_name} ({node_count})"
 
-    nodes = []
-    table_columns = {}
-    for table, node_id in table_to_id.items():
-        cursor.execute(f"PRAGMA table_info({table})")
-        columns = [col[1] for col in cursor.fetchall()]
-        table_columns[table] = columns
-        nodes.append({
-            "id": node_id,
-            "texts": [table] + columns,
-            "pos": {"x": node_id * 220.0, "y": 100.0}
+        named_views.append({
+            "name": name,
+            "nodes": view["nodes"],
+            "edges": view["edges"]
         })
-
-    edges = []
-    for table, node_id in table_to_id.items():
-        cursor.execute(f"PRAGMA foreign_key_list({table})")
-        for ref in cursor.fetchall():
-            ref_table = ref[2]
-            ref_column = ref[3]  # the column in the foreign table
-            if ref_table in table_to_id:
-                start_field_index = table_columns[table].index(ref[3]) + 1  # +1 because 0 is the table name
-                edges.append({
-                    "start_node_id": node_id,
-                    "start_field_index": start_field_index,
-                    "end_node_id": table_to_id[ref_table],
-                    "end_field_index": 0  # connect to table name of target
-                })
-
-    conn.close()
-    return {"nodes": nodes, "edges": edges}
+    sort_views = sorted(named_views, key=lambda val: len(val["nodes"]), reverse=True)
+    return sort_views
 
 
+def name_views(views):
+    named_views = []
+    for i, view in enumerate(views, start=1):
+        node_edge_counts = {}
+        for edge in view["edges"]:
+            node_edge_counts[edge["start_node_id"]] = node_edge_counts.get(edge["start_node_id"], 0) + 1
+            node_edge_counts[edge["end_node_id"]] = node_edge_counts.get(edge["end_node_id"], 0) + 1
+
+        root_node = view['name'].replace('View_', '')
+        node_count = len(view["nodes"])
+        base_name = f"View_{i:02d}"
+        if root_node:
+            name = f"{root_node} ({node_count})"
+        elif node_count < 3:
+            name = f"{'->'.join(n['texts'][0] for n in view['nodes'])}({node_count})"
+        else:
+            name = f"{base_name} ({node_count})"
+
+        named_views.append({
+            "name": name,
+            "nodes": view["nodes"],
+            "edges": view["edges"]
+        })
+    sort_views = sorted(named_views, key=lambda val: len(val["nodes"]), reverse=True)
+    return sort_views

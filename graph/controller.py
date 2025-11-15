@@ -11,14 +11,17 @@ class GraphController(QGraphicsScene):
         self.model = model
         self.node_counter = 0
         self.setBackgroundBrush(QBrush(QColor("#f0f0f0")))
+        self.sorted_positions = {}
 
-    def add_node(self, pos, texts=None, node_id=None):
-        if texts is None:
-            texts = [None, None]
+    def add_node(self, pos, primary_texts=None, secondary_texts=None, node_id=None):
+        if primary_texts is None:
+            primary_texts = [None, None]
+        if secondary_texts is None:
+            secondary_texts = [None, None]
         if node_id is None:
             self.node_counter += 1
             node_id = f"node_{self.node_counter}"
-        node = NodeItem(node_id, texts=texts)
+        node = NodeItem(node_id, primary_texts=primary_texts, secondary_texts=secondary_texts)
         node.setPos(pos)
         self.addItem(node)
         return node
@@ -110,7 +113,7 @@ class GraphController(QGraphicsScene):
         for node_data in data.get("nodes", []):
             n = self.add_node(
                 QPointF(node_data["pos"]["x"], node_data["pos"]["y"]),
-                texts=node_data["texts"],
+                primary_texts=node_data["primary_texts"], secondary_texts=node_data["secondary_texts"],
                 node_id=node_data["id"]
             )
             nodes[n.node_id] = n
@@ -123,8 +126,8 @@ class GraphController(QGraphicsScene):
             if s and e:
                 self.add_edge(s, idx, e, end_index)
 
-    def sort_graph(self):
-        edges = []
+    def sort_graph(self):       # orphaned from when we were dynamically sorting. Might be useful for user generated
+        edges = []              # stuff later tho
         nodes = {}
 
         # Collect all nodes and edges from the scene

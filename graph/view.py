@@ -1,8 +1,9 @@
 from PyQt5.QtCore import Qt, QRectF, QLineF, pyqtSignal, QPointF
-from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QFont, QPainterPath
+from PyQt5.QtGui import QPainter, QBrush, QColor, QPen, QFont, QPainterPath, QPolygonF
 
 from PyQt5.QtWidgets import (QGraphicsView, QGraphicsItem, QGraphicsObject, QGraphicsTextItem,
-                             QGraphicsLineItem, QDialog, QFormLayout, QLineEdit, QDialogButtonBox)
+                             QGraphicsLineItem, QDialog, QFormLayout, QLineEdit, QDialogButtonBox,
+                             QWidget, QVBoxLayout, QComboBox)
 
 
 class NodeEditDialog(QDialog):
@@ -43,6 +44,55 @@ class EdgeItem(QGraphicsLineItem):
         self.setLine(QLineF(start_point, end_point))
 
 
+class ExpanderButton(QGraphicsObject):
+    """A clickable button that shows an arrow indicating expansion state."""
+    clicked = pyqtSignal(bool)  # emits current state (True=Open, False=Closed)
+
+    def __init__(self, parent=None, width=150):
+        super().__init__(parent)
+        self.width = width
+        self.is_expanded = False
+        self.height = 20
+        self.setFlag(QGraphicsItem.ItemIsSelectable, False)  # Button shouldn't be selected alone
+
+    def boundingRect(self):
+        return QRectF(0, 0, self.width, self.height)
+
+    def paint(self, painter, option, widget):
+        # Draw a subtle separator line
+        painter.setPen(QPen(QColor("#ddd"), 1))
+        painter.drawLine(5, 0, self.width - 5, 0)
+
+        # Draw the arrow
+        painter.setBrush(QBrush(QColor("#666")))
+        painter.setPen(Qt.NoPen)
+
+        center_x = self.width / 2
+        center_y = self.height / 2
+
+        arrow = QPolygonF()
+        if self.is_expanded:
+            # Arrow pointing Down
+            arrow.append(QPointF(center_x - 4, center_y - 2))
+            arrow.append(QPointF(center_x + 4, center_y - 2))
+            arrow.append(QPointF(center_x, center_y + 4))
+        else:
+            # Arrow pointing Right
+            arrow.append(QPointF(center_x - 2, center_y - 4))
+            arrow.append(QPointF(center_x - 2, center_y + 4))
+            arrow.append(QPointF(center_x + 4, center_y))
+
+        painter.drawPolygon(arrow)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.is_expanded = not self.is_expanded
+            self.clicked.emit(self.is_expanded)
+            self.update()  # Redraw arrow
+            event.accept()
+        else:
+            super().mousePressEvent(event)
+
 
 class NodeItem(QGraphicsObject):
     position_changed = pyqtSignal()
@@ -51,34 +101,86 @@ class NodeItem(QGraphicsObject):
     PADDING = 5
     LINE_SPACING = 5
 
-    def __init__(self, node_id, texts=None, parent=None):
+    def __init__(self, node_id, primary_texts=None, secondary_texts=None, parent=None):
         super().__init__(parent)
         self.node_id = node_id
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
+
+        # Data storage
+        self.primary_texts = primary_texts if primary_texts else ["Title", "Primary Field"]
+        self.secondary_texts = secondary_texts if secondary_texts else []
+
+        self.primary_items = []
+        self.secondary_items = []
         self.edges = []
 
-        if texts is None:
-            texts = ["Title", "Description"]
+        # 1. Create Primary Items
+        for i, text in enumerate(self.primary_texts):
+            item = self._create_text_item(text, is_header=(i == 0))
+            self.primary_items.append(item)
 
-        self.text_items = []
+        # 2. Create Expander Button (only if we have secondary text)
+        self.expander = None
+        if self.secondary_texts:
+            self.expander = ExpanderButton(self, self.NODE_WIDTH)
+            self.expander.clicked.connect(self.on_expand_toggled)
+
+        # 3. Create Secondary Items (Initially hidden)
+        for text in self.secondary_texts:
+            item = self._create_text_item(text, is_header=False)
+            item.setVisible(False)  # Start hidden
+            self.secondary_items.append(item)
+
+        # Calculate initial layout
+        self.NODE_HEIGHT = 0  # Will be set in relayout
+        self.relayout()
+
+    def _create_text_item(self, text, is_header=False):
+        item = QGraphicsTextItem(self)
+        item.setPlainText(text)
+        item.setTextInteractionFlags(Qt.TextEditorInteraction)
+        item.setTextWidth(self.NODE_WIDTH - 2 * self.PADDING)
+
+        if is_header:
+            item.setDefaultTextColor(Qt.white)
+            item.setFont(QFont("Inter", 10, QFont.Bold))
+        else:
+            item.setDefaultTextColor(Qt.black)
+            item.setFont(QFont("Inter", 9))
+        return item
+
+    def on_expand_toggled(self, is_open):
+        """Slot called when the little arrow is clicked"""
+        self.prepareGeometryChange()  # CRITICAL: Tells the scene the size is changing
+
+        for item in self.secondary_items:
+            item.setVisible(is_open)
+
+        self.relayout()
+        self.update()  # Trigger repaint of the background rect
+
+    def relayout(self):
+        """Calculates positions based on what is currently visible."""
         y = self.PADDING / 2
 
-        for i, text in enumerate(texts):
-            item = QGraphicsTextItem(self)
-            item.setPlainText(text)
-            item.setTextInteractionFlags(Qt.TextEditorInteraction)
-            if i == 0:
-                item.setDefaultTextColor(Qt.white)
-                item.setFont(QFont("Inter", 10, QFont.Bold))
-            else:
-                item.setDefaultTextColor(Qt.black)
-                item.setFont(QFont("Inter", 9))
-            item.setTextWidth(self.NODE_WIDTH - 2 * self.PADDING)
+        # 1. Layout Primary
+        for item in self.primary_items:
             item.setPos(self.PADDING, y)
-            self.text_items.append(item)
             y += item.boundingRect().height() + self.LINE_SPACING
+
+        # 2. Layout Expander (if it exists)
+        if self.expander:
+            # Add a little extra space before the button
+            self.expander.setPos(0, y)
+            y += self.expander.height  # Expander has fixed height
+
+            # 3. Layout Secondary (if expanded)
+            if self.expander.is_expanded:
+                for item in self.secondary_items:
+                    item.setPos(self.PADDING, y)
+                    y += item.boundingRect().height() + self.LINE_SPACING
 
         total_height = y + self.PADDING
         self.NODE_HEIGHT = max(total_height, self.HEADER_HEIGHT + 2 * self.PADDING)
@@ -87,15 +189,20 @@ class NodeItem(QGraphicsObject):
         return QRectF(0, 0, self.NODE_WIDTH, self.NODE_HEIGHT).adjusted(-1, -1, 1, 1)
 
     def paint(self, painter, option, widget):
+        # Background
         painter.setBrush(QBrush(QColor("#ffffff")))
         painter.setPen(QPen(QColor("#333"), 1))
         painter.drawRoundedRect(0, 0, self.NODE_WIDTH, self.NODE_HEIGHT, 8, 8)
+
+        # Header
         painter.setBrush(QBrush(QColor("#4a90e2")))
         painter.setPen(Qt.NoPen)
         path = QPainterPath()
         path.addRoundedRect(0, 0, self.NODE_WIDTH, self.HEADER_HEIGHT, 8, 8)
         path.addRect(0, self.HEADER_HEIGHT - 8, self.NODE_WIDTH, 8)
         painter.drawPath(path)
+
+        # Selection Outline
         if self.isSelected():
             painter.setPen(QPen(QColor("#f5a623"), 2, Qt.DotLine))
             painter.setBrush(Qt.NoBrush)
@@ -106,21 +213,25 @@ class NodeItem(QGraphicsObject):
             self.position_changed.emit()
         return super().itemChange(change, value)
 
-    def relayout(self):
-        y = self.PADDING / 2
-        for item in self.text_items:
-            item.setPos(self.PADDING, y)
-            y += item.boundingRect().height() + self.LINE_SPACING
-        self.NODE_HEIGHT = max(y + self.PADDING, self.HEADER_HEIGHT + 2 * self.PADDING)
-
+    # Helper to get connection points for wires
     def get_field_scene_pos(self, index, right=True):
-        if 0 <= index < len(self.text_items):
-            item = self.text_items[index]
-            rect = item.boundingRect()
+        # Map index to the correct list (primary or secondary)
+        target_item = None
+
+        if index < len(self.primary_items):
+            target_item = self.primary_items[index]
+        else:
+            sec_index = index - len(self.primary_items)
+            if 0 <= sec_index < len(self.secondary_items) and self.secondary_items[sec_index].isVisible():
+                target_item = self.secondary_items[sec_index]
+
+        if target_item:
+            rect = target_item.boundingRect()
             x = rect.right() if right else rect.left()
-            point = item.mapToScene(QPointF(x, rect.center().y()))
+            point = target_item.mapToScene(QPointF(x, rect.center().y()))
             return point
-        # fallback to node edge
+
+        # Fallback to center of node if index invalid or hidden
         rect = self.boundingRect()
         x = rect.right() if right else rect.left()
         return self.mapToScene(QPointF(x, rect.center().y()))
@@ -132,3 +243,33 @@ class GraphView(QGraphicsView):
         self.setRenderHint(QPainter.Antialiasing)
         self.setDragMode(QGraphicsView.RubberBandDrag)
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
+
+
+class GraphDropdownView(QWidget):
+    def __init__(self, parent=None, controller=None):
+        super().__init__(parent)
+        layout = QVBoxLayout(self)
+        self.dropdown = QComboBox()
+        self.view = GraphView(controller)
+        layout.addWidget(self.dropdown)
+        layout.addWidget(self.view)
+        self.views = {}
+        self.dropdown.currentIndexChanged.connect(self.switch_view)
+
+    def load_views(self, views):
+        self.views.clear()
+        self.dropdown.clear()
+        for v in views:
+            self.views[v["name"]] = v
+            self.dropdown.addItem(v["name"])
+        if views:
+            self.switch_view(0)
+
+    def switch_view(self, index):
+        name = self.dropdown.itemText(index)
+        if not name:
+            return
+        data = self.views[name]
+        self.view.scene().load_graph_data(data)
+        # self.view.scene().sort_graph()
+

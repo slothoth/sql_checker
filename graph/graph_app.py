@@ -1,20 +1,25 @@
 import json
 from PyQt5.QtWidgets import QMainWindow, QAction, QFileDialog
 # project imports
-from graph.model import GraphModel, BaseDB, load_db_graph
-from graph.view import GraphView
+from graph.model import GraphModel, BaseDB, name_views_hub, name_views
+from graph.model_positioning import force_forward_kamada_kamai_graphs, graphviz_layout_for_db_graphs_with_dimensions
+from graph.model_positioning import load_db_graph, separate_db_graphs, force_forward_spring_graphs
+
+from graph.view import GraphView, GraphDropdownView
 from graph.controller import GraphController
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Graph Editor (MVC)")
+        self.setWindowTitle("Graph Editor")
         self.setGeometry(100, 100, 1000, 800)
         self.model = GraphModel()
         self.controller = GraphController(self.model)
-        self.view = GraphView(self.controller)
+        self.view = GraphDropdownView(controller=self.controller)
         self.setCentralWidget(self.view)
+        # self.view = GraphView(self.controller)
+        # self.setCentralWidget(self.view)
         self.create_menu()
         self.new_graph()
 
@@ -70,9 +75,13 @@ class MainWindow(QMainWindow):
 
     def load_antiquity(self):
         print('loading antiquity')
-        data = load_db_graph('antiquity-db.sqlite')
-        self.controller.load_graph_data(data)
-        self.controller.sort_graph()
+        # data = load_db_graph('antiquity-db.sqlite')
+        # views = separate_db_graphs('antiquity-db.sqlite')
+        views = force_forward_spring_graphs('antiquity-db.sqlite')
+
+        named_views = name_views(views)
+        # named_views = name_views_hub(views)
+        self.view.load_views(named_views)
 
     def load_exploration(self):
         data = load_db_graph('exploration-db.sqlite')
