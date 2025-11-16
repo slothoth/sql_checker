@@ -51,6 +51,9 @@ class BaseDB:
                 ref_table, table_col = ref[2], ref[3]
                 if ref_table in self.tables:
                     self.table_data[table]['foreign_keys'][table_col] = ref_table
+                    if not self.table_data[ref_table].get('backlink_fk', None):
+                        self.table_data[ref_table]['backlink_fk'] = {}
+                    self.table_data[ref_table]['backlink_fk'][table_col] = table         # for backlinks
         conn.close()
 
 

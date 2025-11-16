@@ -13,7 +13,8 @@ class GraphController(QGraphicsScene):
         self.setBackgroundBrush(QBrush(QColor("#f0f0f0")))
         self.sorted_positions = {}
 
-    def add_node(self, pos, primary_texts=None, secondary_texts=None, node_id=None):
+    def add_node(self, pos, primary_texts=None, secondary_texts=None, default_texts=None, foreign_key_refs=None,
+                 node_id=None, table_name=None, table_id=None):
         if primary_texts is None:
             primary_texts = [None, None]
         if secondary_texts is None:
@@ -21,7 +22,8 @@ class GraphController(QGraphicsScene):
         if node_id is None:
             self.node_counter += 1
             node_id = f"node_{self.node_counter}"
-        node = NodeItem(node_id, primary_texts=primary_texts, secondary_texts=secondary_texts)
+        node = NodeItem(node_id, primary_texts=primary_texts, secondary_texts=secondary_texts,
+                        default_texts=default_texts, foreign_key_refs=foreign_key_refs, table_name=table_name)
         node.setPos(pos)
         self.addItem(node)
         return node
@@ -32,19 +34,6 @@ class GraphController(QGraphicsScene):
         start_node.edges.append(edge)
         end_node.edges.append(edge)
         return edge
-
-    def add_custom_node(self, pos, primary_texts=None, secondary_texts=None, node_id=None):
-        if primary_texts is None:
-            primary_texts = [None, None]
-        if secondary_texts is None:
-            secondary_texts = [None, None]
-        if node_id is None:
-            self.node_counter += 1
-            node_id = f"node_{self.node_counter}"
-        node = NodeItem(node_id, primary_texts=primary_texts, secondary_texts=secondary_texts)
-        node.setPos(pos)
-        self.addItem(node)
-        return node
 
     def contextMenuEvent(self, event):
         item = self.itemAt(event.scenePos(), self.views()[0].transform())
@@ -132,7 +121,8 @@ class GraphController(QGraphicsScene):
             n = self.add_node(
                 QPointF(node_data["pos"]["x"], node_data["pos"]["y"]),
                 primary_texts=node_data["primary_texts"], secondary_texts=node_data["secondary_texts"],
-                node_id=node_data["id"]
+                default_texts=node_data.get("default_values", None), foreign_key_refs=node_data.get("foreign_keys", None),
+                node_id=node_data["id"], table_name=node_data.get("table_name", None)
             )
             nodes[n.node_id] = n
 
@@ -202,4 +192,20 @@ class GraphController(QGraphicsScene):
             name = dlg.selected()
             if name:
                 data = self.model.DatabaseModel.table_data[name]
-                node = self.add_node(pos, data["primary_texts"], data["secondary_texts"])
+                node = self.add_node(pos, data["primary_texts"], data["secondary_texts"],
+                                     default_texts=data.get("default_values", None),
+                                     foreign_key_refs=data.get("foreign_keys", None),
+                                     table_name=name)
+
+    def spawn_field_node(self, text_item, pull_target, source_node, pos):
+        if source_node.table_name is not None:
+            foreign_table = self.model.DatabaseModel.table_data.get(pull_target, None)
+            if foreign_table is None:
+                raise(Exception(f"no foreign key found for table pull target: {pull_target}"))
+            new_node = self.add_node(pos + QPointF(40, 40), foreign_table["primary_texts"], foreign_table["secondary_texts"],
+                                 default_texts=foreign_table.get("default_values", None),
+                                 foreign_key_refs=foreign_table.get("foreign_keys", None))
+            self.add_edge(source_node, 0, new_node, 0)
+        # add a new node.
+        # add an edge connecting from source node to new node
+        # look up the table relevant from the source node and field text

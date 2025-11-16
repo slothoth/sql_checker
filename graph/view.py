@@ -101,43 +101,42 @@ class NodeItem(QGraphicsObject):
     PADDING = 5
     LINE_SPACING = 5
 
-    def __init__(self, node_id, primary_texts=None, secondary_texts=None, parent=None):
+    def __init__(self, node_id, primary_texts=None, secondary_texts=None, default_texts=None, foreign_key_refs=None,
+                 table_name=None, parent=None):
         super().__init__(parent)
         self.node_id = node_id
+        self.table_name = table_name
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
-
-        # Data storage
         self.primary_texts = primary_texts if primary_texts else ["Title", "Primary Field"]
         self.secondary_texts = secondary_texts if secondary_texts else []
-
         self.primary_items = []
         self.secondary_items = []
         self.edges = []
 
-        # 1. Create Primary Items
         for i, text in enumerate(self.primary_texts):
-            item = self._create_text_item(text, is_header=(i == 0))
+            default_val = default_texts.get(text, None) if default_texts is not None else None
+            fk_ref = foreign_key_refs.get(text, None) if foreign_key_refs is not None else None
+            item = self._create_text_item(text, is_header=(i == 0), pull_target=fk_ref)
             self.primary_items.append(item)
 
-        # 2. Create Expander Button (only if we have secondary text)
         self.expander = None
         if self.secondary_texts:
             self.expander = ExpanderButton(self, self.NODE_WIDTH)
             self.expander.clicked.connect(self.on_expand_toggled)
 
-        # 3. Create Secondary Items (Initially hidden)
         for text in self.secondary_texts:
-            item = self._create_text_item(text, is_header=False)
+            default_val = default_texts.get(text, None) if default_texts is not None else None
+            fk_ref = foreign_key_refs.get(text, None) if foreign_key_refs is not None else None
+            item = self._create_text_item(text, is_header=False, pull_target=fk_ref)
             item.setVisible(False)  # Start hidden
             self.secondary_items.append(item)
 
-        # Calculate initial layout
         self.NODE_HEIGHT = 0  # Will be set in relayout
         self.relayout()
 
-    def _create_text_item(self, text, is_header=False):
+    def _create_text_item(self, text, is_header=False, pull_target=None):
         item = QGraphicsTextItem(self)
         item.setPlainText(text)
         item.setTextInteractionFlags(Qt.TextEditorInteraction)
@@ -149,34 +148,37 @@ class NodeItem(QGraphicsObject):
         else:
             item.setDefaultTextColor(Qt.black)
             item.setFont(QFont("Inter", 9))
+
+        if pull_target is not None:
+            handle = PullHandle(self, item)
+            handle.pulled.connect(self.handle_pull_out)
+            item.pull_handle = handle
+            item.pull_target = pull_target
+        else:
+            item.pull_handle, item.pull_target = None, None
+
         return item
 
     def on_expand_toggled(self, is_open):
         """Slot called when the little arrow is clicked"""
-        self.prepareGeometryChange()  # CRITICAL: Tells the scene the size is changing
-
+        self.prepareGeometryChange()
         for item in self.secondary_items:
             item.setVisible(is_open)
-
         self.relayout()
-        self.update()  # Trigger repaint of the background rect
+        self.update()
 
     def relayout(self):
         """Calculates positions based on what is currently visible."""
         y = self.PADDING / 2
-
-        # 1. Layout Primary
         for item in self.primary_items:
             item.setPos(self.PADDING, y)
+            if item.pull_handle:
+                r = item.boundingRect()
+                item.pull_handle.setPos(self.NODE_WIDTH - self.PADDING - 10, y + r.height() / 2 - 5)
             y += item.boundingRect().height() + self.LINE_SPACING
-
-        # 2. Layout Expander (if it exists)
         if self.expander:
-            # Add a little extra space before the button
-            self.expander.setPos(0, y)
+            self.expander.setPos(0, y)      # Add a little extra space before the button
             y += self.expander.height  # Expander has fixed height
-
-            # 3. Layout Secondary (if expanded)
             if self.expander.is_expanded:
                 for item in self.secondary_items:
                     item.setPos(self.PADDING, y)
@@ -235,6 +237,9 @@ class NodeItem(QGraphicsObject):
         rect = self.boundingRect()
         x = rect.right() if right else rect.left()
         return self.mapToScene(QPointF(x, rect.center().y()))
+
+    def handle_pull_out(self, text_item, pull_target, source_node, pos):
+        self.scene().spawn_field_node(text_item, pull_target, source_node, pos)
 
 
 class GraphView(QGraphicsView):
@@ -299,12 +304,14 @@ class NodeSearchDialog(QDialog):
         item = self.list.currentItem()
         return item.text() if item else None
 
-class DragHandle(QGraphicsObject):
-    dragged = pyqtSignal(str, QPointF)
 
-    def __init__(self, field_name, parent=None):
-        super().__init__(parent)
-        self.field_name = field_name
+class PullHandle(QGraphicsObject):
+    pulled = pyqtSignal(QGraphicsTextItem, object, object, QPointF)
+
+    def __init__(self, node, text_item):
+        super().__init__(node)
+        self.node = node
+        self.text_item = text_item
         self.setCursor(Qt.OpenHandCursor)
         self.setAcceptedMouseButtons(Qt.LeftButton)
         self.start = None
@@ -313,7 +320,7 @@ class DragHandle(QGraphicsObject):
         return QRectF(0, 0, 14, 14)
 
     def paint(self, p, o, w):
-        p.setBrush(QColor("#777"))
+        p.setBrush(QColor("#666"))
         p.setPen(Qt.NoPen)
         p.drawEllipse(0, 0, 14, 14)
 
@@ -323,7 +330,12 @@ class DragHandle(QGraphicsObject):
 
     def mouseMoveEvent(self, e):
         if (e.scenePos() - self.start).manhattanLength() > 10:
-            self.dragged.emit(self.field_name, e.scenePos())
+            self.pulled.emit(
+                self.text_item,
+                self.text_item.pull_target,
+                self.node,
+                e.scenePos()
+            )
 
     def mouseReleaseEvent(self, e):
         self.setCursor(Qt.OpenHandCursor)
