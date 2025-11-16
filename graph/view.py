@@ -144,18 +144,23 @@ class NodeItem(QGraphicsObject):
 
         if is_header:
             item.setDefaultTextColor(Qt.white)
-            item.setFont(QFont("Inter", 10, QFont.Bold))
+            f = QFont("Inter", 10, QFont.Bold)
+            item.setFont(f)
         else:
             item.setDefaultTextColor(Qt.black)
-            item.setFont(QFont("Inter", 9))
+            f = QFont("Inter", 9)
+            item.setFont(f)
 
         if pull_target is not None:
-            handle = PullHandle(self, item)
-            handle.pulled.connect(self.handle_pull_out)
-            item.pull_handle = handle
+            h = PullHandle(self, item)
+            h.setPos(self.NODE_WIDTH - 18, item.pos().y())
+            h.begin.connect(self.handle_pull_start)
+            h.end.connect(self.handle_pull_end)
+            item.pull_handle = h
             item.pull_target = pull_target
         else:
-            item.pull_handle, item.pull_target = None, None
+            item.pull_handle = None
+            item.pull_target = None
 
         return item
 
@@ -182,6 +187,9 @@ class NodeItem(QGraphicsObject):
             if self.expander.is_expanded:
                 for item in self.secondary_items:
                     item.setPos(self.PADDING, y)
+                    if item.pull_handle:
+                        r = item.boundingRect()
+                        item.pull_handle.setPos(self.NODE_WIDTH - self.PADDING - 10, y + r.height() / 2 - 5)
                     y += item.boundingRect().height() + self.LINE_SPACING
 
         total_height = y + self.PADDING
@@ -237,6 +245,23 @@ class NodeItem(QGraphicsObject):
         rect = self.boundingRect()
         x = rect.right() if right else rect.left()
         return self.mapToScene(QPointF(x, rect.center().y()))
+
+    def handle_pull_start(self, text_item, pull_target, source_node, pos):
+        line = QGraphicsLineItem()
+        line.setPen(QPen(QColor("#555"), 2))
+        text_item.pull_handle.drag_line = line
+        self.scene().addItem(line)
+        self._pull_info = (text_item, pull_target, source_node)
+
+    def handle_pull_end(self, pos):
+        text_item, pull_target, source_node = self._pull_info
+        self.scene().spawn_field_node(
+            text_item,
+            pull_target,
+            source_node,
+            pos
+        )
+        self._pull_info = None
 
     def handle_pull_out(self, text_item, pull_target, source_node, pos):
         self.scene().spawn_field_node(text_item, pull_target, source_node, pos)
@@ -306,15 +331,17 @@ class NodeSearchDialog(QDialog):
 
 
 class PullHandle(QGraphicsObject):
-    pulled = pyqtSignal(QGraphicsTextItem, object, object, QPointF)
+    begin = pyqtSignal(QGraphicsTextItem, object, object, QPointF)
+    end = pyqtSignal(QPointF)
 
     def __init__(self, node, text_item):
         super().__init__(node)
         self.node = node
         self.text_item = text_item
+        self.drag_line = None
+        self.start_pos = None
         self.setCursor(Qt.OpenHandCursor)
         self.setAcceptedMouseButtons(Qt.LeftButton)
-        self.start = None
 
     def boundingRect(self):
         return QRectF(0, 0, 14, 14)
@@ -326,16 +353,27 @@ class PullHandle(QGraphicsObject):
 
     def mousePressEvent(self, e):
         self.setCursor(Qt.ClosedHandCursor)
-        self.start = e.scenePos()
+        self.start_pos = self.mapToScene(QPointF(7, 7))
+        self.begin.emit(
+            self.text_item,
+            self.text_item.pull_target,
+            self.node,
+            self.start_pos
+        )
 
     def mouseMoveEvent(self, e):
-        if (e.scenePos() - self.start).manhattanLength() > 10:
-            self.pulled.emit(
-                self.text_item,
-                self.text_item.pull_target,
-                self.node,
-                e.scenePos()
+        if self.drag_line:
+            self.drag_line.setLine(
+                self.start_pos.x(),
+                self.start_pos.y(),
+                e.scenePos().x(),
+                e.scenePos().y()
             )
 
     def mouseReleaseEvent(self, e):
         self.setCursor(Qt.OpenHandCursor)
+        self.end.emit(e.scenePos())
+        if self.drag_line:
+            self.scene().removeItem(self.drag_line)
+            self.drag_line = None
+

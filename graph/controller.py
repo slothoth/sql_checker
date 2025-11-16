@@ -201,11 +201,10 @@ class GraphController(QGraphicsScene):
         if source_node.table_name is not None:
             foreign_table = self.model.DatabaseModel.table_data.get(pull_target, None)
             if foreign_table is None:
-                raise(Exception(f"no foreign key found for table pull target: {pull_target}"))
-            new_node = self.add_node(pos + QPointF(40, 40), foreign_table["primary_texts"], foreign_table["secondary_texts"],
-                                 default_texts=foreign_table.get("default_values", None),
-                                 foreign_key_refs=foreign_table.get("foreign_keys", None))
+                raise (Exception(f"no foreign key found for table pull target: {pull_target}"))
+            new_node = self.add_node(pos + QPointF(40, 40), foreign_table["primary_texts"],
+                                     foreign_table["secondary_texts"],
+                                     default_texts=foreign_table.get("default_values", None),
+                                     foreign_key_refs=foreign_table.get("foreign_keys", None),
+                                     table_name=pull_target)
             self.add_edge(source_node, 0, new_node, 0)
-        # add a new node.
-        # add an edge connecting from source node to new node
-        # look up the table relevant from the source node and field text
