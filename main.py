@@ -13,7 +13,7 @@ if sys.platform == 'win32':
 
 from model import model_run
 from graph.graph_app import MainWindow as GraphEditorWindow
-
+from graph.node_controller import main as nodeEditorWindow
 
 class App(QWidget):
     def __init__(self):
@@ -122,10 +122,11 @@ class App(QWidget):
 
     def popout_graph_planner(self):
         if self.graph_editor_window is None:
-            self.graph_editor_window = GraphEditorWindow()
-        self.graph_editor_window.show()
-        self.graph_editor_window.raise_()
-        self.graph_editor_window.activateWindow()
+            # self.graph_editor_window = GraphEditorWindow()
+            self.graph_editor_window = nodeEditorWindow()
+        # self.graph_editor_window.show()
+        # self.graph_editor_window.raise_()
+        # self.graph_editor_window.activateWindow()
 
 
 def find_steam_install():
