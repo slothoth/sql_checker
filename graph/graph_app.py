@@ -77,7 +77,7 @@ class MainWindow(QMainWindow):
         print('loading antiquity')
         # data = load_db_graph('antiquity-db.sqlite')
         # views = separate_db_graphs('antiquity-db.sqlite')
-        views = force_forward_spring_graphs('antiquity-db.sqlite')
+        views, id_map = force_forward_spring_graphs('antiquity-db.sqlite')
 
         named_views = name_views(views)
         # named_views = name_views_hub(views)

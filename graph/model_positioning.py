@@ -211,7 +211,8 @@ def get_table_info(full_path):
             "id": table_to_id[table],
             "primary_texts": [table] + primary_texts,
             "secondary_texts": secondary_texts,
-            "height": height
+            "height": height,
+            "table_name": table
         }
     conn.close()
     return node_info, all_tables, table_to_id
@@ -287,22 +288,13 @@ def force_forward_spring_graphs(db_path, normalise=True):
         # E. Apply Dynamic Scale and Output
         final_nodes = []
         for node in group_nodes:
-            info = node_info[node]
             norm_x, norm_y = normalized_pos[node]
-
             # Apply the calculated scale factor
             pixel_x = float(norm_x * dynamic_scale) + PADDING / 2
             pixel_y = float(norm_y * dynamic_scale) + PADDING / 2
-
-            final_nodes.append({
-                "id": info["id"],
-                "primary_texts": info["primary_texts"],
-                "secondary_texts": info["secondary_texts"],
-                "pos": {
-                    "x": pixel_x,
-                    "y": pixel_y
-                }
-            })
+            info = node_info[node].copy()
+            info["pos"] = {"x": pixel_x, "y": pixel_y}
+            final_nodes.append(info)
 
         # E. Define Edges (Only those existing within this subgraph)
         final_edges = []
@@ -321,7 +313,7 @@ def force_forward_spring_graphs(db_path, normalise=True):
 
     # Sort views by name or complexity
     views.sort(key=lambda v: v['name'])
-    return views
+    return views, table_to_id
 
 
 def force_forward_kamada_kamai_graphs(db_path):

@@ -103,7 +103,7 @@ class SqlChecker:
 
         if len(err_string) > 0:
             print(err_string)
-            raise err_string
+            raise Exception(err_string)
         for row in rows:
             file_info = dict(row)
             mod_folder_path = modinfo_uuids[file_info['ModId']]

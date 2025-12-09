@@ -1,4 +1,5 @@
 import sqlite3
+import json
 
 
 class GraphModel:
@@ -21,6 +22,7 @@ class BaseDB:
         self.table_data = {}
         self.tables = []
         self.setup_table_infos(full_path)
+        self.dump_json_form()
 
     def setup_table_infos(self, db_path):
         full_path = f"resources/{db_path}"
@@ -55,6 +57,11 @@ class BaseDB:
                         self.table_data[ref_table]['backlink_fk'] = {}
                     self.table_data[ref_table]['backlink_fk'][table_col] = table         # for backlinks
         conn.close()
+
+    def dump_json_form(self):
+        # adjust it so it fits spec
+        with open('resources/db_spec.json', 'w') as f:
+            f.write(json.dumps(self.table_data))
 
 
 def name_views_hub(views):

@@ -3,7 +3,7 @@ from pathlib import Path
 from Qt import QtCore, QtWidgets
 # import signal
 # import example nodes from the "nodes" sub-package
-from graph.nodes import basic_nodes, custom_ports_node, group_node, widget_nodes
+from graph.nodes import basic_nodes, custom_ports_node, group_node, widget_nodes, db_nodes
 from NodeGraphQt import (
     NodeGraph,
     NodesPaletteWidget,
@@ -17,15 +17,12 @@ BASE_PATH = Path(__file__).parent.resolve()
 def main():
     # handle SIGINT to make the app terminate on CTRL+C
     # signal.signal(signal.SIGINT, signal.SIG_DFL)
-    # create graph controller.
     graph = NodeGraph()
 
-    # set up context menu for the node graph.
-    hotkey_path = Path(BASE_PATH, 'hotkeys', 'hotkeys.json')
+    hotkey_path = Path(BASE_PATH, 'hotkeys', 'hotkeys.json')        # set up context menu for the node graph.
     graph.set_context_menu_from_file(hotkey_path, 'graph')
 
-    # registered example nodes.
-    graph.register_nodes([
+    graph.register_nodes([                  # registered example nodes.
         basic_nodes.BasicNodeA,
         basic_nodes.BasicNodeB,
         basic_nodes.CircleNode,
@@ -34,11 +31,11 @@ def main():
         group_node.MyGroupNode,
         widget_nodes.DropdownMenuNode,
         widget_nodes.TextInputNode,
-        widget_nodes.CheckboxNode
+        widget_nodes.CheckboxNode,
+        db_nodes.DynamicFieldsNode
     ])
 
-    # show the node graph widget.
-    graph_widget = graph.widget
+    graph_widget = graph.widget             # show the node graph widget.
     graph_widget.resize(1100, 800)
     graph_widget.setWindowTitle("Database Editor")
     graph_widget.show()

@@ -1,5 +1,33 @@
 [
   {
+    "type":"command",
+    "label":"NewNode",
+    "file":"./hotkey_functions.py",
+    "function_name":"make_node",
+    "shortcut":"Shift+Enter"
+  },
+  {
+    "type": "command",
+    "label": "NewDynamicNode",
+    "file": "./hotkey_functions.py",
+    "function_name": "create_dynamic_node_with_search",
+    "shortcut": "Shift+N"
+  },
+  {
+    "type":"command",
+    "label":"EditAntiquity",
+    "file":"./hotkey_functions.py",
+    "function_name":"edit_antiquity_scene",
+    "shortcut":"Shift+1"
+  },
+  {
+    "type":"command",
+    "label":"DeleteNode",
+    "file":"./hotkey_functions.py",
+    "function_name":"install_delete_at_cursor_shortcut",
+    "shortcut":"Shift+Backspace"
+  },
+  {
     "type":"menu",
     "label":"&File",
     "items":[

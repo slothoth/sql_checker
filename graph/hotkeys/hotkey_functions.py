@@ -1,10 +1,10 @@
-#!/usr/bin/python
-
 # ------------------------------------------------------------------------------
 # menu command functions
 # ------------------------------------------------------------------------------
-
-
+from Qt import QtGui, QtWidgets
+import json
+from graph.db_node_support import NodeCreationDialog
+from graph.model_positioning import force_forward_spring_graphs
 def zoom_in(graph):
     """
     Set the node graph to zoom in by 0.1
@@ -293,3 +293,118 @@ def toggle_node_search(graph):
     """
     graph.toggle_node_search()
 
+
+def make_node(graph):
+    """
+    make a new node in the graph
+    """
+    spec = [
+        {'label': 'Name', 'key': 'field_name', 'ports': 'in'},
+        {'label': 'Value', 'key': 'field_value', 'ports': 'out'},
+        {'label': 'Condition', 'key': 'field_cond', 'ports': 'both'},
+        {'label': 'Note', 'key': 'field_note', 'ports': ''},
+    ]
+
+    viewer = graph.viewer()
+    pos = viewer.mapToScene(viewer.mapFromGlobal(QtGui.QCursor.pos()))
+
+    n_text_input = graph.create_node(
+        'nodes.widget.DynamicFieldsNode', name='my ports', color='#0a1e20', pos=[pos.x(), pos.y()])
+    n_text_input.set_spec(spec)
+
+
+def _node_from_graphics_items(items):
+    for it in items:
+        cur = it
+        # walk up the parent chain trying to find an object that references a node
+        while cur is not None:
+            # common NodeGraphQt graphics objects often expose .node or ._node or .get_node()
+            node = getattr(cur, "node", None) or getattr(cur, "_node", None)
+            if node is not None:
+                return node
+            get_node = getattr(cur, "get_node", None)
+            if callable(get_node):
+                try:
+                    n = get_node()
+                    if n is not None:
+                        return n
+                except Exception:
+                    pass
+            # check python-friendly attributes that may hold a node reference
+            for attr in ("_base_node", "base_node", "parent_node"):
+                node = getattr(cur, attr, None)
+                if node is not None:
+                    return node
+            cur = cur.parentItem()
+    return None
+
+
+def delete_node_at_cursor(graph):
+    viewer = graph.viewer()
+    scene_pos = viewer.mapToScene(viewer.mapFromGlobal(QtGui.QCursor.pos()))
+    scene = viewer.scene()
+    items = scene.items(scene_pos)
+    node = _node_from_graphics_items(items)
+    if node is None:
+        return
+    try:
+        graph.delete_node(node)
+    except Exception:
+        # fallback: if node is a graphics wrapper that exposes .node() or .get_node(), try to resolve then delete
+        try:
+            node_obj = node.node() if callable(getattr(node, "node", None)) else getattr(node, "get_node", lambda: None)()
+            if node_obj:
+                graph.delete_node(node_obj)
+        except Exception:
+            pass
+
+
+def install_delete_at_cursor_shortcut(graph, parent_widget=None):
+    if parent_widget is None:
+        parent_widget = graph.widget
+    for seq in ('Delete', 'Backspace'):
+        sc = QtWidgets.QShortcut(QtGui.QKeySequence(seq), parent_widget)
+        sc.activated.connect(lambda g=graph: delete_node_at_cursor(g))
+
+
+def create_dynamic_node_with_search(graph):
+    dialog = NodeCreationDialog(node_templates)
+    viewer = graph.viewer()
+    pos = viewer.mapToGlobal(QtGui.QCursor.pos())
+    dialog.move(pos)
+
+    if dialog.exec_() != QtWidgets.QDialog.Accepted:
+        return
+
+    name = dialog.selected()
+    if not name:
+        return
+
+    spec = node_templates[name]
+    scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
+    node = graph.create_node('nodes.widget.DynamicFieldsNode', pos=[scene_pos.x(), scene_pos.y()])
+    node.set_spec(spec)
+    node.set_name(name)
+
+
+def edit_antiquity_scene(graph):
+    views, id_map = force_forward_spring_graphs('antiquity-db.sqlite')
+    first_view = views[0]
+    for node_info in first_view['nodes']:
+        spec = node_templates[node_info['table_name']]
+        node = graph.create_node('nodes.widget.DynamicFieldsNode',
+                                 pos=[node_info['pos']['x'], node_info['pos']['y']])
+        node.set_spec(spec)
+        node.set_name(node_info['table_name'])
+
+    for edge_info in first_view['edges']:
+        start_table = id_map[edge_info['start_node_id']]
+        end_table = id_map[edge_info['end_node_id']]
+        pk = node_templates[start_table]
+
+    # make edges from graphs.
+    # convert views (old style) into graphs
+
+
+with open('resources/db_spec.json', 'r') as f:
+    node_templates = json.load(f)
