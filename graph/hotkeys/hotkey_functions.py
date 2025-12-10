@@ -359,11 +359,13 @@ def delete_node_at_cursor(graph):
             pass
 
 
-def install_delete_at_cursor_shortcut(graph, parent_widget=None):
-    if parent_widget is None:
-        parent_widget = graph.widget
+def install_delete_at_cursor_shortcut(graph):
+    viewer = graph.viewer()
+    target = viewer  # or viewer.viewport()
+
     for seq in ('Delete', 'Backspace'):
-        sc = QtWidgets.QShortcut(QtGui.QKeySequence(seq), parent_widget)
+        sc = QtWidgets.QShortcut(QtGui.QKeySequence(seq), target)
+        sc.setContext(QtCore.Qt.WidgetWithChildrenShortcut)
         sc.activated.connect(lambda g=graph: delete_node_at_cursor(g))
 
 

@@ -157,7 +157,3 @@ def main():
     nodes_palette.set_category_label('nodes.basic', 'Basic Nodes')
     nodes_palette.set_category_label('nodes.group', 'Group Nodes')
     # nodes_palette.show()
-
-
-if __name__ == '__main__':
-    main()
