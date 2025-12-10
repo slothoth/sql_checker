@@ -1,12 +1,5 @@
 [
   {
-    "type":"command",
-    "label":"NewNode",
-    "file":"./hotkey_functions.py",
-    "function_name":"make_node",
-    "shortcut":"Shift+Enter"
-  },
-  {
     "type": "command",
     "label": "NewDynamicNode",
     "file": "./hotkey_functions.py",

@@ -1,34 +1,22 @@
 from pathlib import Path
+from Qt import QtGui, QtWidgets
+from NodeGraphQt import NodeGraph
+import json
 
-from Qt import QtCore, QtWidgets
-# import signal
-# import example nodes from the "nodes" sub-package
-from graph.nodes import basic_nodes, custom_ports_node, group_node, widget_nodes, db_nodes
-from NodeGraphQt import (
-    NodeGraph,
-    NodesPaletteWidget,
-    NodesTreeWidget,
-    PropertiesBinWidget,
-)
+from graph.db_node_support import NodeCreationDialog
+from graph.nodes import custom_ports_node, widget_nodes, db_nodes
 
 BASE_PATH = Path(__file__).parent.resolve()
 
 
 def main():
-    # handle SIGINT to make the app terminate on CTRL+C
-    # signal.signal(signal.SIGINT, signal.SIG_DFL)
+    # signal.signal(signal.SIGINT, signal.SIG_DFL)    #   handle SIGINT to make the app terminate on CTRL+C
     graph = NodeGraph()
-
     hotkey_path = Path(BASE_PATH, 'hotkeys', 'hotkeys.json')        # set up context menu for the node graph.
     graph.set_context_menu_from_file(hotkey_path, 'graph')
 
     graph.register_nodes([                  # registered example nodes.
-        basic_nodes.BasicNodeA,
-        basic_nodes.BasicNodeB,
-        basic_nodes.CircleNode,
-        basic_nodes.SVGNode,
         custom_ports_node.CustomPortsNode,
-        group_node.MyGroupNode,
         widget_nodes.DropdownMenuNode,
         widget_nodes.TextInputNode,
         widget_nodes.CheckboxNode,
@@ -40,120 +28,101 @@ def main():
     graph_widget.setWindowTitle("Database Editor")
     graph_widget.show()
 
-    # create node with custom text color and disable it.
-    n_basic_a = graph.create_node(
-        'nodes.basic.BasicNodeA', text_color='#feab20')
-    n_basic_a.set_disabled(True)
-
-    # create node with vertial alignment
-    n_basic_a_vertical = graph.create_node(
-        "nodes.basic.BasicNodeA", name="Vertical Node", text_color="#feab20"
-    )
-
-    # adjust layout of node to be vertical
-    n_basic_a_vertical.set_layout_direction(1)
-
-    # create node and set a custom icon.
-    n_basic_b = graph.create_node(
-        'nodes.basic.BasicNodeB', name='custom icon')
-    n_basic_b.set_icon(str(Path(BASE_PATH, 'img', 'star.png')))
-
-    # create node with the custom port shapes.
-    n_custom_ports = graph.create_node(
-        'nodes.custom.ports.CustomPortsNode', name='custom ports')
-
-    # create node with the embedded QLineEdit widget.
-    n_text_input = graph.create_node(
-        'nodes.widget.TextInputNode', name='text node', color='#0a1e20')
-
-    # create node with the embedded QCheckBox widgets.
-    n_checkbox = graph.create_node(
-        'nodes.widget.CheckboxNode', name='checkbox node')
-
-    # create node with the QComboBox widget.
-    n_combo_menu = graph.create_node(
-        'nodes.widget.DropdownMenuNode', name='combobox node')
-
-    # crete node with the circular design.
-    n_circle = graph.create_node(
-        'nodes.basic.CircleNode', name='circle node')
-
-    # crete node with the circular design.
-    n_svg = graph.create_node(
-        'nodes.basic.SVGNode', name='svg node')
-
-    n_svg_file = graph.create_node(
-        'nodes.basic.SVGNode', name='svg file')
-    n_svg_file.set_svg(str(Path(BASE_PATH, 'img', 'cirlce-diamond.svg')))
-
-    n_svg_file_vertical = graph.create_node(
-        'nodes.basic.SVGNode', name='svg file', color='#0a1e20')
-
-    n_svg_file_vertical.set_svg(str(Path(BASE_PATH, 'img', 'cirlce-diamond.svg')))
-    # adjust layout of node to be vertical
-    n_svg_file_vertical.set_layout_direction(1)
-
-    # create group node.
-    n_group = graph.create_node('nodes.group.MyGroupNode')
-
-    # make node connections.
-
-    # (connect nodes using the .set_output method)
-    n_text_input.set_output(0, n_custom_ports.input(0))
-    n_text_input.set_output(0, n_checkbox.input(0))
-    n_text_input.set_output(0, n_combo_menu.input(0))
-    # (connect nodes using the .set_input method)
-    n_group.set_input(0, n_custom_ports.output(1))
-    n_basic_b.set_input(2, n_checkbox.output(0))
-    n_basic_b.set_input(2, n_combo_menu.output(1))
-    # (connect nodes using the .connect_to method from the port object)
-    port = n_basic_a.input(0)
-    port.connect_to(n_basic_b.output(0))
-
-    # auto layout nodes.
     graph.auto_layout_nodes()
 
-    # crate a backdrop node and wrap it around
-    # "custom port node" and "group node".
-    n_backdrop = graph.create_node('Backdrop')
-    n_backdrop.wrap_nodes([n_custom_ports, n_combo_menu])
+    # custom pullout
+    enable_auto_node_creation(graph, db_nodes.DynamicFieldsNode)
 
-    # fit nodes to the viewer.
-    graph.clear_selection()
-    graph.fit_to_selection()
 
-    # adjust layout of node to be vertical (for all nodes).
-    # graph.set_layout_direction(LayoutDirectionEnum.VERTICAL.value)
+def enable_auto_node_creation(graph, node_class_to_create):
+    """
+    Patches the graph viewer to create a new node when a connection
+    is dropped in empty space.
+    """
+    original_mouse_release = graph.viewer().mouseReleaseEvent
 
-    # Custom builtin widgets from NodeGraphQt
-    # ---------------------------------------
+    def custom_mouse_release(event):
+        # --- 1. Detect if we are dragging a connection ---
+        # NodeGraphQt stores the active drag pipe in '_live_pipe'
+        live_pipe = getattr(graph.viewer(), '_LIVE_PIPE', None)
+        source_port_item = getattr(graph.viewer(), '_start_port')
 
-    # create a node properties bin widget.
-    properties_bin = PropertiesBinWidget(node_graph=graph, parent=graph_widget)
-    properties_bin.setWindowFlags(QtCore.Qt.Tool)
+        # --- 2. Check what is under the mouse ---
+        # We need to know if the user released over an existing port
+        items_under_mouse = graph.viewer().items(event.pos())
+        released_on_port = False
 
-    # example show the node properties bin widget when a node is double-clicked.
-    def display_properties_bin(node):
-        if not properties_bin.isVisible():
-            properties_bin.show()
+        # Check if any item under cursor is a PortItem
+        # Note: We check class name to avoid importing internal PortItem class directly
+        for item in items_under_mouse:
+            if type(item).__name__ == 'PortItem':
+                released_on_port = True
+                break
 
-    # wire function to "node_double_clicked" signal.
-    graph.node_double_clicked.connect(display_properties_bin)
+        # --- 3. Execute original behavior ---
+        # This handles the standard connection logic or clearing the pipe
+        original_mouse_release(event)
 
-    # create a nodes tree widget.
-    nodes_tree = NodesTreeWidget(node_graph=graph)
-    nodes_tree.set_category_label('nodeGraphQt.nodes', 'Builtin Nodes')
-    nodes_tree.set_category_label('nodes.custom.ports', 'Custom Port Nodes')
-    nodes_tree.set_category_label('nodes.widget', 'Widget Nodes')
-    nodes_tree.set_category_label('nodes.basic', 'Basic Nodes')
-    nodes_tree.set_category_label('nodes.group', 'Group Nodes')
-    # nodes_tree.show()
+        # --- 4. Custom Logic: Create Node if dropped on empty space ---
+        if source_port_item and not released_on_port:
+            # Calculate scene position for the new node
+            scene_pos = graph.viewer().mapToScene(event.pos())
 
-    # create a node palette widget.
-    nodes_palette = NodesPaletteWidget(node_graph=graph)
-    nodes_palette.set_category_label('nodeGraphQt.nodes', 'Builtin Nodes')
-    nodes_palette.set_category_label('nodes.custom.ports', 'Custom Port Nodes')
-    nodes_palette.set_category_label('nodes.widget', 'Widget Nodes')
-    nodes_palette.set_category_label('nodes.basic', 'Basic Nodes')
-    nodes_palette.set_category_label('nodes.group', 'Group Nodes')
-    # nodes_palette.show()
+            # Find the high-level NodeObject from the low-level PortItem
+            # source_port_item.node is the NodeItem (graphic)
+            # source_port_item.node.id is the unique identifier
+            src_node_id = source_port_item.node.id
+            src_node = graph.get_node_by_id(src_node_id)
+
+            if src_node:
+                src_port_name = source_port_item.name
+                src_port = src_node.get_output(src_port_name) or src_node.get_input(src_port_name)
+
+                # create new node
+                if src_port.type_() == 'out':       # it could be multiple tables, open dialog
+                    valid_tables = [j for j in templates[source_port_item.node.name]['backlink_fk'].values()]
+                    if len(valid_tables) > 1:
+                        dialog = NodeCreationDialog(subset=source_port_item.node.name)
+                        viewer = graph.viewer()
+                        pos = viewer.mapToGlobal(QtGui.QCursor.pos())
+                        dialog.move(pos)
+
+                        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+                            return
+
+                        name = dialog.selected()
+                        if not name:
+                            return
+                    else:
+                        name = valid_tables[0]
+                else:
+                    name = templates[source_port_item.node.name]['foreign_keys'][src_port_name]
+
+                new_node = graph.create_node('nodes.widget.DynamicFieldsNode',
+                                             pos=[scene_pos.x(), scene_pos.y()])
+                new_node.set_spec(name)
+                new_node.set_name(name)
+
+                # Connect them!
+                # Logic: If dragged from Output -> Connect to New Node Input
+                #        If dragged from Input  -> Connect to New Node Output
+                if src_port.type_() == 'out':        # Connect to first available input of new node, which should be PK
+                    if new_node.input_ports():
+                        connect_port = new_node.get_link_port(source_port_item.node.name, source_port_item.name)
+                        if connect_port:
+                            port_index = next((i for i, s in enumerate(new_node.input_ports()) if s.name() == connect_port), 0)
+                            src_port.connect_to(new_node.input_ports()[port_index])
+                            old_pk = source_port_item.node.get_widget(source_port_item.name).get_value()             # get val of connecting entry
+                            new_node.get_widget(connect_port).set_value(old_pk)
+                        else:
+                            src_port.connect_to(new_node.input_ports()[0])
+                elif src_port.type_() == 'in':
+                    # Connect to first available output of new node, which should be primary key
+                    if new_node.output_ports():
+                        new_node.output_ports()[0].connect_to(src_port)
+
+    # Apply the patch
+    graph.viewer().mouseReleaseEvent = custom_mouse_release
+
+with open('resources/db_spec.json', 'r') as f:
+    templates = json.load(f)

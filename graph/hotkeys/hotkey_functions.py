@@ -1,10 +1,12 @@
 # ------------------------------------------------------------------------------
 # menu command functions
 # ------------------------------------------------------------------------------
-from Qt import QtGui, QtWidgets
+from Qt import QtGui, QtWidgets, QtCore
 import json
 from graph.db_node_support import NodeCreationDialog
 from graph.model_positioning import force_forward_spring_graphs
+
+
 def zoom_in(graph):
     """
     Set the node graph to zoom in by 0.1
@@ -294,25 +296,6 @@ def toggle_node_search(graph):
     graph.toggle_node_search()
 
 
-def make_node(graph):
-    """
-    make a new node in the graph
-    """
-    spec = [
-        {'label': 'Name', 'key': 'field_name', 'ports': 'in'},
-        {'label': 'Value', 'key': 'field_value', 'ports': 'out'},
-        {'label': 'Condition', 'key': 'field_cond', 'ports': 'both'},
-        {'label': 'Note', 'key': 'field_note', 'ports': ''},
-    ]
-
-    viewer = graph.viewer()
-    pos = viewer.mapToScene(viewer.mapFromGlobal(QtGui.QCursor.pos()))
-
-    n_text_input = graph.create_node(
-        'nodes.widget.DynamicFieldsNode', name='my ports', color='#0a1e20', pos=[pos.x(), pos.y()])
-    n_text_input.set_spec(spec)
-
-
 def _node_from_graphics_items(items):
     for it in items:
         cur = it
@@ -370,7 +353,7 @@ def install_delete_at_cursor_shortcut(graph):
 
 
 def create_dynamic_node_with_search(graph):
-    dialog = NodeCreationDialog(node_templates)
+    dialog = NodeCreationDialog()
     viewer = graph.viewer()
     pos = viewer.mapToGlobal(QtGui.QCursor.pos())
     dialog.move(pos)
@@ -382,10 +365,9 @@ def create_dynamic_node_with_search(graph):
     if not name:
         return
 
-    spec = node_templates[name]
     scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
     node = graph.create_node('nodes.widget.DynamicFieldsNode', pos=[scene_pos.x(), scene_pos.y()])
-    node.set_spec(spec)
+    node.set_spec(name)
     node.set_name(name)
 
 
@@ -393,10 +375,9 @@ def edit_antiquity_scene(graph):
     views, id_map = force_forward_spring_graphs('antiquity-db.sqlite')
     first_view = views[0]
     for node_info in first_view['nodes']:
-        spec = node_templates[node_info['table_name']]
         node = graph.create_node('nodes.widget.DynamicFieldsNode',
                                  pos=[node_info['pos']['x'], node_info['pos']['y']])
-        node.set_spec(spec)
+        node.set_spec(node_info['table_name'])
         node.set_name(node_info['table_name'])
 
     for edge_info in first_view['edges']:

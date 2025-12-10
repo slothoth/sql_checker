@@ -23,6 +23,7 @@ class BaseDB:
         self.tables = []
         self.setup_table_infos(full_path)
         self.dump_json_form()
+        self.dump_unique_pks(full_path)
 
     def setup_table_infos(self, db_path):
         full_path = f"resources/{db_path}"
@@ -43,6 +44,7 @@ class BaseDB:
             self.table_data[table]['primary_keys'] = [i[1] for i in rows if i[5] == 1]
             self.table_data[table]['primary_texts'] = primary_texts
             self.table_data[table]['secondary_texts'] = secondary_texts
+            columns.sort(key=lambda x: 0 if x in self.table_data[table]['primary_keys'] else 1)
             self.table_data[table]['all_cols'] = columns
             self.table_data[table]['default_values'] = {i[1]: i[4] for i in rows if i[4] is not None}
 
@@ -56,12 +58,42 @@ class BaseDB:
                     if not self.table_data[ref_table].get('backlink_fk', None):
                         self.table_data[ref_table]['backlink_fk'] = {}
                     self.table_data[ref_table]['backlink_fk'][table_col] = table         # for backlinks
+
         conn.close()
 
     def dump_json_form(self):
-        # adjust it so it fits spec
         with open('resources/db_spec.json', 'w') as f:
             f.write(json.dumps(self.table_data))
+
+    def dump_unique_pks(self, db_path):
+        possible_firaxis_pks, double_keys, possible_vals = {}, [], {}
+        full_path = f"resources/{db_path}"
+        conn = sqlite3.connect(full_path)
+        cursor = conn.cursor()
+        for table in self.tables:
+            primary_keys = self.table_data[table]['primary_keys']
+            if len(primary_keys) == 1:
+                pk = primary_keys[0]
+                rows = cursor.execute(f"SELECT DISTINCT {pk} FROM {table}").fetchall()
+                possible_firaxis_pks[table] = [r[0] for r in rows]
+            else:
+                double_keys.append(table)
+
+        for table in self.tables:
+            foreign_keys = self.table_data[table]['foreign_keys']
+            for fk, table_ref in foreign_keys.items():
+                key_possible_vals = possible_firaxis_pks[table_ref]
+                if table not in possible_vals:
+                    possible_vals[table] = {}
+                if fk not in possible_vals[table]:
+                    possible_vals[table][fk] = []
+                possible_vals[table][fk].extend(key_possible_vals)
+
+        for tbl, col_poss_dicts in possible_vals.items():
+            for col in col_poss_dicts:
+                col_poss_dicts[col] = list(set(col_poss_dicts[col]))
+        with open('resources/db_possible_vals.json', 'w') as f:
+            f.write(json.dumps(possible_vals))
 
 
 def name_views_hub(views):
