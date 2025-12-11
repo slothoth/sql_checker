@@ -26,7 +26,7 @@ class DynamicFieldsNode(BaseNode):
 
     def set_spec(self, name):
         self._spec = node_templates[name]
-        self._possible_vals = possible_vals[name]
+        self._possible_vals = possible_vals.get(name, {})
 
         self._initial_fields = list(self._spec.get('primary_texts', []))
         self._extra_fields = list(self._spec.get('secondary_texts', []))
@@ -42,7 +42,7 @@ class DynamicFieldsNode(BaseNode):
                 self.add_combo_menu(
                     name=col,
                     label=col,
-                    items=col_poss_vals,
+                    items=col_poss_vals['vals'],
                     tab='fields'
                 )
             else:
@@ -88,8 +88,6 @@ class DynamicFieldsNode(BaseNode):
         graph = self.graph
         if graph:
             graph.delete_node(self)
-
-
 
 
 with open('resources/db_spec.json', 'r') as f:

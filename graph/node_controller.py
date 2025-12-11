@@ -33,6 +33,12 @@ def main():
     # custom pullout
     enable_auto_node_creation(graph, db_nodes.DynamicFieldsNode)
 
+    def on_nodes_deleted(node_ids):
+        if False:
+            sync_node_b_options(graph)
+    graph.nodes_deleted.connect(on_nodes_deleted)
+    graph.property_changed.connect(on_property_changed)
+
 
 def enable_auto_node_creation(graph, node_class_to_create):
     """
@@ -124,5 +130,61 @@ def enable_auto_node_creation(graph, node_class_to_create):
     # Apply the patch
     graph.viewer().mouseReleaseEvent = custom_mouse_release
 
+
+def sync_node_b_options(graph):
+    valid_options_dict = {}
+
+    all_nodes = graph.all_nodes()
+    chs = templates
+    pck = possible_vals
+    target_nodes = [n for n in all_nodes if n.type_ == 'nodes.widget.DynamicFieldsNode']
+    for node in target_nodes:
+        if node.name() in possible_vals:            # if table contributes to possible vals
+            primary_key_property_list = templates[node.name()]['primary_keys']
+            if len(primary_key_property_list) == 1:
+                val = node.get_property(primary_key_property_list[0])
+                if val:
+                    if node.name() not in valid_options_dict:
+                        valid_options_dict[node.name()] = set()
+                    valid_options_dict[node.name()].add(val)
+
+    # add default vals
+    for tbl_name, new_options_set in valid_options_dict.items():
+        valid_options_dict[tbl_name] = sorted(list(valid_options_dict[tbl_name]))
+        valid_options_dict[tbl_name].extend(possible_vals[tbl_name]['_PK_VALS'])
+
+    fk_ref_tables = {key: val for key, val in possible_vals.items()
+     if any(key_j != '_PK_VALS' and val_j['ref'] in valid_options_dict for key_j, val_j in val.items())}
+    fk_nodes = [n for n in target_nodes if n.name() in fk_ref_tables]
+    for node in fk_nodes:
+        node_info = fk_ref_tables[node.name()]
+        correct_refs = {col: col_info for col, col_info in node_info.items() if col !='_PK_VALS'
+                       and col_info['ref'] in valid_options_dict}
+        # tehcnically could be plural, UnitReplaces
+        for ref_name, col_info in correct_refs.items():
+            combo_widget = node.get_widget(ref_name)
+            if combo_widget:
+                current_val = node.get_property(ref_name)
+                sorted_options = valid_options_dict[col_info['ref']]
+                combo_widget.clear()
+                # 2. Add the new list of items
+                combo_widget.add_items(sorted_options)
+                if current_val in sorted_options:
+                    combo_widget.set_value(current_val)
+
+
+def on_property_changed(node, property_name, property_value):
+    if node.type_ != 'nodes.widget.DynamicFieldsNode':
+        return
+    if property_name == 'name':                 # should only happen on instantiation
+        sync_node_b_options(node.graph)
+    pk_list = templates.get(node.name(), {}).get('primary_keys', {})
+    if len(pk_list) == 1 and pk_list[0] == property_name:
+        sync_node_b_options(node.graph)
+
+
 with open('resources/db_spec.json', 'r') as f:
     templates = json.load(f)
+
+with open('resources/db_possible_vals.json', 'r') as f:
+    possible_vals = json.load(f)

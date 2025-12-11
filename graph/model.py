@@ -84,14 +84,17 @@ class BaseDB:
             for fk, table_ref in foreign_keys.items():
                 key_possible_vals = possible_firaxis_pks[table_ref]
                 if table not in possible_vals:
-                    possible_vals[table] = {}
+                    possible_vals[table] = {'_PK_VALS': possible_firaxis_pks.get(table, [])}
                 if fk not in possible_vals[table]:
-                    possible_vals[table][fk] = []
-                possible_vals[table][fk].extend(key_possible_vals)
+                    possible_vals[table][fk] = {}
+                    possible_vals[table][fk]['vals'] = []
+                    possible_vals[table][fk]['ref'] = table_ref
+                possible_vals[table][fk]['vals'].extend(key_possible_vals)
 
         for tbl, col_poss_dicts in possible_vals.items():
             for col in col_poss_dicts:
-                col_poss_dicts[col] = list(set(col_poss_dicts[col]))
+                if col != '_PK_VALS':
+                    col_poss_dicts[col]['vals'] = sorted(list(set(col_poss_dicts[col]['vals'])))
         with open('resources/db_possible_vals.json', 'w') as f:
             f.write(json.dumps(possible_vals))
 
