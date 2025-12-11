@@ -7,19 +7,16 @@ import logging
 import sys
 import tempfile
 import time
-
 import sqlparse
 
 from xml_handler import read_xml
-
 from gameeffects import game_effects, req_build, req_set_build
 from sql_errors import get_query_details, full_matcher_sql, primary_key_matcher, check_foreign_keys, foreign_key_check, foreign_key_pretty_notify
 
-# I FORGOT HOW i got the original database with all the define definitions and initial types ahhhhhh
-# When I figure out how i did that, I will make a process detailing it, as its outside python.
-# ITS NOT just loading up civ and using the existing empty one in shell. as that misses collections added as types
-# What it ended up being was loading an antiquity civ game, except editing the modinfo for it so the criteria is AGE_EXPLORATION for those entries
-# that arent always (those are needed for shell to start antiquity), then copying the db after it fails to load.
+# FOr getting the DB, its NOT just loading up civ and using the existing empty one in shell. as that misses collections
+# added  as types, What it ended up being was loading an antiquity civ game, except editing the modinfo for it so
+# the criteria is AGE_EXPLORATION for those entries that arent always (those are needed for shell to start antiquity),
+# then copying the db after it fails to load.
 DEBUG_LOGFILE = os.path.expanduser('~/CivVII_backend_debug.log')
 logging.basicConfig(filename=DEBUG_LOGFILE, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
@@ -591,7 +588,7 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 
-def model_run(civ_install, civ_config, workshop, log_queue):
+def model_run(civ_install, civ_config, workshop, log_queue, extra_sql):
     start_time = time.time()
     wrapped_q = NonBlockingQueue(log_queue)
     logging.debug("model_run start civ_install=%s civ_config=%s workshop=%s", civ_install, civ_config, workshop)
@@ -638,5 +635,13 @@ def model_run(civ_install, civ_config, workshop, log_queue):
     wrapped_q.put("Running SQL on Modded files...")
     checker.test_db(sql_statements_mods, modded_short, False)
     wrapped_q.put("Finished running Modded Files")
+    if extra_sql:
+        with open('resources/main.sql', 'r') as f:
+            graph_sql = f.readlines()
+        print(graph_sql)
+        extra_statements = {'graph_main.sql': graph_sql}
+        checker.test_db(extra_statements, ['Graph'], False)
+        wrapped_q.put("Finished running Graph mod")
+
     checker.kill_df()
     wrapped_q.put(f"model_run finished in {time.time()-start_time:.1f}s")

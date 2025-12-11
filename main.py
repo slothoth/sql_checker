@@ -3,7 +3,7 @@ import threading
 import queue
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QTextEdit, QFileDialog, QSizePolicy
+    QTextEdit, QFileDialog, QSizePolicy, QPlainTextEdit
 )
 import os
 from pathlib import Path
@@ -12,10 +12,17 @@ if sys.platform == 'win32':
     import winreg
 
 from model import model_run
-from graph.graph_app import MainWindow as GraphEditorWindow
 from graph.node_controller import main as nodeEditorWindow
+from syntax_highlighter import LogHighlighter
 
 class App(QWidget):
+    entry1 = None
+    entry2 = None
+    entry3 = None
+    run_button = None
+    planner_button = None
+    log_display = None
+    log_highlighter = None
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Database Analyzer")
@@ -64,11 +71,11 @@ class App(QWidget):
         # Log Output
         log_label = QLabel("Log Output:")
         main_layout.addWidget(log_label)
-        self.log_display = QTextEdit()
+        self.log_display = QPlainTextEdit()
         self.log_display.setReadOnly(True)
-        self.log_display.setStyleSheet("background-color:#ffffff; color:#000000; font-family:Courier New;")
         self.log_display.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        main_layout.addWidget(self.log_display)
+        self.log_highlighter = LogHighlighter(self.log_display.document())
+        main_layout.addWidget(self.log_display, stretch=1)
         self.setLayout(main_layout)
 
     def create_file_row(self, label_text, default_value="", browse_func=None):
@@ -102,12 +109,15 @@ class App(QWidget):
             self.folder_path_civ_install = path
             self.layout().itemAt(4).itemAt(1).widget().setText(path)
 
-    def start_analysis(self):
+    def start_analysis(self, extra_sql=None):
         civ_install = self.folder_path_civ_install
         civ_config = self.folder_path_civ_config
         workshop = self.folder_path_workshop_input
         self.run_button.setEnabled(False)
-        threading.Thread(target=model_run, args=(civ_install, civ_config, workshop, self.log_queue), daemon=True).start()
+        if extra_sql is not None:
+            threading.Thread(target=model_run, args=(civ_install, civ_config, workshop, self.log_queue, True), daemon=True).start()
+        else:
+            threading.Thread(target=model_run, args=(civ_install, civ_config, workshop, self.log_queue), daemon=True).start()
 
     def timerEvent(self, event):
         try:
@@ -116,14 +126,19 @@ class App(QWidget):
                 if message is None:
                     self.run_button.setEnabled(True)
                 else:
-                    self.log_display.append(str(message))
+                    # ensure plain text insertion so the highlighter can run
+                    self.log_display.appendPlainText(str(message))
+                    # keep view scrolled to bottom
+                    cursor = self.log_display.textCursor()
+                    cursor.movePosition(cursor.End)
+                    self.log_display.setTextCursor(cursor)
         except queue.Empty:
             pass
 
     def popout_graph_planner(self):
         if self.graph_editor_window is None:
             # self.graph_editor_window = GraphEditorWindow()
-            self.graph_editor_window = nodeEditorWindow()
+            self.graph_editor_window = nodeEditorWindow(self)
         # self.graph_editor_window.show()
         # self.graph_editor_window.raise_()
         # self.graph_editor_window.activateWindow()

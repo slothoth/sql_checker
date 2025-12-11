@@ -1,5 +1,7 @@
 import sqlite3
-import json
+from db_spec_singleton import ResourceLoader
+
+db_spec = ResourceLoader()
 
 
 class GraphModel:
@@ -22,7 +24,7 @@ class BaseDB:
         self.table_data = {}
         self.tables = []
         self.setup_table_infos(full_path)
-        self.dump_json_form()
+        db_spec.update_node_templates(self.table_data)
         self.dump_unique_pks(full_path)
 
     def setup_table_infos(self, db_path):
@@ -41,7 +43,7 @@ class BaseDB:
             primary_texts = [i for idx, i in enumerate(columns) if notnulls[idx] == 1 and defaults[idx] is None]
             secondary_texts = [i for i in columns if i not in primary_texts]
             self.table_data[table] = {}
-            self.table_data[table]['primary_keys'] = [i[1] for i in rows if i[5] == 1]
+            self.table_data[table]['primary_keys'] = [i[1] for i in rows if i[5] != 0]
             self.table_data[table]['primary_texts'] = primary_texts
             self.table_data[table]['secondary_texts'] = secondary_texts
             columns.sort(key=lambda x: 0 if x in self.table_data[table]['primary_keys'] else 1)
@@ -61,9 +63,6 @@ class BaseDB:
 
         conn.close()
 
-    def dump_json_form(self):
-        with open('resources/db_spec.json', 'w') as f:
-            f.write(json.dumps(self.table_data))
 
     def dump_unique_pks(self, db_path):
         possible_firaxis_pks, double_keys, possible_vals = {}, [], {}
@@ -82,6 +81,8 @@ class BaseDB:
         for table in self.tables:
             foreign_keys = self.table_data[table]['foreign_keys']
             for fk, table_ref in foreign_keys.items():
+                if table_ref == 'Types':        # SKIP Types reference! Makes huge possible vals
+                    continue
                 key_possible_vals = possible_firaxis_pks[table_ref]
                 if table not in possible_vals:
                     possible_vals[table] = {'_PK_VALS': possible_firaxis_pks.get(table, [])}
@@ -95,8 +96,8 @@ class BaseDB:
             for col in col_poss_dicts:
                 if col != '_PK_VALS':
                     col_poss_dicts[col]['vals'] = sorted(list(set(col_poss_dicts[col]['vals'])))
-        with open('resources/db_possible_vals.json', 'w') as f:
-            f.write(json.dumps(possible_vals))
+        db_spec.update_possible_vals(possible_vals)
+
 
 
 def name_views_hub(views):

@@ -1,17 +1,22 @@
 from pathlib import Path
 from Qt import QtGui, QtWidgets
 from NodeGraphQt import NodeGraph
-import json
 
 from graph.db_node_support import NodeCreationDialog
-from graph.nodes import custom_ports_node, widget_nodes, db_nodes
+from graph.nodes import custom_ports_node, widget_nodes
+from graph.nodes.dynamic_nodes import generate_tables
+from graph.db_spec_singleton import ResourceLoader
 
+db_spec = ResourceLoader()
 BASE_PATH = Path(__file__).parent.resolve()
 
+# bodge job for blocking recursion
+recently_changed = {}
 
-def main():
-    # signal.signal(signal.SIGINT, signal.SIG_DFL)    #   handle SIGINT to make the app terminate on CTRL+C
+
+def main(main_app_window=None):
     graph = NodeGraph()
+    graph.main_window = main_app_window         # needed to trigger run analysis
     hotkey_path = Path(BASE_PATH, 'hotkeys', 'hotkeys.json')        # set up context menu for the node graph.
     graph.set_context_menu_from_file(hotkey_path, 'graph')
 
@@ -20,8 +25,10 @@ def main():
         widget_nodes.DropdownMenuNode,
         widget_nodes.TextInputNode,
         widget_nodes.CheckboxNode,
-        db_nodes.DynamicFieldsNode
     ])
+    # custom SQL nodes
+    table_nodes_list = generate_tables()
+    graph.register_nodes(table_nodes_list)
 
     graph_widget = graph.widget             # show the node graph widget.
     graph_widget.resize(1100, 800)
@@ -31,7 +38,7 @@ def main():
     graph.auto_layout_nodes()
 
     # custom pullout
-    enable_auto_node_creation(graph, db_nodes.DynamicFieldsNode)
+    enable_auto_node_creation(graph)
 
     def on_nodes_deleted(node_ids):
         if False:
@@ -39,8 +46,12 @@ def main():
     graph.nodes_deleted.connect(on_nodes_deleted)
     graph.property_changed.connect(on_property_changed)
 
+    # 2. Connect the connection handler
+    viewer = graph.viewer()
+    viewer.connection_changed.connect(on_connection_changed)
 
-def enable_auto_node_creation(graph, node_class_to_create):
+
+def enable_auto_node_creation(graph):
     """
     Patches the graph viewer to create a new node when a connection
     is dropped in empty space.
@@ -58,35 +69,25 @@ def enable_auto_node_creation(graph, node_class_to_create):
         items_under_mouse = graph.viewer().items(event.pos())
         released_on_port = False
 
-        # Check if any item under cursor is a PortItem
-        # Note: We check class name to avoid importing internal PortItem class directly
         for item in items_under_mouse:
             if type(item).__name__ == 'PortItem':
                 released_on_port = True
                 break
 
-        # --- 3. Execute original behavior ---
-        # This handles the standard connection logic or clearing the pipe
         original_mouse_release(event)
 
-        # --- 4. Custom Logic: Create Node if dropped on empty space ---
+        # Create Node if dropped on empty space
         if source_port_item and not released_on_port:
-            # Calculate scene position for the new node
             scene_pos = graph.viewer().mapToScene(event.pos())
-
-            # Find the high-level NodeObject from the low-level PortItem
-            # source_port_item.node is the NodeItem (graphic)
-            # source_port_item.node.id is the unique identifier
             src_node_id = source_port_item.node.id
             src_node = graph.get_node_by_id(src_node_id)
-
             if src_node:
                 src_port_name = source_port_item.name
                 src_port = src_node.get_output(src_port_name) or src_node.get_input(src_port_name)
 
                 # create new node
                 if src_port.type_() == 'out':       # it could be multiple tables, open dialog
-                    valid_tables = [j for j in templates[source_port_item.node.name]['backlink_fk'].values()]
+                    valid_tables = [j for j in db_spec.node_templates[source_port_item.node.name]['backlink_fk'].values()]
                     if len(valid_tables) > 1:
                         dialog = NodeCreationDialog(subset=source_port_item.node.name)
                         viewer = graph.viewer()
@@ -102,16 +103,13 @@ def enable_auto_node_creation(graph, node_class_to_create):
                     else:
                         name = valid_tables[0]
                 else:
-                    name = templates[source_port_item.node.name]['foreign_keys'][src_port_name]
+                    name = db_spec.node_templates[source_port_item.node.name]['foreign_keys'][src_port_name]
 
-                new_node = graph.create_node('nodes.widget.DynamicFieldsNode',
+                class_name = f"{name.title().replace('_', '')}Node"
+                new_node = graph.create_node(f'db.table.{name.lower()}.{class_name}',
                                              pos=[scene_pos.x(), scene_pos.y()])
-                new_node.set_spec(name)
-                new_node.set_name(name)
 
-                # Connect them!
-                # Logic: If dragged from Output -> Connect to New Node Input
-                #        If dragged from Input  -> Connect to New Node Output
+                # Connect nodes
                 if src_port.type_() == 'out':        # Connect to first available input of new node, which should be PK
                     if new_node.input_ports():
                         connect_port = new_node.get_link_port(source_port_item.node.name, source_port_item.name)
@@ -132,15 +130,14 @@ def enable_auto_node_creation(graph, node_class_to_create):
 
 
 def sync_node_b_options(graph):
+    print('syncing nodes...')
     valid_options_dict = {}
 
     all_nodes = graph.all_nodes()
-    chs = templates
-    pck = possible_vals
-    target_nodes = [n for n in all_nodes if n.type_ == 'nodes.widget.DynamicFieldsNode']
+    target_nodes = [n for n in all_nodes if 'db.table.' in n.type_]
     for node in target_nodes:
-        if node.name() in possible_vals:            # if table contributes to possible vals
-            primary_key_property_list = templates[node.name()]['primary_keys']
+        if node.name() in db_spec.possible_vals:            # if table contributes to possible vals
+            primary_key_property_list = db_spec.node_templates[node.name()]['primary_keys']
             if len(primary_key_property_list) == 1:
                 val = node.get_property(primary_key_property_list[0])
                 if val:
@@ -151,9 +148,9 @@ def sync_node_b_options(graph):
     # add default vals
     for tbl_name, new_options_set in valid_options_dict.items():
         valid_options_dict[tbl_name] = sorted(list(valid_options_dict[tbl_name]))
-        valid_options_dict[tbl_name].extend(possible_vals[tbl_name]['_PK_VALS'])
+        valid_options_dict[tbl_name].extend(db_spec.possible_vals[tbl_name]['_PK_VALS'])
 
-    fk_ref_tables = {key: val for key, val in possible_vals.items()
+    fk_ref_tables = {key: val for key, val in db_spec.possible_vals.items()
      if any(key_j != '_PK_VALS' and val_j['ref'] in valid_options_dict for key_j, val_j in val.items())}
     fk_nodes = [n for n in target_nodes if n.name() in fk_ref_tables]
     for node in fk_nodes:
@@ -174,17 +171,57 @@ def sync_node_b_options(graph):
 
 
 def on_property_changed(node, property_name, property_value):
-    if node.type_ != 'nodes.widget.DynamicFieldsNode':
+    print('property changed')
+    if 'db.table' not in node.type_:
         return
-    if property_name == 'name':                 # should only happen on instantiation
-        sync_node_b_options(node.graph)
-    pk_list = templates.get(node.name(), {}).get('primary_keys', {})
+    print('and the property belongs sql table')
+    pk_list = db_spec.node_templates.get(node.name(), {}).get('primary_keys', {})
     if len(pk_list) == 1 and pk_list[0] == property_name:
         sync_node_b_options(node.graph)
 
+    if recently_changed.get(node.name(),  {}).get(property_name, {}):       # this section handles updating connected port
+        recently_changed[node.name()][property_name] = False
+        return
+    else:
+        if node.name() not in recently_changed:
+            recently_changed[node.name()] = {}
+        recently_changed[node.name()][property_name] = True
+        matching_ports = [p for p in list(node.inputs().values()) + list(node.outputs().values()) if p.name() == property_name]
+        for matching_port in matching_ports:
+            is_connected = bool(matching_port.connected_ports())
+            if is_connected:
+                propagate_value_by_port_name(node, property_name, node.graph)
+        recently_changed[node.name()][property_name] = False
 
-with open('resources/db_spec.json', 'r') as f:
-    templates = json.load(f)
 
-with open('resources/db_possible_vals.json', 'r') as f:
-    possible_vals = json.load(f)
+def propagate_value_by_port_name(source_node, prop_name, graph):
+    prop_value = source_node.get_property(prop_name)
+    all_ports = list(source_node.inputs().values()) + list(source_node.outputs().values())
+    for port in all_ports:
+        if port.name() == prop_name:
+            for connected_port in port.connected_ports():
+                target_prop_name = connected_port.name()
+                target_node = connected_port.node()
+                if target_node.has_property(target_prop_name):
+                    # we need to make sure if the target node is a comboBox, we first add the option
+                    widget = target_node.get_widget(target_prop_name)
+                    if widget.__class__.__name__ == 'NodeComboBox':
+                        widget.add_items([prop_value])
+                    target_node.set_property(target_prop_name, prop_value)
+
+
+def on_connection_changed(disconnected_ports, connected_ports):
+    for port1, port2 in connected_ports:
+        prop_name_1 = port1.name()
+        prop_name_2 = port2.name()
+        node1 = port1.node()
+        node2 = port2.node()
+
+        if node1.has_property(prop_name_1) and node2.has_property(prop_name_2):
+            winning_value = node1.get_property(prop_name_1)
+            qt_node2 = node2.get_widget_layout()
+            if qt_node2:
+                qt_node2.blockSignals(True)
+            node2.set_property(prop_name_2, winning_value)
+            if qt_node2:
+                qt_node2.blockSignals(False)

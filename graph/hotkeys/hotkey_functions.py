@@ -2,10 +2,12 @@
 # menu command functions
 # ------------------------------------------------------------------------------
 from Qt import QtGui, QtWidgets, QtCore
-import json
 from graph.db_node_support import NodeCreationDialog
 from graph.model_positioning import force_forward_spring_graphs
+from graph.transform_json_to_sql import transform_json
+from graph.db_spec_singleton import ResourceLoader
 
+db_spec = ResourceLoader()
 
 def zoom_in(graph):
     """
@@ -76,6 +78,22 @@ def save_session(graph):
         viewer.message_dialog(msg, title='Session Saved')
     else:
         save_session_as(graph)
+
+
+def test_session(graph):
+    """
+    Tests the given graph against the database by converting it to SQL. During this process,
+    we save it to serialise to JSON, so we can use that structure to build SQL form.
+    """
+    current = graph.current_session()
+    if not current:
+        current = 'resources/graph.json'
+
+    graph.save_session(current)
+    transform_json(current, graph.main_window)
+    msg = 'Running Test in main Window'.format(current)
+    viewer = graph.viewer()
+    viewer.message_dialog(msg, title='Running Test')
 
 
 def save_session_as(graph):
@@ -366,9 +384,9 @@ def create_dynamic_node_with_search(graph):
         return
 
     scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
-    node = graph.create_node('nodes.widget.DynamicFieldsNode', pos=[scene_pos.x(), scene_pos.y()])
-    node.set_spec(name)
-    node.set_name(name)
+
+    class_name = f"{name.title().replace('_', '')}Node"
+    node = graph.create_node(f'db.table.{name.lower()}.{class_name}', pos=[scene_pos.x(), scene_pos.y()])
 
 
 def edit_antiquity_scene(graph):
@@ -383,11 +401,9 @@ def edit_antiquity_scene(graph):
     for edge_info in first_view['edges']:
         start_table = id_map[edge_info['start_node_id']]
         end_table = id_map[edge_info['end_node_id']]
-        pk = node_templates[start_table]
+        pk = db_spec.node_templates[start_table]
 
     # make edges from graphs.
     # convert views (old style) into graphs
 
 
-with open('resources/db_spec.json', 'r') as f:
-    node_templates = json.load(f)

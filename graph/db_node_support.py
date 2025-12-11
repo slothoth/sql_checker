@@ -1,15 +1,18 @@
-from Qt import QtWidgets, QtCore, QtGui
-import json
+from Qt import QtWidgets, QtCore
+from graph.db_spec_singleton import ResourceLoader
+
+db_spec = ResourceLoader()
+subsets = {}
 
 
 class NodeCreationDialog(QtWidgets.QDialog):
     def __init__(self, subset=None):
         super().__init__()
         if subset is None:
-            self.templates = templates
+            self.templates = db_spec.node_templates
         else:
-            valid_tables = [j for j in templates[subset]['backlink_fk'].values()]
-            self.templates = {key: val for key, val in templates.items() if key in valid_tables}
+            valid_tables = [j for j in db_spec.node_templates[subset]['backlink_fk'].values()]
+            self.templates = {key: val for key, val in db_spec.node_templates.items() if key in valid_tables}
 
         self.setWindowFlags(QtCore.Qt.Popup)
         self.setMinimumWidth(300)
@@ -44,9 +47,3 @@ class NodeCreationDialog(QtWidgets.QDialog):
     def selected(self):
         item = self.list.currentItem()
         return item.text() if item else None
-
-
-with open('resources/db_spec.json', 'r') as f:
-    templates = json.load(f)
-
-subsets = {}

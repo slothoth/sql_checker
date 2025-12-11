@@ -61,6 +61,13 @@
       },
       {
         "type":"command",
+        "label":"Test...",
+        "file":"./hotkey_functions.py",
+        "function_name":"test_session",
+        "shortcut":"Shift+T"
+      },
+      {
+        "type":"command",
         "label":"Exit",
         "file":"./hotkey_functions.py",
         "function_name":"quit_qt",
