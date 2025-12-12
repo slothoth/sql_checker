@@ -1,3 +1,0 @@
-([('CivVIIModDBDebugger',
-   '/Users/samuelmayo/git/sql_checker/dist/CivVIIModDBDebugger',
-   'EXECUTABLE')],)
