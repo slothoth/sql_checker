@@ -1,15 +1,14 @@
 from pathlib import Path
 from Qt import QtGui, QtWidgets
 from NodeGraphQt import NodeGraph
+import sys, os, json
 
 from graph.db_node_support import NodeCreationDialog
-from graph.nodes import custom_ports_node, widget_nodes
 from graph.nodes.dynamic_nodes import generate_tables
 from graph.db_spec_singleton import ResourceLoader
+from graph.set_hotkeys import set_hotkeys
 
 db_spec = ResourceLoader()
-BASE_PATH = Path(__file__).parent.resolve()
-
 # bodge job for blocking recursion
 recently_changed = {}
 
@@ -17,15 +16,8 @@ recently_changed = {}
 def main(main_app_window=None):
     graph = NodeGraph()
     graph.main_window = main_app_window         # needed to trigger run analysis
-    hotkey_path = Path(BASE_PATH, 'hotkeys', 'hotkeys.json')        # set up context menu for the node graph.
-    graph.set_context_menu_from_file(hotkey_path, 'graph')
+    set_hotkeys(graph.get_context_menu('graph'))
 
-    graph.register_nodes([                  # registered example nodes.
-        custom_ports_node.CustomPortsNode,
-        widget_nodes.DropdownMenuNode,
-        widget_nodes.TextInputNode,
-        widget_nodes.CheckboxNode,
-    ])
     # custom SQL nodes
     table_nodes_list = generate_tables()
     graph.register_nodes(table_nodes_list)

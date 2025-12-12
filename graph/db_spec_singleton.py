@@ -1,5 +1,7 @@
 import json
 from threading import Lock
+import os
+import sys
 
 
 class ResourceLoader:
@@ -19,8 +21,8 @@ class ResourceLoader:
 
     def _load_resources(self):
         self._files = {
-            'node_templates': 'resources/db_spec.json',
-            'possible_vals': 'resources/db_possible_vals.json'
+            'node_templates': self.resource_path("resources/db_spec.json"),
+            'possible_vals': self.resource_path('resources/db_possible_vals.json')
         }
         self.node_templates = self._read_file(self._files['node_templates'])
         self.possible_vals = self._read_file(self._files['possible_vals'])
@@ -43,3 +45,7 @@ class ResourceLoader:
         self.possible_vals = data
         self._write_file(self._files['possible_vals'], data)
 
+    @staticmethod
+    def resource_path(relative_path):
+        base_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
+        return os.path.join(base_path, relative_path)

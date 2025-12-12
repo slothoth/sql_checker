@@ -2,3 +2,7 @@
 .idea/*
 *.sqlite
 *.log
+/dist/*
+/build/*
+/resources/graph.json
+/resources/main.sql

@@ -3,7 +3,7 @@ import threading
 import queue
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QTextEdit, QFileDialog, QSizePolicy, QPlainTextEdit
+    QFileDialog, QSizePolicy, QPlainTextEdit
 )
 import os
 from pathlib import Path
@@ -14,6 +14,7 @@ if sys.platform == 'win32':
 from model import model_run
 from graph.node_controller import main as nodeEditorWindow
 from syntax_highlighter import LogHighlighter
+
 
 class App(QWidget):
     entry1 = None
