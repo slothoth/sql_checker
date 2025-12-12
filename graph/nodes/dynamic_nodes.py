@@ -1,5 +1,6 @@
 from NodeGraphQt import BaseNode
 from ..db_spec_singleton import ResourceLoader
+from Qt import QtCore, QtGui
 
 db_spec = ResourceLoader()
 
@@ -40,6 +41,43 @@ class DynamicNode(BaseNode):
             graph.delete_node(self)
 
 
+def draw_square_port(painter, rect, info):
+    """
+    Custom paint function for drawing a Square shaped port.
+
+    Args:
+        painter (QtGui.QPainter): painter object.
+        rect (QtCore.QRectF): port rect used to describe parameters
+                              needed to draw.
+        info (dict): information describing the ports current state.
+            {
+                'port_type': 'in',
+                'color': (0, 0, 0),
+                'border_color': (255, 255, 255),
+                'multi_connection': False,
+                'connected': False,
+                'hovered': False,
+            }
+    """
+    painter.save()
+    if info['hovered']:                         # mouse over port color.
+        color = QtGui.QColor(14, 45, 59)
+        border_color = QtGui.QColor(136, 255, 35, 255)
+    elif info['connected']:                     # port connected color.
+        color = QtGui.QColor(195, 60, 60)
+        border_color = QtGui.QColor(200, 130, 70)
+    else:                                       # default port color
+        color = QtGui.QColor(*info['color'])
+        border_color = QtGui.QColor(*info['border_color'])
+
+    pen = QtGui.QPen(border_color, 1.8)
+    pen.setJoinStyle(QtCore.Qt.MiterJoin)
+    painter.setPen(pen)
+    painter.setBrush(color)
+    painter.drawRect(rect)
+    painter.restore()
+
+
 def create_table_node_class(table_name, spec):
     class_name = f"{table_name.title().replace('_', '')}Node"
 
@@ -58,7 +96,10 @@ def create_table_node_class(table_name, spec):
             default_val = spec.get("default_values", {}).get(col, '')
             fk_table = spec.get("foreign_keys", {}).get(col, None)
             if fk_table is not None:
-                self.add_input(col)
+                if col in spec['primary_texts']:            # mandatory FK
+                    self.add_input(col)
+                else:
+                    self.add_input(col, painter_func=draw_square_port)
 
             col_poss_vals = self._possible_vals.get(col, None)
             if col_poss_vals is not None:
