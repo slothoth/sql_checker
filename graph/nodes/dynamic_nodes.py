@@ -1,6 +1,6 @@
 from NodeGraphQt import BaseNode, NodeBaseWidget
 from NodeGraphQt.constants import Z_VAL_NODE_WIDGET
-from PyQt5 import QtWidgets
+from PySide6 import QtWidgets
 
 from ..db_node_support import SearchListDialog
 from ..db_spec_singleton import ResourceLoader
@@ -128,7 +128,7 @@ def create_table_node_class(table_name, spec):
                     self.add_input(col, painter_func=draw_square_port)
 
             col_poss_vals = self._possible_vals.get(col, None)
-            if col in spec['mined_bools']:
+            if col in spec.get('mined_bools', {}):
                 default_on = int(spec.get('default_values', {}).get(col, '0')) == 1
                 self.add_checkbox(col, label=col, state=default_on)
             elif col_poss_vals is not None:

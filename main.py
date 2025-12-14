@@ -1,7 +1,7 @@
 import sys
 import threading
 import queue
-from PyQt5.QtWidgets import (
+from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QFileDialog, QSizePolicy, QPlainTextEdit
 )
@@ -12,7 +12,7 @@ if sys.platform == 'win32':
     import winreg
 
 from model import model_run
-from graph.node_controller import main as nodeEditorWindow
+from graph.node_controller import nodeEditorWindow
 from syntax_highlighter import LogHighlighter
 
 
@@ -131,7 +131,7 @@ class App(QWidget):
                     self.log_display.appendPlainText(str(message))
                     # keep view scrolled to bottom
                     cursor = self.log_display.textCursor()
-                    cursor.movePosition(cursor.End)
+                    # cursor.movePosition(cursor.End)                 # TODO cursor .end fails on Pyside6
                     self.log_display.setTextCursor(cursor)
         except queue.Empty:
             pass
@@ -183,8 +183,7 @@ def find_workshop():
 def find_civ_config():
     if sys.platform == 'win32':
         local_appdata = os.getenv('LOCALAPPDATA')
-        civ_install = f"{local_appdata}\Firaxis Games\Sid Meier's Civilization VII"
-        print(civ_install)
+        civ_install = f"{local_appdata}/Firaxis Games/Sid Meier's Civilization VII"
     elif sys.platform == 'darwin':
         user_home = Path.home()
         civ_install = str(user_home / "Library" / "Application Support" / "Civilization VII")
@@ -197,4 +196,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = App()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())

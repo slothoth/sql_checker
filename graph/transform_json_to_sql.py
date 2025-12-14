@@ -18,6 +18,9 @@ def transform_json(json_file):
         columns = [key for key in columns_dict.keys()]
         values = [val for val in columns_dict.values()]
 
+        # transform bools into 0 or 1
+        values = ['1' if isinstance(val, bool) and val else val for val in values]
+        values = ['0' if isinstance(val, bool) and not val else val for val in values]
         # transform '' to NULL?
         values = ['NULL' if val == '' else val for val in values]
         # get rid of weird double quotes like '"NO_RESOURCECLASS"'

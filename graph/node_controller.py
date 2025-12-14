@@ -1,4 +1,5 @@
-from Qt import QtGui, QtWidgets
+import uuid
+from PySide6 import QtGui, QtWidgets
 from NodeGraphQt import NodeGraph
 
 from graph.db_node_support import NodeCreationDialog
@@ -11,9 +12,18 @@ db_spec = ResourceLoader()
 recently_changed = {}
 
 
-def main(main_app_window=None):
+def nodeEditorWindow(main_app_window=None):
     graph = NodeGraph()
     graph.main_window = main_app_window         # needed to trigger run analysis
+    mod_uuid = 'SQL_GUI_' + str(uuid.uuid4().hex)
+    graph.setProperty('meta', {
+        'Mod Name': 'SQL_GUI_Mod',
+        'Mod Description': "A Mod built with Slothoths SQL GUI. They haven't customised their Description!",
+        'Mod Author': 'Slothoth Mod GUI',
+        'Mod UUID': mod_uuid,
+        'Mod Action': 'always_slothoth_mod_gui',
+        'Age': 'AGE_ANTIQUITY',
+    })
     set_hotkeys(graph.get_context_menu('graph'))
 
     # custom SQL nodes

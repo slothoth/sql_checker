@@ -5,6 +5,7 @@ from graph.db_node_support import NodeCreationDialog
 from graph.model_positioning import force_forward_spring_graphs
 from graph.transform_json_to_sql import transform_json, start_analysis
 from graph.db_spec_singleton import ResourceLoader
+from graph.windows import MetadataDialog
 
 db_spec = ResourceLoader()
 
@@ -435,6 +436,14 @@ def test_session(graph):
     viewer.message_dialog(msg, title='Running Test')
 
 
+criteria_names = {
+    'ALWAYS': 'always',
+    'AGE_ANTIQUITY': 'antiquity-age-current',
+    'AGE_EXPLORATION': 'exploration-age-current',
+    'AGE_MODERN': 'modern-age-current'
+}
+
+
 def save_session_to_mod(graph, parent=None):
     """
     Saves the session, converts to SQL, and packages into a new folder with a template .modinfo
@@ -466,11 +475,14 @@ def save_session_to_mod(graph, parent=None):
         if not base_dir:
             return
 
-    mod_uuid = 'SQL_GUI-' + str(uuid.uuid4())        # default vals
-    mod_name = 'SQL_GUI_Mod'        #
-    mod_description = "A Mod built with Slothoths SQL GUI. They haven't customised their Description!"
-    mod_author = 'Slothoth Mod GUI'
-    mod_action_id = 'always_slothoth_mod_gui'           # really dont want this default, makes modding.log pain
+    meta_info = graph.property('meta')
+    mod_name = meta_info['Mod Name']
+    mod_description = meta_info['Mod Description']
+    mod_author = meta_info['Mod Author']
+    mod_uuid = meta_info['Mod UUID']
+    mod_action_id = meta_info['Mod Action']
+    mod_age = meta_info['Age']
+    mod_age_criteria = criteria_names[mod_age]
     target = os.path.join(base_dir, mod_name)
 
     with open('resources/template.modinfo', 'r') as f:
@@ -482,9 +494,20 @@ def save_session_to_mod(graph, parent=None):
     template = template.replace("$MOD_DESCRIPTION$", mod_description)
     template = template.replace("$YOUR_NAME$", mod_author)
     template = template.replace("$actionID$", mod_action_id)
+    template = template.replace("$actionCriteria$", mod_age_criteria)
     os.makedirs(target, exist_ok=True)
 
     shutil.copy('resources/main.sql', os.path.join(target, "main.sql"))
 
     with open(os.path.join(target, f"{mod_name}.modinfo"), "w", encoding="utf-8") as f:
         f.write(template)
+
+
+def open_metadata_dialog(graph, parent=None):
+    dialog = MetadataDialog(graph, graph.viewer())
+    dialog.type_combo.addItems(["AGE_ANTIQUITY", "AGE_EXPLORATION", "AGE_MODERN"])
+
+    if dialog.exec_() != QtWidgets.QDialog.Accepted:
+        return None
+
+    return dialog.values()

@@ -1,4 +1,4 @@
-from graph.node_controller import main as nodeEditorWindow
+from graph.node_controller import nodeEditorWindow
 from PyQt5.QtWidgets import QApplication
 import sys
 
