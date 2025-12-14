@@ -1,9 +1,9 @@
 from Qt import QtGui, QtWidgets, QtCore
-import sys, os, json
+import sys, os, json, shutil, uuid
 
 from graph.db_node_support import NodeCreationDialog
 from graph.model_positioning import force_forward_spring_graphs
-from graph.transform_json_to_sql import transform_json
+from graph.transform_json_to_sql import transform_json, start_analysis
 from graph.db_spec_singleton import ResourceLoader
 
 db_spec = ResourceLoader()
@@ -105,22 +105,6 @@ def save_session(graph):
         viewer.message_dialog(msg, title='Session Saved')
     else:
         save_session_as(graph)
-
-
-def test_session(graph):
-    """
-    Tests the given graph against the database by converting it to SQL. During this process,
-    we save it to serialise to JSON, so we can use that structure to build SQL form.
-    """
-    current = graph.current_session()
-    if not current:
-        current = 'resources/graph.json'
-
-    graph.save_session(current)
-    transform_json(current, graph.main_window)
-    msg = 'Running Test in main Window'.format(current)
-    viewer = graph.viewer()
-    viewer.message_dialog(msg, title='Running Test')
 
 
 def save_session_as(graph):
@@ -434,6 +418,73 @@ def edit_antiquity_scene(graph):
     # convert views (old style) into graphs
 
 
+def test_session(graph):
+    """
+    Tests the given graph against the database by converting it to SQL. During this process,
+    we save it to serialise to JSON, so we can use that structure to build SQL form.
+    """
+    current = graph.current_session()
+    if not current:
+        current = 'resources/graph.json'
+
+    graph.save_session(current)
+    transform_json(current)
+    start_analysis(graph.main_window)
+    msg = 'Running Test in main Window'.format(current)
+    viewer = graph.viewer()
+    viewer.message_dialog(msg, title='Running Test')
 
 
+def save_session_to_mod(graph, parent=None):
+    """
+    Saves the session, converts to SQL, and packages into a new folder with a template .modinfo
+    with a unique uuid? For this i assume we will need to
+    """
+    current = graph.current_session()
+    if not current:
+        current = 'resources/graph.json'
 
+    graph.save_session(current)
+    transform_json(current)
+
+    # if local mod dir exists, use that
+    base_home = os.path.expanduser("~")
+    mac_path = f'{base_home}/Library/Application Support/Civilization VII/Mods'
+    win_path = f'{base_home}/Library/Application Support/Civilization VII/Mods' # TODO get win path
+
+    if os.path.exists(mac_path):
+        base_dir = mac_path
+    elif os.path.exists(win_path):
+        base_dir = win_path
+    else:
+        base_dir = QtWidgets.QFileDialog.getExistingDirectory(
+            parent,
+            "Select Save Location",
+            "",
+            QtWidgets.QFileDialog.ShowDirsOnly
+        )
+        if not base_dir:
+            return
+
+    mod_uuid = 'SQL_GUI-' + str(uuid.uuid4())        # default vals
+    mod_name = 'SQL_GUI_Mod'        #
+    mod_description = "A Mod built with Slothoths SQL GUI. They haven't customised their Description!"
+    mod_author = 'Slothoth Mod GUI'
+    mod_action_id = 'always_slothoth_mod_gui'           # really dont want this default, makes modding.log pain
+    target = os.path.join(base_dir, mod_name)
+
+    with open('resources/template.modinfo', 'r') as f:
+        template = f.read()
+
+    # add custom stuff
+    template = template.replace('$UUID$', mod_uuid)
+    template = template.replace('$MODNAME$', mod_name)
+    template = template.replace("$MOD_DESCRIPTION$", mod_description)
+    template = template.replace("$YOUR_NAME$", mod_author)
+    template = template.replace("$actionID$", mod_action_id)
+    os.makedirs(target, exist_ok=True)
+
+    shutil.copy('resources/main.sql', os.path.join(target, "main.sql"))
+
+    with open(os.path.join(target, f"{mod_name}.modinfo"), "w", encoding="utf-8") as f:
+        f.write(template)

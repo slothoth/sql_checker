@@ -1,7 +1,5 @@
-from pathlib import Path
 from Qt import QtGui, QtWidgets
 from NodeGraphQt import NodeGraph
-import sys, os, json
 
 from graph.db_node_support import NodeCreationDialog
 from graph.nodes.dynamic_nodes import generate_tables
@@ -51,37 +49,28 @@ def enable_auto_node_creation(graph):
     original_mouse_release = graph.viewer().mouseReleaseEvent
 
     def custom_mouse_release(event):
-        # --- 1. Detect if we are dragging a connection ---
-        # NodeGraphQt stores the active drag pipe in '_live_pipe'
+        # --- 1. Detect if we are dragging a connection using start port on live connection ---
         live_pipe = getattr(graph.viewer(), '_LIVE_PIPE', None)
         source_port_item = getattr(graph.viewer(), '_start_port')
 
-        # --- 2. Check what is under the mouse ---
-        # We need to know if the user released over an existing port
+        # check for no port item to do node creation
         items_under_mouse = graph.viewer().items(event.pos())
-        released_on_port = False
+        released_on_port = any(type(i).__name__ == 'PortItem' for i in items_under_mouse)
 
-        for item in items_under_mouse:
-            if type(item).__name__ == 'PortItem':
-                released_on_port = True
-                break
-
-        original_mouse_release(event)
+        original_mouse_release(event)           # release mouse events
 
         # Create Node if dropped on empty space
         if source_port_item and not released_on_port:
             scene_pos = graph.viewer().mapToScene(event.pos())
-            src_node_id = source_port_item.node.id
-            src_node = graph.get_node_by_id(src_node_id)
+            src_node = graph.get_node_by_id(source_port_item.node.id)
+
             if src_node:
                 src_port_name = source_port_item.name
-                src_port = src_node.get_output(src_port_name) or src_node.get_input(src_port_name)
-
-                # create new node
-                if src_port.type_() == 'out':       # it could be multiple tables, open dialog
-                    valid_tables = [j for j in db_spec.node_templates[source_port_item.node.name]['backlink_fk'].values()]
-                    if len(valid_tables) > 1:
-                        dialog = NodeCreationDialog(subset=source_port_item.node.name)
+                if source_port_item.port_type == 'out':
+                    src_port = src_node.get_output(src_port_name)
+                    valid_tables = db_spec.node_templates[source_port_item.node.name]['backlink_fk'][src_port_name]
+                    if len(valid_tables) > 1:        # it could be multiple tables, open dialog
+                        dialog = NodeCreationDialog(subset=source_port_item)
                         viewer = graph.viewer()
                         pos = viewer.mapToGlobal(QtGui.QCursor.pos())
                         dialog.move(pos)
@@ -94,7 +83,9 @@ def enable_auto_node_creation(graph):
                             return
                     else:
                         name = valid_tables[0]
+
                 else:
+                    src_port = src_node.get_input(src_port_name)             # No Dialog as fk reference can only be one table
                     name = db_spec.node_templates[source_port_item.node.name]['foreign_keys'][src_port_name]
 
                 class_name = f"{name.title().replace('_', '')}Node"
@@ -163,10 +154,8 @@ def sync_node_b_options(graph):
 
 
 def on_property_changed(node, property_name, property_value):
-    print('property changed')
     if 'db.table' not in node.type_:
         return
-    print('and the property belongs sql table')
     pk_list = db_spec.node_templates.get(node.name(), {}).get('primary_keys', {})
     if len(pk_list) == 1 and pk_list[0] == property_name:
         sync_node_b_options(node.graph)

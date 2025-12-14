@@ -26,14 +26,19 @@ class DynamicNode(BaseNode):
         except Exception:
             pass
 
-    def get_link_port(self, connect_table, connect_port):
+    def get_link_port(self, connect_table, connect_port):       # given an input port, finds the matching output on other node
         connect_spec = db_spec.node_templates[connect_table]
         if connect_port is not None:
             backlinks = connect_spec.get('backlink_fk', None)
             if backlinks is not None:
-                for backlink_port, backlink_table in backlinks.items():
-                    if backlink_table == self.NODE_NAME:
-                        return backlink_port
+                for backlink_port, backlink_table_list in backlinks.items():
+                    for backlink_table in backlink_table_list:
+                        if backlink_table == self.NODE_NAME:
+                            base_spec = db_spec.node_templates[backlink_table]
+                            fk_ports = [key for key, val in base_spec['foreign_keys'].items() if val == connect_table]
+                            if len(fk_ports) > 1:
+                                print('error multiple ports possible for connect!')
+                            return fk_ports[0]
 
     def _delete_self(self):
         graph = self.graph
@@ -78,6 +83,8 @@ def draw_square_port(painter, rect, info):
     painter.restore()
 
 
+# had to auto generate classes rather then generate at node instantition because
+# on save they werent storing their properties in such a way they could be loaded again
 def create_table_node_class(table_name, spec):
     class_name = f"{table_name.title().replace('_', '')}Node"
 
@@ -102,7 +109,10 @@ def create_table_node_class(table_name, spec):
                     self.add_input(col, painter_func=draw_square_port)
 
             col_poss_vals = self._possible_vals.get(col, None)
-            if col_poss_vals is not None:
+            if col in spec['mined_bools']:
+                default_on = int(spec.get('default_values', {}).get(col, '0')) == 1
+                self.add_checkbox(col, label=col, state=default_on)
+            elif col_poss_vals is not None:
                 self.add_combo_menu(
                     name=col,
                     label=col,

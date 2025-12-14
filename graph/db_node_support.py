@@ -11,7 +11,7 @@ class NodeCreationDialog(QtWidgets.QDialog):
         if subset is None:
             self.templates = db_spec.node_templates
         else:
-            valid_tables = [j for j in db_spec.node_templates[subset]['backlink_fk'].values()]
+            valid_tables = db_spec.node_templates[subset.node.name]['backlink_fk'][subset.name]
             self.templates = {key: val for key, val in db_spec.node_templates.items() if key in valid_tables}
 
         self.setWindowFlags(QtCore.Qt.Popup)
@@ -34,10 +34,17 @@ class NodeCreationDialog(QtWidgets.QDialog):
 
     def _filter(self, text):
         self.list.clear()
-        text = text.lower()
+        q = text.lower()
+
+        scored = []
         for name in self.templates.keys():
-            if text in name.lower():
-                self.list.addItem(name)
+            n = name.lower()
+            if q in n:
+                idx = n.index(q)
+                scored.append((idx, len(n) - len(q), name))
+
+        for _, _, name in sorted(scored):
+            self.list.addItem(name)
 
     def _choose_first(self):
         if self.list.count():
@@ -47,3 +54,8 @@ class NodeCreationDialog(QtWidgets.QDialog):
     def selected(self):
         item = self.list.currentItem()
         return item.text() if item else None
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.search.setFocus(QtCore.Qt.PopupFocusReason)
+        self.search.selectAll()

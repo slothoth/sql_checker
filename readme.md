@@ -1,17 +1,24 @@
-## Slothoth's DB Checker
-The purpose of this script is to use it if you have had a modding conflict, and the Database.log has not been useful.
+## Slothoth's DB Checker and Planner
+The purpose of this program is to debug a given mod setup in Civ VII to get a better log of what is causing the error.
 
-For initial setup, first load into a game using Play Now in complete vanilla, no mods, no DLC at all. 
-Then run the migrate.py script which copies the DebugGameplay.sqlite file into this directory for use.
-This is a one-time thing, and you should be able to run the main script without this from now on.
+It also includes a graph GUI where you can package and plan your own mod.
 
-make sure you have tried to run with the set of mods you want, try loading into a game with all the Modes
-(Secret Society etc.) that you want on.
+# TODO:
+- package a given graph into a user friendly configuration with a .modinfo file and a main.sql  [x]
+- Dialog traps mouse [X]
+- Change integer columns that are 0 or 1 into checkbox      [x]
+- Metadata setter window. Also if this determines age, we should change possible values.
+- ModifierArgs/RequirementArgs Value completions using Name
+- ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier
+- Search highlights most used set (predefined/ user tracked?)     [ ]
+- Searchable dropdown in comboBox                                   [ ]
+- Sort port topdown so required ones are at the top                 [ ]
+- pk fk connects done prior to making the connection or the downstream node get the value  [ ]
+- Effect Attach Modifier, ModifierArgument Extra Connection             [ ]
+- Include some hotkeys in top section, like File []
 
-You will also need to edit the config.json file in this directory. 
-You need to set CIV_INSTALL as the folder with your civilization VI.exe, WORKSHOP_FOLDER where your steam mods are, and last, your User civ directory.
-Some sensible defaults are already in place, but at least the user civ directory will need to changed to whatever your username is.
-
-Known Errors: 
-- [x] Mods with Criteria like requiring Secret Society's are not caught.
-- [x] Database currently does not absorb
+  Big Features:
+- Image imports
+- frontend modelling
+- VI port (ahhh)
+- Convert existing mod to diagram

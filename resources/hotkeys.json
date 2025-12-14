@@ -68,6 +68,13 @@
       },
       {
         "type":"command",
+        "label":"Save as Mod",
+        "file":"./hotkey_functions.py",
+        "function_name":"save_session_to_mod",
+        "shortcut":"Ctrl+Shift+T"
+      },
+      {
+        "type":"command",
         "label":"Exit",
         "file":"./hotkey_functions.py",
         "function_name":"quit_qt",

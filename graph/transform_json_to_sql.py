@@ -6,7 +6,7 @@ db_spec = ResourceLoader()
 excludes = ['toggle_extra']
 
 
-def transform_json(json_file, main_window):
+def transform_json(json_file):
     error_string = ''
     with open(json_file) as f:
         data = json.load(f)
@@ -52,4 +52,6 @@ def transform_json(json_file, main_window):
     with open('resources/main.sql', 'w') as f:
         f.writelines([i + '\n' for i in sql_code])
 
+
+def start_analysis(main_window):
     main_window.start_analysis(True)
