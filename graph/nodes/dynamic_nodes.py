@@ -1,4 +1,8 @@
-from NodeGraphQt import BaseNode
+from NodeGraphQt import BaseNode, NodeBaseWidget
+from NodeGraphQt.constants import Z_VAL_NODE_WIDGET
+from PyQt5 import QtWidgets
+
+from ..db_node_support import SearchListDialog
 from ..db_spec_singleton import ResourceLoader
 from Qt import QtCore, QtGui
 
@@ -39,6 +43,21 @@ class DynamicNode(BaseNode):
                             if len(fk_ports) > 1:
                                 print('error multiple ports possible for connect!')
                             return fk_ports[0]
+
+    def add_search_menu(self, name, label='', items=None, tooltip=None, tab=None):
+        self.create_property(
+            name,
+            value=items[0] if items else None,
+            items=items or [],
+            widget_type='SEARCH_MENU',
+            widget_tooltip=tooltip,
+            tab=tab
+        )
+        widget = NodeSearchMenu(self.view, name, label, items)
+        widget.setToolTip(tooltip or '')
+        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        self.view.add_widget(widget)
+        self.view.draw_node()
 
     def _delete_self(self):
         graph = self.graph
@@ -113,12 +132,9 @@ def create_table_node_class(table_name, spec):
                 default_on = int(spec.get('default_values', {}).get(col, '0')) == 1
                 self.add_checkbox(col, label=col, state=default_on)
             elif col_poss_vals is not None:
-                self.add_combo_menu(
-                    name=col,
-                    label=col,
-                    items=[''] + col_poss_vals['vals'],
-                    tab='fields'
-                )
+                self.add_search_menu(name=col, label=col,
+                                     items=[''] + col_poss_vals['vals'],
+                                     tab='fields')
             else:
                 self.add_text_input(name=col, label=col, text=str(default_val or ''), tab='fields')
             if col in self._extra_fields:
@@ -154,3 +170,49 @@ def generate_tables():
         NodeClass = create_table_node_class(name, spec)
         all_custom_nodes.append(NodeClass)
     return all_custom_nodes
+
+
+# support for searchable combo box
+class NodeSearchMenu(NodeBaseWidget):
+    def __init__(self, parent=None, name='', label='', items=None):
+        super().__init__(parent, name, label)
+        self.setZValue(Z_VAL_NODE_WIDGET + 1)
+
+        self._items = items or []
+
+        button = QtWidgets.QToolButton()
+        button.setMinimumHeight(24)
+        button.setText(self._items[0] if self._items else '')
+        button.clicked.connect(self._open_dialog)
+
+        self.set_custom_widget(button)
+
+    @property
+    def type_(self):
+        return 'SearchMenuNodeWidget'
+
+    def _open_dialog(self):
+        dialog = SearchListDialog(self._items, self.parent())
+        pos = QtGui.QCursor.pos()
+        dialog.move(pos)
+
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+
+        value = dialog.selected()
+        if value:
+            self.set_value(value)
+            self.on_value_changed()
+
+    def get_value(self):
+        return self.get_custom_widget().text()
+
+    def set_value(self, value):
+        self.get_custom_widget().setText(value)
+
+    def add_items(self, items):
+        self._items.extend(items)
+
+    def clear(self):
+        self._items.clear()
+        self.set_value('')
