@@ -1,7 +1,7 @@
 import sys
 import threading
 import queue
-from PySide6.QtWidgets import (
+from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QFileDialog, QSizePolicy, QPlainTextEdit
 )

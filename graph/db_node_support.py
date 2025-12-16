@@ -1,4 +1,4 @@
-from Qt import QtWidgets, QtCore
+from PyQt5 import QtWidgets, QtCore
 from graph.db_spec_singleton import ResourceLoader
 
 db_spec = ResourceLoader()

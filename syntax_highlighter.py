@@ -1,5 +1,5 @@
-from PySide6.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor
-from PySide6.QtCore import QRegularExpression
+from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor
+from PyQt5.QtCore import QRegularExpression
 
 
 class LogHighlighter(QSyntaxHighlighter):

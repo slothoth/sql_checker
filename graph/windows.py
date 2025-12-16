@@ -1,5 +1,5 @@
 from graph.db_node_support import sync_node_options_all
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QLineEdit, QFormLayout, QHBoxLayout,
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QLineEdit, QFormLayout, QHBoxLayout,
                                QPushButton, QCheckBox)
 
 

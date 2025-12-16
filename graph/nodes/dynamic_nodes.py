@@ -1,10 +1,10 @@
 from NodeGraphQt import BaseNode, NodeBaseWidget
 from NodeGraphQt.constants import Z_VAL_NODE_WIDGET
-from PySide6 import QtWidgets
+from PyQt5 import QtWidgets
 
 from ..db_node_support import SearchListDialog
 from ..db_spec_singleton import ResourceLoader
-from Qt import QtCore, QtGui
+from PyQt5 import QtCore, QtGui
 
 db_spec = ResourceLoader()
 

@@ -1,6 +1,8 @@
 import uuid
 from PySide6 import QtGui, QtWidgets
 from PySide6.QtWidgets import QMainWindow
+from PyQt5 import QtGui, QtWidgets
+from PyQt5.QtWidgets import QMainWindow
 from NodeGraphQt import NodeGraph
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options
@@ -79,7 +81,7 @@ class NodeEditorWindow(QMainWindow):
                     src_port_name = source_port_item.name
                     if source_port_item.port_type == 'out':
                         src_port = src_node.get_output(src_port_name)
-                        valid_tables = db_spec.node_templates[source_port_item.node.name]['backlink_fk'][src_port_name]
+                        valid_tables = db_spec.node_templates[src_node.get_property('table_name')]['backlink_fk'][src_port_name]
                         if len(valid_tables) > 1:        # it could be multiple tables, open dialog
                             dialog = NodeCreationDialog(subset=source_port_item)
                             viewer = self.graph.viewer()
@@ -96,8 +98,8 @@ class NodeEditorWindow(QMainWindow):
                             name = valid_tables[0]
 
                     else:
-                        src_port = src_node.get_input(src_port_name)             # No Dialog as fk reference can only be one table
-                        name = db_spec.node_templates[source_port_item.node.name]['foreign_keys'][src_port_name]
+                        src_port = src_node.get_input(src_port_name)   # No Dialog as fk reference can only be one table
+                        name = db_spec.node_templates[src_node.get_property('table_name')]['foreign_keys'][src_port_name]
 
                     class_name = f"{name.title().replace('_', '')}Node"
                     new_node = self.graph.create_node(f'db.table.{name.lower()}.{class_name}',
@@ -106,7 +108,7 @@ class NodeEditorWindow(QMainWindow):
                     # Connect nodes
                     if src_port.type_() == 'out':        # Connect to first available input of new node, which should be PK
                         if new_node.input_ports():
-                            connect_port = new_node.get_link_port(source_port_item.node.get_property('table_name'), source_port_item.name)
+                            connect_port = new_node.get_link_port(src_node.get_property('table_name'), source_port_item.name)
                             if connect_port:
                                 port_index = next((i for i, s in enumerate(new_node.input_ports()) if s.name() == connect_port), 0)
                                 src_port.connect_to(new_node.input_ports()[port_index])

@@ -1,4 +1,4 @@
-from PySide6 import QtGui, QtWidgets, QtCore
+from PyQt5 import QtGui, QtWidgets, QtCore
 import sys, os, json, shutil
 
 from sqlalchemy import inspect
@@ -48,8 +48,8 @@ def insert_command(command_dict, menu=None, menu_bar_folder=None, window=None):
             menu_bar_folder.addAction(action_)
 
 
-class GraphMenuAction(QtGui.QAction):
-    executed = QtCore.Signal(object)
+class GraphMenuAction(QtWidgets.QAction):
+    executed = QtCore.pyqtSignal(object)
 
     def __init__(self, text, graph, parent=None):
         super().__init__(text, parent)
@@ -153,7 +153,7 @@ def quit_qt(graph):
     """
     Quit the Qt application.
     """
-    from Qt import QtCore
+    from PyQt5 import QtCore
     QtCore.QCoreApplication.quit()
 
 
@@ -533,8 +533,8 @@ def import_mod(graph):
     """
     Prompts a file open dialog to load an existing mod folder.
     """
-    from PySide6.QtWidgets import QFileDialog
-    from PySide6.QtCore import QUrl
+    from PyQt5.QtWidgets import QFileDialog
+    from PyQt5.QtCore import QUrl
     from filepath_utils import find_civ_config
     from graph.mod_conversion import parse_mod_folder
 
