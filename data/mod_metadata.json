@@ -1,0 +1,8 @@
+{
+    "Mod Name": "SQL_GUI_Mod",
+    "Mod Description": "A Mod built with Slothoths SQL GUI. They haven't customised their Description!",
+    "Mod Author": "Slothoth Mod GUI",
+    "Mod UUID": null,
+    "Mod Action": "always_slothoth_mod_gui",
+    "Age": "AGE_ANTIQUITY"
+}

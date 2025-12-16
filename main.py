@@ -134,7 +134,9 @@ class App(QWidget):
     def popout_graph_planner(self):
         if self.graph_editor_window is None:
             self.graph_editor_window = NodeEditorWindow(self)
-            self.graph_editor_window.show()
+        self.graph_editor_window.show()
+        self.graph_editor_window.raise_()
+        self.graph_editor_window.activateWindow()
 
 
 if __name__ == "__main__":

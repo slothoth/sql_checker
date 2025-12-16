@@ -13,25 +13,22 @@ db_spec = ResourceLoader()
 # bodge job for blocking recursion
 recently_changed = {}
 
+with open('data/mod_metadata.json') as f:
+    default_meta = json.load(f)
+
 
 class NodeEditorWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.graph = NodeGraph()
         self.setCentralWidget(self.graph.widget)
+        self.graph.main_window = parent
+
+        mod_uuid = 'SQL_GUI_' + str(uuid.uuid4().hex)
+        default_meta['Mod UUID'] = mod_uuid
+        self.graph.setProperty('meta', default_meta)
 
         menubar = self.menuBar()
-
-        self.graph.main_window = parent         # needed to trigger run analysis
-        mod_uuid = 'SQL_GUI_' + str(uuid.uuid4().hex)
-        self.graph.setProperty('meta', {
-            'Mod Name': 'SQL_GUI_Mod',
-            'Mod Description': "A Mod built with Slothoths SQL GUI. They haven't customised their Description!",
-            'Mod Author': 'Slothoth Mod GUI',
-            'Mod UUID': mod_uuid,
-            'Mod Action': 'always_slothoth_mod_gui',
-            'Age': 'AGE_ANTIQUITY',
-        })
         set_hotkeys(self, menubar)
 
         # custom SQL nodes
@@ -52,6 +49,10 @@ class NodeEditorWindow(QMainWindow):
 
         viewer = self.graph.viewer()
         viewer.connection_changed.connect(on_connection_changed)
+
+    def closeEvent(self, event):
+        self.hide()
+        event.ignore()
 
     def enable_auto_node_creation(self):
         """
@@ -105,7 +106,7 @@ class NodeEditorWindow(QMainWindow):
                                                  pos=[scene_pos.x(), scene_pos.y()])
 
                     # Connect nodes
-                    if src_port.type_() == 'out':        # Connect to first available input of new node, which should be PK
+                    if src_port.type_() == 'out':   # Connect to first available input of new node, which should be PK
                         if new_node.input_ports():
                             connect_port = new_node.get_link_port(src_node.get_property('table_name'), source_port_item.name)
                             if connect_port:
