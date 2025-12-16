@@ -125,143 +125,6 @@ class SqlChecker:
         self.log_queue.put('--------------------------------------------')
         return files_to_apply
 
-    def convert_xml_to_sql(self, xml_file, job_type):
-        sql_statements = []
-        xml_ = read_xml(xml_file)
-        error_messages, skips = self.validate_xml(xml_)
-        if not xml_ or xml_ == '':
-            return f"{xml_file} was empty...", {}
-        xml_ = xml_.get('Database', xml_.get('{GameEffects}GameEffects'))
-        if not xml_ or xml_ == '':
-            return f"{xml_file} was empty...", {}
-        if 'Table' in xml_:
-            if not isinstance(xml_['Table'], list):
-                xml_['Table'] = [xml_['Table']]
-            sql_strings = []
-            for table in xml_['Table']:
-                table_name = table['@name']
-                sql_string = f"CREATE TABLE '{table_name}' ("
-                pks = []
-                if not isinstance(table['Column'], list):
-                    table['Column'] = [table['Column']]
-                for i in table['Column']:
-                    column_string = f"'{i['@name']}' {i['@type'].capitalize()}"
-                    if i.get('@notnull') == 'true':
-                        column_string += " NOT NULL"
-                    if i.get('@unique') == 'true':
-                        column_string += " UNIQUE"
-                    if i.get('@primarykey') == 'true':
-                        pks.append(i['@name'])
-                    sql_string += column_string + ", "
-                sql_string += f"PRIMARY KEY({', '.join([i for i in pks])}));"
-                sql_strings.append(sql_string)
-            return sql_strings, {}
-        # filter out empty strings
-        for key, val in xml_.items():
-            if isinstance(val, list):
-                new_val = [j for j in val if not isinstance(j, str)]
-                xml_[key] = new_val
-        xml_errors = {}
-        for table_name, sql_commands in xml_.items():
-            if table_name == 'Row':
-                continue                # some orphaned xml with no table
-            if sql_commands is None:
-                message = f'Table {table_name} was referenced, but did not contain any commands within.'
-                if job_type in ['DLC', 'vanilla']:
-                    # self.log_queue.put(message)
-                    print('ignoring message for user as probably on firaxis', message)
-                else:
-                    # self.log_queue.put(message)
-                    print('ignoring message for user', message)
-                continue
-            if isinstance(sql_commands, str):
-                message = f'Likely empty xml, this was the value found in table element: {sql_commands}. File: {xml_file}.'
-                if job_type in ['DLC', 'vanilla']:
-                    #self.log_queue.put(message)
-                    print('ignoring message for user as probably on firaxis', message)
-                else:
-                    # self.log_queue.put(message)
-                    print('ignoring message for user', message)
-                continue
-            if not isinstance(sql_commands, list):
-                sql_commands = [sql_commands]
-            for sql_commands_dict in sql_commands:
-                if table_name == '{GameEffects}Modifier':
-                    sql_statements, errors = game_effects(sql_statements, sql_commands_dict, xml_file, skips)
-                    if len(errors) > 0:
-                        if xml_errors.get(table_name, False):
-                            xml_errors[table_name].append(errors)
-                        else:
-                            xml_errors[table_name] = [errors]
-                    continue
-                if table_name == '{GameEffects}RequirementSet':
-                    req_set_id = sql_commands_dict['@id']
-                    sql_statements = req_set_build(sql_statements, sql_commands_dict, req_set_id)
-                    continue
-                if table_name == '{GameEffects}Requirement':
-                    req_id = sql_commands_dict['@id']
-                    sql_statements, req_id = req_build(sql_statements, sql_commands_dict, req_id)
-                    continue
-                for command, details in sql_commands_dict.items():
-                    if details is None:
-                        continue
-                    if command == 'Delete':
-                        if not isinstance(details, list):
-                            details = [details]
-                        for record in details:
-                            for column, value in record.items():
-                                sql_statements.append({"type": "DELETE", "table": table_name, "where": {column: value}})
-                    elif command == 'Update':
-                        if not isinstance(details, list):
-                            details = [details]
-                        for record in details:
-                            sql_statements.append({"type": "UPDATE", "table": table_name, "set": record['Set'],
-                                                       "where": {i: j for i, j in record['Where'].items()}})
-                    elif command == 'Row':
-                        if not isinstance(details, list):
-                            details = [details]
-                        for record in details:
-                            columns, values = [i for i in record], [j for j in record.values()]
-                            sql_statements.append({"type": "INSERT", "table": table_name, "columns": columns, "values": values})
-                    elif command == 'Replace':
-                        if not isinstance(details, list):
-                            details = [details]
-                        for record in details:
-                            columns, values = [i for i in record], [j for j in record.values()]
-                            sql_statements.append({"type": "REPLACE", "table": table_name, "columns": columns, "values": values})
-                    elif command == 'InsertOrIgnore':
-                        if not isinstance(details, list):
-                            details = [details]
-                        for record in details:
-                            columns, values = [i for i in record], [j for j in record.values()]
-                            sql_statements.append({"type": "INSERT IGNORE", "table": table_name, "columns": columns, "values": values})
-                    elif command == '#text':
-                        self.log_queue.put(f'Firaxis typo lol on {xml_file}')
-                    else:
-                        self.log_queue.put(f'unknown command: {command}')
-        sql_strings = convert_to_sql(sql_statements)
-        return sql_strings, xml_errors
-
-    def validate_xml(self, xml_dict):
-        error_msgs, xml_skips = [], {}
-        if '{GameEffects}GameEffects' in xml_dict:
-            game_effects = xml_dict['{GameEffects}GameEffects']
-            if '{GameEffects}Modifier' in game_effects:
-                modifier_list = game_effects['{GameEffects}Modifier']
-                if not isinstance(modifier_list, list):
-                    modifier_list = [modifier_list]
-                for modifier_dict in modifier_list:
-                    mod_name = modifier_dict['@id']
-                    if '{GameEffects}SubjectRequirements' in modifier_dict:
-                        requirement_list = modifier_dict['{GameEffects}SubjectRequirements']
-                        if isinstance(requirement_list, list):
-                            msg = f'ERROR: Requirements list for {mod_name} had two requirement lists nested, due to bad xml. This will silently error on firaxis side, and only will use the first requirement.'
-                            print(msg)
-                            error_msgs.append(msg)
-                            xml_skips[mod_name] = {'error_type': 'NestedRequirements', 'additional': 'subject'}
-
-        return error_msgs, xml_skips
-
     def should_be_replace(self, cursor, sql_script, update_dict, filename, error):
         cursor.execute(primary_key_matcher(sql_script, error))
         result_wider = cursor.fetchone()
@@ -403,7 +266,7 @@ class SqlChecker:
                 else:
                     self.log_queue.put(error_msg)
             if db_file.endswith('.xml') and not any(i in db_file for i in known_fails):
-                statements, xml_errors = self.convert_xml_to_sql(db_file, job_type)
+                statements, xml_errors = convert_xml_to_sql(db_file, job_type, log_queue=self.log_queue)
                 if isinstance(statements, str):
                     missed_files.append(short_name)
                     if job_type in ['DLC', 'vanilla']:
@@ -412,7 +275,7 @@ class SqlChecker:
                         print('ignore as its just modders having empty files')
                         # self.log_queue.put(statements)
                     continue
-                sql_statements[short_name], xml_errors = self.convert_xml_to_sql(db_file, job_type)
+                sql_statements[short_name], xml_errors = convert_xml_to_sql(db_file, job_type, log_queue=self.log_queue)
                 ensure_ordered_sql.append((short_name, sql_statements[short_name]))
             if db_file.endswith('.sql') and not any(i in db_file for i in known_fails):
                 try:
@@ -566,6 +429,139 @@ def convert_to_sql(statements):
             sql = sql.replace("'''", '"\'"')
         sql_list.append(sql)
     return sql_list
+
+
+def convert_xml_to_sql(xml_file, job_type=None, log_queue=None):
+    sql_statements = []
+    xml_ = read_xml(xml_file)
+    error_messages, skips = validate_xml(xml_)
+    if not xml_ or xml_ == '':
+        return f"{xml_file} was empty...", {}
+    xml_ = xml_.get('Database', xml_.get('{GameEffects}GameEffects'))
+    if not xml_ or xml_ == '':
+        return f"{xml_file} was empty...", {}
+    if 'Table' in xml_:
+        if not isinstance(xml_['Table'], list):
+            xml_['Table'] = [xml_['Table']]
+        sql_strings = []
+        for table in xml_['Table']:
+            table_name = table['@name']
+            sql_string = f"CREATE TABLE '{table_name}' ("
+            pks = []
+            if not isinstance(table['Column'], list):
+                table['Column'] = [table['Column']]
+            for i in table['Column']:
+                column_string = f"'{i['@name']}' {i['@type'].capitalize()}"
+                if i.get('@notnull') == 'true':
+                    column_string += " NOT NULL"
+                if i.get('@unique') == 'true':
+                    column_string += " UNIQUE"
+                if i.get('@primarykey') == 'true':
+                    pks.append(i['@name'])
+                sql_string += column_string + ", "
+            sql_string += f"PRIMARY KEY({', '.join([i for i in pks])}));"
+            sql_strings.append(sql_string)
+        return sql_strings, {}
+    # filter out empty strings
+    for key, val in xml_.items():
+        if isinstance(val, list):
+            new_val = [j for j in val if not isinstance(j, str)]
+            xml_[key] = new_val
+    xml_errors = {}
+    for table_name, sql_commands in xml_.items():
+        if table_name == 'Row':
+            continue                # some orphaned xml with no table
+        if sql_commands is None:
+            message = f'Table {table_name} was referenced, but did not contain any commands within.'
+            print('ignoring message for user as probably on firaxis', message) if (job_type is not None
+                                                                                   and job_type in ['DLC', 'vanilla']) \
+                else print('ignoring message for user', message)
+            continue
+        if isinstance(sql_commands, str):
+            message = f'Likely empty xml, this was the value found in table element: {sql_commands}. File: {xml_file}.'
+            print('ignoring message for user as probably on firaxis', message) if (job_type is not None
+                                                                                   and job_type in ['DLC', 'vanilla']) \
+                else print('ignoring message for user', message)
+            continue
+        if not isinstance(sql_commands, list):
+            sql_commands = [sql_commands]
+        for sql_commands_dict in sql_commands:
+            if table_name == '{GameEffects}Modifier':
+                sql_statements, errors = game_effects(sql_statements, sql_commands_dict, xml_file, skips)
+                if len(errors) > 0:
+                    if xml_errors.get(table_name, False):
+                        xml_errors[table_name].append(errors)
+                    else:
+                        xml_errors[table_name] = [errors]
+                continue
+            if table_name == '{GameEffects}RequirementSet':
+                req_set_id = sql_commands_dict['@id']
+                sql_statements = req_set_build(sql_statements, sql_commands_dict, req_set_id)
+                continue
+            if table_name == '{GameEffects}Requirement':
+                req_id = sql_commands_dict['@id']
+                sql_statements, req_id = req_build(sql_statements, sql_commands_dict, req_id)
+                continue
+            for command, details in sql_commands_dict.items():
+                if details is None:
+                    continue
+                if command == 'Delete':
+                    if not isinstance(details, list):
+                        details = [details]
+                    for record in details:
+                        for column, value in record.items():
+                            sql_statements.append({"type": "DELETE", "table": table_name, "where": {column: value}})
+                elif command == 'Update':
+                    if not isinstance(details, list):
+                        details = [details]
+                    for record in details:
+                        sql_statements.append({"type": "UPDATE", "table": table_name, "set": record['Set'],
+                                                   "where": {i: j for i, j in record['Where'].items()}})
+                elif command == 'Row':
+                    if not isinstance(details, list):
+                        details = [details]
+                    for record in details:
+                        columns, values = [i for i in record], [j for j in record.values()]
+                        sql_statements.append({"type": "INSERT", "table": table_name, "columns": columns, "values": values})
+                elif command == 'Replace':
+                    if not isinstance(details, list):
+                        details = [details]
+                    for record in details:
+                        columns, values = [i for i in record], [j for j in record.values()]
+                        sql_statements.append({"type": "REPLACE", "table": table_name, "columns": columns, "values": values})
+                elif command == 'InsertOrIgnore':
+                    if not isinstance(details, list):
+                        details = [details]
+                    for record in details:
+                        columns, values = [i for i in record], [j for j in record.values()]
+                        sql_statements.append({"type": "INSERT IGNORE", "table": table_name, "columns": columns, "values": values})
+                elif command == '#text':
+                    log_queue.put(f'Firaxis typo lol on {xml_file}') if log_queue is not None else print(f'Firaxis typo lol on {xml_file}')
+                else:
+                    log_queue.put(f'unknown command: {command}') if log_queue is not None else print(f'unknown command: {command}')
+    sql_strings = convert_to_sql(sql_statements)
+    return sql_strings, xml_errors
+
+
+def validate_xml(xml_dict):
+    error_msgs, xml_skips = [], {}
+    if '{GameEffects}GameEffects' in xml_dict:
+        game_effects_info = xml_dict['{GameEffects}GameEffects']
+        if '{GameEffects}Modifier' in game_effects_info:
+            modifier_list = game_effects_info['{GameEffects}Modifier']
+            if not isinstance(modifier_list, list):
+                modifier_list = [modifier_list]
+            for modifier_dict in modifier_list:
+                mod_name = modifier_dict['@id']
+                if '{GameEffects}SubjectRequirements' in modifier_dict:
+                    requirement_list = modifier_dict['{GameEffects}SubjectRequirements']
+                    if isinstance(requirement_list, list):
+                        msg = f'ERROR: Requirements list for {mod_name} had two requirement lists nested, due to bad xml. This will silently error on firaxis side, and only will use the first requirement.'
+                        print(msg)
+                        error_msgs.append(msg)
+                        xml_skips[mod_name] = {'error_type': 'NestedRequirements', 'additional': 'subject'}
+
+    return error_msgs, xml_skips
 
 
 def check_state(cursor):

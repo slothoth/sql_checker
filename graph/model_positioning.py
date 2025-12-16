@@ -184,7 +184,6 @@ def presort(data):
     return {"nodes": sorted_nodes, "edges": data.get("edges", [])}
 
 
-
 def get_table_info(full_path):
     conn = sqlite3.connect(full_path)
     cursor = conn.cursor()

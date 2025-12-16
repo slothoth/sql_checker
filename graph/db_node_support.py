@@ -104,3 +104,72 @@ class SearchListDialog(QtWidgets.QDialog):
     def selected(self):
         item = self.list.currentItem()
         return item.text() if item else None
+
+
+# used to resync possible options for node combo boxes when changing age or adding new origin values
+# like say a Units entry
+def sync_node_options(graph):
+    print('syncing nodes...')
+    age = graph.property('meta').get('Age')
+    if age == 'ALWAYS':
+        age_specific_db = db_spec.all_possible_vals
+    else:
+        age_specific_db = db_spec.possible_vals.get(age, {})
+
+    valid_options_dict = {}             # find all nodes that have an origin PK, and their values
+    target_nodes = [n for n in graph.all_nodes() if 'db.table.' in n.type_]
+    for node in target_nodes:
+        node_table = node.get_property('table_name')
+        pk_val = node.get_property(db_spec.node_templates[node_table]['primary_keys'][0])
+        if db_spec.node_templates.get(node_table, False):
+            if node_table not in valid_options_dict:
+                valid_options_dict[node_table] = set([pk_val])
+            else:
+                valid_options_dict[node_table].add(pk_val)
+
+    # add default values from database
+    for tbl_name, new_options_set in valid_options_dict.items():
+        valid_options_dict[tbl_name] = sorted(list(valid_options_dict[tbl_name]))
+        valid_options_dict[tbl_name].extend(age_specific_db[tbl_name]['_PK_VALS'])
+
+    # get tables that reference new origin tables that arent in db
+    fk_ref_tables = {key: val for key, val in age_specific_db.items()
+                     if any(key_j != '_PK_VALS' and val_j['ref'] in valid_options_dict for key_j, val_j in val.items())}
+
+    fk_nodes = [n for n in target_nodes if n.get_property('table_name') in fk_ref_tables]       # get nodes from those
+    for node in fk_nodes:
+        node_info = fk_ref_tables[node.get_property('table_name')]
+        combo_boxes_with_fk_ref_to_new_pk = {col: col_info for col, col_info in node_info.items() if col !='_PK_VALS'
+                                             and col_info['ref'] in valid_options_dict}
+        for ref_name, col_info in combo_boxes_with_fk_ref_to_new_pk.items():
+            combo_widget = node.get_widget(ref_name)
+            if combo_widget:
+                current_val = node.get_property(ref_name)
+                sorted_options = valid_options_dict[col_info['ref']]
+                combo_widget.clear()
+                combo_widget.add_items(sorted_options)              # 2. Add the new list of items
+                if current_val in sorted_options:
+                    combo_widget.set_value(current_val)
+
+
+def sync_node_options_all(graph):
+    age = graph.property('meta').get('Age')
+    if age == 'ALWAYS':
+        age_specific_db = db_spec.all_possible_vals
+    else:
+        age_specific_db = db_spec.possible_vals.get(age, {})
+
+    target_nodes = [n for n in graph.all_nodes() if 'db.table.' in n.type_
+                    and age_specific_db.get(n.get_property('table_name'), False)]
+    for node in target_nodes:
+        combo_box_vals = age_specific_db[node.get_property('table_name')]
+        for col_name, new_combo_box_vals in combo_box_vals.items():
+            if col_name != '_PK_VALS':
+                combo_widget = node.get_widget(col_name)
+                if combo_widget:
+                    current_val = node.get_property(col_name)
+                    sorted_options = new_combo_box_vals['vals']
+                    combo_widget.clear()
+                    combo_widget.add_items(sorted_options)
+                    if current_val in sorted_options:
+                        combo_widget.set_value(current_val)

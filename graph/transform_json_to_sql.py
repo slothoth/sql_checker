@@ -56,5 +56,5 @@ def transform_json(json_file):
         f.writelines([i + '\n' for i in sql_code])
 
 
-def start_analysis(main_window):
+def start_analysis_graph(main_window):
     main_window.start_analysis(True)

@@ -100,7 +100,8 @@
       "Self",
       "TilesRequired"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AdvancedStartAges": {
     "primary_keys": [
@@ -286,7 +287,8 @@
       "ScienceCost",
       "WildcardCost"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AdvancedStartAIModifiers": {
     "primary_keys": [
@@ -344,7 +346,8 @@
     "foreign_keys": {
       "Age": "Ages"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AdvancedStartCardSets": {
     "primary_keys": [
@@ -370,7 +373,8 @@
     "foreign_keys": {
       "Age": "Ages"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AdvancedStartDecks": {
     "primary_keys": [
@@ -390,7 +394,8 @@
         "AdvancedStartDeckCardEntries"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AdvancedStartDeckCardEntries": {
     "primary_keys": [],
@@ -571,7 +576,8 @@
         "AdvisorSubjects"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AdvisorSubjects": {
     "primary_keys": [
@@ -657,7 +663,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "AdvisoryClasses": {
     "primary_keys": [
@@ -685,7 +692,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AdvisorySubjects": {
     "primary_keys": [
@@ -710,7 +718,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Affinities": {
     "primary_keys": [
@@ -738,7 +747,8 @@
         "Independents"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Ages": {
     "primary_keys": [
@@ -908,7 +918,8 @@
         "AgeCrisisEvents"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeCrisisEvents": {
     "primary_keys": [
@@ -948,7 +959,8 @@
           "col": "NarrativeStoryType"
         }
       ]
-    }
+    },
+    "origin_pk": true
   },
   "AgeCrisisStages": {
     "primary_keys": [
@@ -1083,7 +1095,8 @@
     },
     "extra_fks": {
       "AgeType": "Resource_Distribution"
-    }
+    },
+    "origin_pk": true
   },
   "AgeProgressionDarkAgeRewardInfos": {
     "primary_keys": [],
@@ -1141,7 +1154,8 @@
     "mined_bools": [
       "GameSpeedScaling"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeProgressionEventMapSizeOverrides": {
     "primary_keys": [
@@ -1290,7 +1304,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeProgressionTurns": {
     "primary_keys": [
@@ -1321,7 +1336,8 @@
       "GameSpeedScaling",
       "Points"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeTransitionArmyUnits": {
     "primary_keys": [],
@@ -1359,7 +1375,8 @@
     "foreign_keys": {
       "Age": "Ages"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeTransitionCardSets": {
     "primary_keys": [
@@ -1385,7 +1402,8 @@
     "foreign_keys": {
       "Age": "Ages"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeTransitionLegacyPoints": {
     "primary_keys": [],
@@ -1440,7 +1458,8 @@
     "foreign_keys": {
       "Age": "Ages"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeTransitionRespawnModifiers": {
     "primary_keys": [],
@@ -1507,7 +1526,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiBuildSpecializations": {
     "primary_keys": [
@@ -1585,7 +1605,8 @@
       "Consumer",
       "Producer"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiDefinitions": {
     "primary_keys": [
@@ -1630,7 +1651,8 @@
         "TriggeredBehaviorTrees"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiFavoredItems": {
     "primary_keys": [
@@ -1726,7 +1748,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiOperationDefs": {
     "primary_keys": [
@@ -1814,7 +1837,8 @@
       "MustHaveNukes",
       "TargetParameter"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiOperationLimits": {
     "primary_keys": [
@@ -1868,7 +1892,8 @@
     "foreign_keys": {
       "BaseList": "AiOperationLists"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiOperationTeams": {
     "primary_keys": [
@@ -1933,7 +1958,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiPriorities": {
     "primary_keys": [
@@ -1957,7 +1983,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiScoutUses": {
     "primary_keys": [
@@ -1972,7 +1999,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiTactics": {
     "primary_keys": [
@@ -1992,7 +2020,8 @@
     "foreign_keys": {
       "DefaultPriority": "AiPriorities"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiTeams": {
     "primary_keys": [
@@ -2013,7 +2042,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AiUnitEfficiencyBonuses": {
     "primary_keys": [
@@ -2137,7 +2167,8 @@
     },
     "extra_fks": {
       "Type": "NarrativeStory_RewardIcons"
-    }
+    },
+    "origin_pk": true
   },
   "BarbarianAttackForces": {
     "primary_keys": [
@@ -2196,7 +2227,8 @@
       "NumSupportUnits",
       "RaidingForce"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "BarbarianTribes": {
     "primary_keys": [
@@ -2262,7 +2294,8 @@
     "mined_bools": [
       "IsCoastal"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "BarbarianTribeForces": {
     "primary_keys": [
@@ -2331,7 +2364,8 @@
     "foreign_keys": {
       "TribeType": "BarbarianTribes"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "BehaviorTrees": {
     "primary_keys": [
@@ -2356,7 +2390,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "BehaviorTreeNodes": {
     "primary_keys": [
@@ -2385,7 +2420,8 @@
       "NodeType": "NodeDefinitions",
       "TreeName": "BehaviorTrees"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Beliefs": {
     "primary_keys": [
@@ -2480,7 +2516,8 @@
       "AdoptionOrder",
       "MaxInReligion"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "BeliefModifiers": {
     "primary_keys": [
@@ -2560,7 +2597,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "Biome_ValidTerrains": {
     "primary_keys": [
@@ -2673,7 +2711,8 @@
       "Unit2Type": "Units",
       "Unit1Type": "Units"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "BoostHandlers": {
     "primary_keys": [
@@ -2701,7 +2740,8 @@
       "OperationName": "AiOperationDefs",
       "BehaviorTree": "BehaviorTrees"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "BoostNames": {
     "primary_keys": [
@@ -2723,7 +2763,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Buildings": {
     "primary_keys": [
@@ -2843,7 +2884,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "ChargedUnitAbilities": {
     "primary_keys": [
@@ -2872,7 +2914,8 @@
     "foreign_keys": {
       "ConstructibleType": "Constructibles"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CityEvents": {
     "primary_keys": [
@@ -2887,7 +2930,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CityExpansionTypes": {
     "primary_keys": [
@@ -2909,7 +2953,8 @@
         "CityExpansionValidTerrains"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CityExpansionValidTerrains": {
     "primary_keys": [
@@ -2965,7 +3010,8 @@
     "mined_bools": [
       "SortIndex"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CityStateBonuses": {
     "primary_keys": [
@@ -3011,7 +3057,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "CityStateBonusModifiers": {
     "primary_keys": [
@@ -3094,7 +3141,8 @@
     "extra_fks": {
       "Type": "NarrativeStory_RewardIcons",
       "YieldType": "Yields"
-    }
+    },
+    "origin_pk": true
   },
   "Civilizations": {
     "primary_keys": [
@@ -3308,7 +3356,8 @@
       "CanReceiveInfluence",
       "IgnoresUnitStrategicResourceRequirements"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CivilizationTraits": {
     "primary_keys": [
@@ -3552,7 +3601,8 @@
     "mined_bools": [
       "UseSidebar"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CivilopediaPageLayoutChapters": {
     "primary_keys": [
@@ -3694,7 +3744,8 @@
       "SortIndex": "0"
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CivilopediaSectionExcludes": {
     "primary_keys": [
@@ -3709,7 +3760,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CivilopediaUnitsUniqueUpgrades": {
     "primary_keys": [
@@ -3921,7 +3973,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "Constructible_Adjacencies": {
     "primary_keys": [
@@ -4607,7 +4660,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ConstructibleModifiers": {
     "primary_keys": [
@@ -4668,7 +4722,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "DataTypes": {
     "primary_keys": [
@@ -4690,7 +4745,8 @@
         "NodeDataDefinitions"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DealItems": {
     "primary_keys": [
@@ -4709,7 +4765,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DealItemAgreements": {
     "primary_keys": [
@@ -4828,7 +4885,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyActions": {
     "primary_keys": [
@@ -5292,7 +5350,8 @@
     "mined_bools": [
       "TeamPropagation"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomacyFavorGrievanceEventGroups": {
     "primary_keys": [
@@ -5375,7 +5434,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyStatements": {
     "primary_keys": [
@@ -5395,7 +5455,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomacyStatementFrames": {
     "primary_keys": [
@@ -5842,7 +5903,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiscoveryStory_Yield_Rewards": {
     "primary_keys": [
@@ -5895,7 +5957,8 @@
       "Priority": "0"
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Districts": {
     "primary_keys": [
@@ -6308,7 +6371,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ExcludedAdjacencies": {
     "primary_keys": [
@@ -6592,7 +6656,8 @@
       "YieldType": "Yields",
       "FeatureType": "Features"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Feature_NaturalWonders": {
     "primary_keys": [
@@ -6810,7 +6875,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "GameCapabilities": {
     "primary_keys": [
@@ -6855,7 +6921,8 @@
       "DependsOnCapability": "GameCapabilities",
       "GameCapability": "GameCapabilities"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GameEffects": {
     "primary_keys": [
@@ -6998,7 +7065,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "GameSpeed_Durations": {
     "primary_keys": [
@@ -7051,7 +7119,8 @@
     "foreign_keys": {
       "GameSpeedType": "GameSpeeds"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GameSpeed_Turns": {
     "primary_keys": [
@@ -7103,7 +7172,8 @@
       "ConstructibleTypePrereq": "Constructibles",
       "ProgressionTreeNodePrereq": "ProgressionTreeNodes"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GlobalParameters": {
     "primary_keys": [
@@ -7120,7 +7190,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GoldenAges": {
     "primary_keys": [
@@ -7155,7 +7226,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "GoldenAgeModifiers": {
     "primary_keys": [
@@ -7217,7 +7289,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "GoodyHutSubTypes": {
     "primary_keys": [
@@ -7282,7 +7355,8 @@
     },
     "extra_fks": {
       "ModifierId": "Modifiers"
-    }
+    },
+    "origin_pk": true
   },
   "Gossips": {
     "primary_keys": [
@@ -7344,7 +7418,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "Government_ValidGoldenAges": {
     "primary_keys": [
@@ -7751,7 +7826,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GreatPersonVictoryTypeEntries": {
     "primary_keys": [
@@ -7834,7 +7910,8 @@
     "mined_bools": [
       "Generic"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GreatWork_ValidSubTypes": {
     "primary_keys": [
@@ -7944,7 +8021,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "GreatWorkSlotTypes": {
     "primary_keys": [
@@ -7965,7 +8043,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GreatWorkSourceTypes": {
     "primary_keys": [
@@ -7985,7 +8064,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "HandicapSystems": {
     "primary_keys": [
@@ -8012,7 +8092,8 @@
         "StandardHandicaps"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "HistoricRankings": {
     "primary_keys": [
@@ -8033,7 +8114,8 @@
       "Score": "0"
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Ideologies": {
     "primary_keys": [
@@ -8068,7 +8150,8 @@
         "IdeologyPriorities"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "IdeologyAdoptionModifiers": {
     "primary_keys": [
@@ -8354,7 +8437,8 @@
       "IgnoreSpacing",
       "NumNormalRaids"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "InterfaceModes": {
     "primary_keys": [
@@ -8380,7 +8464,8 @@
         "UnitOperations"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "KeywordAbilities": {
     "primary_keys": [
@@ -8421,7 +8506,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "Kinds": {
     "primary_keys": [
@@ -8446,7 +8532,8 @@
         "Types"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Leaders": {
     "primary_keys": [
@@ -8630,7 +8717,8 @@
         "LegacyModifiers"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Legacy_LegacySets": {
     "primary_keys": [
@@ -8732,7 +8820,8 @@
           "col": "IndependentType"
         }
       ]
-    }
+    },
+    "origin_pk": true
   },
   "LegacyLeaderCivPriorities": {
     "primary_keys": [
@@ -8828,7 +8917,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "LegacyPathClasses": {
     "primary_keys": [
@@ -8850,7 +8940,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "LegacySets": {
     "primary_keys": [
@@ -8870,7 +8961,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "LoadingInfo_Ages": {
     "primary_keys": [
@@ -9050,7 +9142,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "Map_GreatPersonClasses": {
     "primary_keys": [
@@ -9114,7 +9207,8 @@
     "foreign_keys": {
       "AgeType": "Ages"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "MapRainfalls": {
     "primary_keys": [
@@ -9138,7 +9232,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "MapResourceDistributions": {
     "primary_keys": [
@@ -9160,7 +9255,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "MapResourceMinimumAmountModifier": {
     "primary_keys": [
@@ -9205,7 +9301,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "MapStartPositions": {
     "primary_keys": [
@@ -9252,7 +9349,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "MapWorldAges": {
     "primary_keys": [
@@ -9276,7 +9374,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Mementos": {
     "primary_keys": [
@@ -9321,7 +9420,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "MementoModifiers": {
     "primary_keys": [
@@ -9436,7 +9536,8 @@
       "RunOnce",
       "SubjectStackLimit"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ModifierArguments": {
     "primary_keys": [
@@ -9485,7 +9586,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ModifierMetadatas": {
     "primary_keys": [
@@ -9569,7 +9671,8 @@
     "mined_bools": [
       "UseSupportEvent"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Months": {
     "primary_keys": [
@@ -9596,7 +9699,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "Movies": {
     "primary_keys": [
@@ -9655,7 +9759,8 @@
         "NamedRiverCivilizations"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NamedRiverCivilizations": {
     "primary_keys": [
@@ -9697,7 +9802,8 @@
         "NamedVolcanoCivilizations"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NamedVolcanoCivilizations": {
     "primary_keys": [
@@ -9789,7 +9895,8 @@
     },
     "extra_fks": {
       "ModifierId": "Modifiers"
-    }
+    },
+    "origin_pk": true
   },
   "NarrativeRewardIcons": {
     "primary_keys": [
@@ -9952,7 +10059,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NarrativeStory_Links": {
     "primary_keys": [
@@ -10014,7 +10122,8 @@
     "mined_bools": [
       "StartAll"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NarrativeStory_Rewards": {
     "primary_keys": [
@@ -10066,7 +10175,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NarrativeStory_RewardIcons": {
     "primary_keys": [
@@ -10083,7 +10193,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NarrativeStory_TextReplacements": {
     "primary_keys": [
@@ -10126,7 +10237,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NarrativeStory_TextTypes": {
     "primary_keys": [
@@ -10141,7 +10253,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NarrativeStory_UIActivations": {
     "primary_keys": [
@@ -10161,7 +10274,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NarrativeStory_Yield_Rewards": {
     "primary_keys": [
@@ -10213,7 +10327,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "NarrativeVariations": {
     "primary_keys": [
@@ -10304,7 +10419,8 @@
       "Tagged",
       "UserData"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NodeDefinitions": {
     "primary_keys": [
@@ -10336,7 +10452,8 @@
     "foreign_keys": {
       "ShapeId": "ShapeDefinitions"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Notifications": {
     "primary_keys": [
@@ -10398,7 +10515,8 @@
       "ShowIconSinglePlayer",
       "VisibleInUI"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "NotificationSounds": {
     "primary_keys": [
@@ -10482,7 +10600,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "PlayerModifiers": {
     "primary_keys": [
@@ -10570,7 +10689,8 @@
       "TriggerOnEnter",
       "UnoccupiedDecay"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "PlotEvalConditions": {
     "primary_keys": [
@@ -10599,7 +10719,8 @@
       "PoorValue": "0"
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Plunders": {
     "primary_keys": [
@@ -10621,7 +10742,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "PrevailingWinds": {
     "primary_keys": [],
@@ -10700,7 +10822,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "ProgressionTree_Advisories": {
     "primary_keys": [
@@ -10789,7 +10912,8 @@
       "CanSteal",
       "Repeatable"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ProgressionTreeNodeTraits": {
     "primary_keys": [
@@ -11167,7 +11291,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Quests": {
     "primary_keys": [
@@ -11258,7 +11383,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "RandomEventDamages": {
     "primary_keys": [
@@ -11407,7 +11533,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "RegionClaimObstacles": {
     "primary_keys": [
@@ -11539,7 +11666,8 @@
       "Reverse",
       "Triggered"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "RequirementArguments": {
     "primary_keys": [
@@ -11620,7 +11748,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "RequirementSetStrings": {
     "primary_keys": [
@@ -11802,7 +11931,8 @@
           "col": "Type"
         }
       ]
-    }
+    },
+    "origin_pk": true
   },
   "Resource_Harvests": {
     "primary_keys": [
@@ -12091,7 +12221,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ScoringCategories": {
     "primary_keys": [
@@ -12118,7 +12249,8 @@
         "ScoringLineItems"
       ]
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ScoringLineItems": {
     "primary_keys": [
@@ -12191,7 +12323,8 @@
     "foreign_keys": {
       "Category": "ScoringCategories"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Seasons": {
     "primary_keys": [
@@ -12218,7 +12351,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "SettlementPreferences": {
     "primary_keys": [
@@ -12233,7 +12367,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ShapeDefinitions": {
     "primary_keys": [
@@ -12269,7 +12404,8 @@
       "MaxChildren",
       "MinChildren"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "StandardHandicaps": {
     "primary_keys": [
@@ -12589,7 +12725,8 @@
     "mined_bools": [
       "CityStrategy"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Strategy_Priorities": {
     "primary_keys": [
@@ -12713,7 +12850,8 @@
     "foreign_keys": {
       "Category": "TagCategories"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TagCategories": {
     "primary_keys": [
@@ -12733,7 +12871,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TargetTypes": {
     "primary_keys": [
@@ -12753,7 +12892,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Terrains": {
     "primary_keys": [
@@ -12840,7 +12980,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "TerrainBiomeFeature_YieldChanges": {
     "primary_keys": [
@@ -13001,7 +13142,8 @@
       "OnlyLegacyCivTrait",
       "UseLegacyTraits"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TraditionAttributes": {
     "primary_keys": [
@@ -13145,7 +13287,8 @@
     "foreign_keys": {
       "TreeName": "BehaviorTrees"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TribeCombatTags": {
     "primary_keys": [
@@ -13305,7 +13448,8 @@
     "mined_bools": [
       "InitialUnitAmount"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TriggeredBehaviorTrees": {
     "primary_keys": [
@@ -13334,7 +13478,8 @@
       "AIEvent": "AiEvents",
       "TreeName": "BehaviorTrees"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TurnPhases": {
     "primary_keys": [
@@ -13366,7 +13511,8 @@
     "mined_bools": [
       "PhaseOrder"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TurnSegments": {
     "primary_keys": [
@@ -13426,7 +13572,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "TurnTimers": {
     "primary_keys": [
@@ -13445,7 +13592,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Types": {
     "primary_keys": [
@@ -13529,7 +13677,8 @@
     "foreign_keys": {
       "Kind": "Kinds"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Types_ValidAges": {
     "primary_keys": [
@@ -13668,7 +13817,8 @@
     "extra_fks": {
       "DiplomacyStatementType": "DiplomacyStatements",
       "WarType": "Wars"
-    }
+    },
+    "origin_pk": true
   },
   "UnhappinessEffects": {
     "primary_keys": [
@@ -13705,7 +13855,8 @@
       "Ongoing",
       "ScaleBySpeed"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UniqueQuarters": {
     "primary_keys": [
@@ -13743,7 +13894,8 @@
       "BuildingType2": "Constructibles",
       "BuildingType1": "Constructibles"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UniqueQuarterModifiers": {
     "primary_keys": [
@@ -14375,7 +14527,8 @@
       "ShareWithChildren",
       "ShowFloatTextWhenEarned"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitAbility_TimedAbilities": {
     "primary_keys": [
@@ -14467,7 +14620,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitCaptures": {
     "primary_keys": [
@@ -14583,7 +14737,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "UnitDiplomacyAction_Targets": {
     "primary_keys": [
@@ -14663,7 +14818,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "UnitFormationClasses": {
     "primary_keys": [
@@ -14680,7 +14836,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitMovementClassObstacles": {
     "primary_keys": [
@@ -14741,7 +14898,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitOperations": {
     "primary_keys": [
@@ -14830,7 +14988,8 @@
       "Turns",
       "VisibleInUI"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitPromotions": {
     "primary_keys": [
@@ -15183,7 +15342,8 @@
       "EnabledByDefault",
       "RequiresMultipleTeams"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "VictoryCinematics": {
     "primary_keys": [
@@ -15226,7 +15386,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "VictoryScorings": {
     "primary_keys": [
@@ -15257,7 +15418,8 @@
       "StaticCarryover": "0"
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "VictoryTypes": {
     "primary_keys": [
@@ -15296,7 +15458,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "VisArt_CivilizationBuildingCultures": {
     "primary_keys": [
@@ -15429,7 +15592,8 @@
     },
     "extra_fks": {
       "Type": "Types"
-    }
+    },
+    "origin_pk": true
   },
   "Warehouse_YieldChanges": {
     "primary_keys": [
@@ -15511,7 +15675,8 @@
       "ResourceInCity",
       "RouteInCity"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "WarWearinessEffects": {
     "primary_keys": [
@@ -15530,7 +15695,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "WMDs": {
     "primary_keys": [
@@ -15584,7 +15750,8 @@
       ]
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Wonders": {
     "primary_keys": [
@@ -15736,7 +15903,8 @@
     },
     "extra_fks": {
       "Type": "NarrativeStory_RewardIcons"
-    }
+    },
+    "origin_pk": true
   },
   "IProperties": {
     "primary_keys": [
@@ -15787,7 +15955,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ReportingEvents": {
     "primary_keys": [
@@ -15802,7 +15971,8 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GameCoreEvents": {
     "primary_keys": [
@@ -15817,6 +15987,7 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   }
 }

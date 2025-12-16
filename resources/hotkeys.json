@@ -40,6 +40,13 @@
       },
       {
         "type":"command",
+        "label":"Import Mod...",
+        "file":"./hotkey_functions.py",
+        "function_name":"import_mod",
+        "shortcut":"Shift+L"
+      },
+      {
+        "type":"command",
         "label":"Clear Session...",
         "file":"./hotkey_functions.py",
         "function_name":"clear_session",

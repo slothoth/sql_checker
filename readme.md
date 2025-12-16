@@ -8,20 +8,22 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Dialog traps mouse [X]
 - Change integer columns that are 0 or 1 into checkbox      [x]
 - Searchable dropdown in comboBox                                   [x]
-- Metadata setter window. Also if this determines age, we should change possible values.
-- ModifierArgs/RequirementArgs Value completions using Name
-- ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier
+- Metadata setter window. Also if this determines age, we should change possible values.   [x]
+- ALWAYS mode uses subset of possible values present in all 3 ages   [x]
+- Include some hotkeys in top section, like File [x]
+- Convert existing mod to diagram[x]
+- ModifierArgs/RequirementArgs Value completions using Name   []
+- ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier  []
+- pk fk connects done prior to making the connection or the downstream node get the value  [ ]
 - Search highlights most used set (predefined/ user tracked?)     [ ]
 - Sort port topdown so required ones are at the top                 [ ]
-- pk fk connects done prior to making the connection or the downstream node get the value  [ ]
 - Effect Attach Modifier, ModifierArgument Extra Connection             [ ]
-- Include some hotkeys in top section, like File []
-- Searchable dropdown comboBox is prettier [ ]
-- ALWAYS mode uses subset of possible values present in all 3 ages   []
-- Types autofills KIND based on connecting module  []
-
+- Searchable dropdown comboBox is prettier                 [ ]
+- Types autofills KIND based on connecting module           []
+- PK port connections with just the first PK value if combined PK  []
+- setEditable on ComboxBox to add new values?
+- Big Graphs compress tables of the same type into one node.
   Big Features:
 - Image imports
 - frontend modelling
 - VI port (ahhh)
-- Convert existing mod to diagram

@@ -1,9 +1,12 @@
-from Qt import QtGui, QtWidgets, QtCore
-import sys, os, json, shutil, uuid
+from PySide6 import QtGui, QtWidgets, QtCore
+import sys, os, json, shutil
+
+from sqlalchemy import inspect
 
 from graph.db_node_support import NodeCreationDialog
+from graph.mod_conversion import modinfo_into_jobs
 from graph.model_positioning import force_forward_spring_graphs
-from graph.transform_json_to_sql import transform_json, start_analysis
+from graph.transform_json_to_sql import transform_json, start_analysis_graph
 from graph.db_spec_singleton import ResourceLoader
 from graph.windows import MetadataDialog
 
@@ -12,21 +15,24 @@ db_spec = ResourceLoader()
 # This file exists because the convenience method for doing hotkeys dies in packaged executables
 
 
-def set_hotkeys(context_menu):
+def set_hotkeys(window, menubar):
+    context_menu = window.graph.get_context_menu('graph')
     rsc_path = os.path.join(getattr(sys, "_MEIPASS", os.path.abspath(".")), "resources/hotkeys.json")
     with open(rsc_path, "r") as f:
         hotkeys_list = json.load(f)
     for item in hotkeys_list:
         if item["type"] == "menu":
             hotkey_menu = context_menu.add_menu(item["label"])
+            menu_bar_category = menubar.addMenu(item["label"])
             for command_info in item.get('items', []):
                 if command_info["type"] == "command":
-                    insert_command(command_info, hotkey_menu)
+                    insert_command(command_info, hotkey_menu, menu_bar_category, window=window)
+
         if item["type"] == "command":
             insert_command(item, context_menu)
 
 
-def insert_command(command_dict, menu=None):
+def insert_command(command_dict, menu=None, menu_bar_folder=None, window=None):
     func_name = command_dict.get("function_name", None)
     if func_name is not None:
         hk_func = globals().get(func_name, False)
@@ -35,6 +41,22 @@ def insert_command(command_dict, menu=None):
                             f"Function {command_dict['function_name']} on command {command_dict.get('label', '')} did not exist.")
         shtcut = command_dict.get("shortcut", None)
         menu.add_command(name=command_dict["label"], func=hk_func, shortcut=shtcut)
+        if menu_bar_folder is not None:
+            action_ = GraphMenuAction(command_dict["label"], window.graph, window)
+            action_.executed.connect(hk_func)
+            menu_bar_folder.addAction(action_)
+
+
+class GraphMenuAction(QtGui.QAction):
+    executed = QtCore.Signal(object)
+
+    def __init__(self, text, graph, parent=None):
+        super().__init__(text, parent)
+        self.graph = graph
+        self.triggered.connect(self._on_triggered)
+
+    def _on_triggered(self):
+        self.executed.emit(self.graph)
 
 
 def zoom_in(graph):
@@ -430,7 +452,7 @@ def test_session(graph):
 
     graph.save_session(current)
     transform_json(current)
-    start_analysis(graph.main_window)
+    start_analysis_graph(graph.main_window)
     msg = 'Running Test in main Window'.format(current)
     viewer = graph.viewer()
     viewer.message_dialog(msg, title='Running Test')
@@ -505,9 +527,29 @@ def save_session_to_mod(graph, parent=None):
 
 def open_metadata_dialog(graph, parent=None):
     dialog = MetadataDialog(graph, graph.viewer())
-    dialog.type_combo.addItems(["AGE_ANTIQUITY", "AGE_EXPLORATION", "AGE_MODERN"])
 
     if dialog.exec_() != QtWidgets.QDialog.Accepted:
         return None
 
     return dialog.values()
+
+
+def import_mod(graph):
+    """
+    Prompts a file open dialog to load an existing mod folder.
+    """
+    from PySide6.QtWidgets import QFileDialog
+    from PySide6.QtCore import QUrl
+    from filepath_utils import find_civ_config
+    from graph.mod_conversion import parse_mod_folder
+
+    dlg = QFileDialog(graph.viewer(), "Select Folder")
+    dlg.setFileMode(QFileDialog.Directory)
+    dlg.setOption(QFileDialog.ShowDirsOnly, True)
+    mod_dir = find_civ_config() + '/Mods'
+    dlg.setDirectoryUrl(QUrl.fromLocalFile(mod_dir))
+    dlg.exec()
+    path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
+    if path is not None:
+        parse_mod_folder(path, graph)
+        layout_graph_down(graph)

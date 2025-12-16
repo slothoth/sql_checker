@@ -59,6 +59,21 @@ class DynamicNode(BaseNode):
         self.view.add_widget(widget)
         self.view.draw_node()
 
+    def set_spec(self, col_dict):
+        for col_name, value in col_dict.items():
+            if value is not None and value != 'NULL':
+                widget = self.get_widget(col_name)
+                if widget:
+                    current_val = self.get_property(col_name)
+                    if 'CheckBox' in type(widget).__name__:
+                        if isinstance(value, str):
+                            value = int(value)
+                        value = True if 0 else False
+                    if 'LineEdit' in type(widget).__name__:
+                        if not isinstance(value, str):
+                            value = str(value)
+                    widget.set_value(value)
+
     def _delete_self(self):
         graph = self.graph
         if graph:
@@ -104,18 +119,23 @@ def draw_square_port(painter, rect, info):
 
 # had to auto generate classes rather then generate at node instantition because
 # on save they werent storing their properties in such a way they could be loaded again
-def create_table_node_class(table_name, spec):
+def create_table_node_class(table_name, spec, graph):
     class_name = f"{table_name.title().replace('_', '')}Node"
 
     def init_method(self):
         super(type(self), self).__init__()
         self._initial_fields = list(spec.get('primary_texts', []))
         self._extra_fields = list(spec.get('secondary_texts', []))
+        self.create_property('table_name', value=table_name)
         self.create_property('toggle_extra', value='>')
         self.add_button(name='toggle_extra', label='', text='>')
         btn = self.get_widget('toggle_extra')
         btn.value_changed.connect(lambda *a: self._toggle_extra())
-        self._possible_vals = db_spec.possible_vals.get(table_name, {})
+        age = graph.property('meta').get('Age')
+        if age == 'ALWAYS':
+            self._possible_vals = db_spec.all_possible_vals.get(table_name, {})
+        else:
+            self._possible_vals = db_spec.possible_vals.get(age, {}).get(table_name, {})
         # Initialize ports and widgets based on the schema
 
         for col in spec['all_cols']:
@@ -164,10 +184,10 @@ def create_table_node_class(table_name, spec):
     return NewClass
 
 
-def generate_tables():
+def generate_tables(graph):
     all_custom_nodes = []
     for name, spec in db_spec.node_templates.items():
-        NodeClass = create_table_node_class(name, spec)
+        NodeClass = create_table_node_class(name, spec, graph)
         all_custom_nodes.append(NodeClass)
     return all_custom_nodes
 

@@ -22,10 +22,12 @@ class ResourceLoader:
     def _load_resources(self):
         self._files = {
             'node_templates': self.resource_path("resources/db_spec.json"),
-            'possible_vals': self.resource_path('resources/db_possible_vals.json')
+            'possible_vals': self.resource_path('resources/db_possible_vals.json'),
+            'all_possible_vals': self.resource_path('resources/all_possible_vals.json')
         }
         self.node_templates = self._read_file(self._files['node_templates'])
         self.possible_vals = self._read_file(self._files['possible_vals'])
+        self.all_possible_vals = self._read_file(self._files['all_possible_vals'])
 
     @staticmethod
     def _read_file(path):
@@ -44,6 +46,10 @@ class ResourceLoader:
     def update_possible_vals(self, data):
         self.possible_vals = data
         self._write_file(self._files['possible_vals'], data)
+
+    def update_all_vals(self, data):
+        self.all_possible_vals = data
+        self._write_file(self._files['all_possible_vals'], data)
 
     @staticmethod
     def resource_path(relative_path):

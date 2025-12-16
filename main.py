@@ -5,15 +5,11 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
     QFileDialog, QSizePolicy, QPlainTextEdit
 )
-import os
-from pathlib import Path
-
-if sys.platform == 'win32':
-    import winreg
 
 from model import model_run
-from graph.node_controller import nodeEditorWindow
+from graph.node_controller import NodeEditorWindow
 from syntax_highlighter import LogHighlighter
+from filepath_utils import find_workshop, find_civ_install, find_civ_config
 
 
 class App(QWidget):
@@ -138,58 +134,8 @@ class App(QWidget):
 
     def popout_graph_planner(self):
         if self.graph_editor_window is None:
-            # self.graph_editor_window = GraphEditorWindow()
-            self.graph_editor_window = nodeEditorWindow(self)
-        # self.graph_editor_window.show()
-        # self.graph_editor_window.raise_()
-        # self.graph_editor_window.activateWindow()
-
-
-def find_steam_install():
-    if sys.platform == 'win32':
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Valve\Steam")
-        steam_path, _ = winreg.QueryValueEx(key, "SteamPath")
-    elif sys.platform == 'win64':
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Wow6432Node\Valve\Steam")
-        steam_path, _ = winreg.QueryValueEx(key, "SteamPath")
-    elif sys.platform == 'darwin':
-        user_home = Path.home()
-        steam_path = str(user_home / "Library" / "Application Support" / "Steam")
-    else:
-        return None
-    return steam_path
-
-
-def find_civ_install():
-    steam_path = find_steam_install()
-    if steam_path is None:
-        return None
-    if sys.platform == 'win32':
-        civ_install = os.path.join(steam_path, "steamapps/common/Sid Meier's Civilization VII")
-    elif sys.platform == 'darwin':
-        civ_install = os.path.join(steam_path, "steamapps/common/Sid Meier's Civilization VII/CivilizationVII.app/Contents/Resources")
-    else:
-        return None
-    return civ_install
-
-
-def find_workshop():
-    steam_path = find_steam_install()
-    if steam_path is None:
-        return None
-    return f"{steam_path}/steamapps/workshop/content/1295660/"
-
-
-def find_civ_config():
-    if sys.platform == 'win32':
-        local_appdata = os.getenv('LOCALAPPDATA')
-        civ_install = f"{local_appdata}/Firaxis Games/Sid Meier's Civilization VII"
-    elif sys.platform == 'darwin':
-        user_home = Path.home()
-        civ_install = str(user_home / "Library" / "Application Support" / "Civilization VII")
-    else:
-        return None
-    return civ_install
+            self.graph_editor_window = NodeEditorWindow(self)
+            self.graph_editor_window.show()
 
 
 if __name__ == "__main__":
