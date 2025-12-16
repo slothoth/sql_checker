@@ -25,5 +25,7 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Big Graphs compress tables of the same type into one node.
   Big Features:
 - Image imports
+- Localisation entries (and displaying them as options in relevant gameplay graph)
 - frontend modelling
 - VI port (ahhh)
+- Tabbed graphs, so you can see content in different criteria.

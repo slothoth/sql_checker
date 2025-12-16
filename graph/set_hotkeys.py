@@ -1,11 +1,9 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
 import sys, os, json, shutil
 
-from sqlalchemy import inspect
 
 from filepath_utils import find_civ_config
 from graph.db_node_support import NodeCreationDialog
-from graph.mod_conversion import modinfo_into_jobs
 from graph.model_positioning import force_forward_spring_graphs
 from graph.transform_json_to_sql import transform_json, start_analysis_graph
 from graph.db_spec_singleton import ResourceLoader
