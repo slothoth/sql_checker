@@ -5,7 +5,7 @@ import sys, os, json, shutil
 from filepath_utils import find_civ_config
 from graph.db_node_support import NodeCreationDialog
 from graph.model_positioning import force_forward_spring_graphs
-from graph.transform_json_to_sql import transform_json, start_analysis_graph
+from graph.transform_json_to_sql import transform_json, start_analysis_graph, make_modinfo
 from graph.db_spec_singleton import ResourceLoader
 from graph.windows import MetadataDialog
 
@@ -422,24 +422,6 @@ def create_dynamic_node_with_search(graph):
     node = graph.create_node(f'db.table.{name.lower()}.{class_name}', pos=[scene_pos.x(), scene_pos.y()])
 
 
-def edit_antiquity_scene(graph):
-    views, id_map = force_forward_spring_graphs('../../resources/antiquity-db.sqlite')
-    first_view = views[0]
-    for node_info in first_view['nodes']:
-        node = graph.create_node('nodes.widget.DynamicFieldsNode',
-                                 pos=[node_info['pos']['x'], node_info['pos']['y']])
-        node.set_spec(node_info['table_name'])
-        node.set_name(node_info['table_name'])
-
-    for edge_info in first_view['edges']:
-        start_table = id_map[edge_info['start_node_id']]
-        end_table = id_map[edge_info['end_node_id']]
-        pk = db_spec.node_templates[start_table]
-
-    # make edges from graphs.
-    # convert views (old style) into graphs
-
-
 def test_session(graph):
     """
     Tests the given graph against the database by converting it to SQL. During this process,
@@ -452,17 +434,10 @@ def test_session(graph):
     graph.save_session(current)
     transform_json(current)
     start_analysis_graph(graph.main_window)
-    msg = 'Running Test in main Window'.format(current)
     viewer = graph.viewer()
-    viewer.message_dialog(msg, title='Running Test')
-
-
-criteria_names = {
-    'ALWAYS': 'always',
-    'AGE_ANTIQUITY': 'antiquity-age-current',
-    'AGE_EXPLORATION': 'exploration-age-current',
-    'AGE_MODERN': 'modern-age-current'
-}
+    graph.main_window.showNormal()
+    graph.main_window.raise_()
+    graph.main_window.activateWindow()
 
 
 def save_session_to_mod(graph, parent=None):
@@ -490,32 +465,15 @@ def save_session_to_mod(graph, parent=None):
         if not civ_mods_path:
             return
 
-    meta_info = graph.property('meta')
-    mod_name = meta_info['Mod Name']
-    mod_description = meta_info['Mod Description']
-    mod_author = meta_info['Mod Author']
-    mod_uuid = meta_info['Mod UUID']
-    mod_action_id = meta_info['Mod Action']
-    mod_age = meta_info['Age']
-    mod_age_criteria = criteria_names[mod_age]
+    template, mod_name = make_modinfo(graph)
     target = os.path.join(civ_mods_path, mod_name)
-
-    with open('resources/template.modinfo', 'r') as f:
-        template = f.read()
-
-    # add custom stuff
-    template = template.replace('$UUID$', mod_uuid)
-    template = template.replace('$MODNAME$', mod_name)
-    template = template.replace("$MOD_DESCRIPTION$", mod_description)
-    template = template.replace("$YOUR_NAME$", mod_author)
-    template = template.replace("$actionID$", mod_action_id)
-    template = template.replace("$actionCriteria$", mod_age_criteria)
     os.makedirs(target, exist_ok=True)
 
     shutil.copy('resources/main.sql', os.path.join(target, "main.sql"))
 
     with open(os.path.join(target, f"{mod_name}.modinfo"), "w", encoding="utf-8") as f:
         f.write(template)
+    graph.message_dialog(f'Saved Mod to mods folder {target}', title='Mod Saved')
 
 
 def open_metadata_dialog(graph, parent=None):
@@ -546,3 +504,4 @@ def import_mod(graph):
     if path is not None:
         parse_mod_folder(path, graph)
         layout_graph_down(graph)
+    graph.message_dialog('Finished loading Mod', title='Mod Loaded')

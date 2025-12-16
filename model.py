@@ -103,11 +103,11 @@ class SqlChecker:
             raise Exception(err_string)
         for row in rows:
             file_info = dict(row)
-            mod_folder_path = modinfo_uuids[file_info['ModId']]
-            # if file_info['Disabled'] is None:
-            #    if 'workshop' in mod_folder_path or 'Mods' in mod_folder_path:
-            #        continue
-            ## removed as mods were alse returning NULL in Mods.Disabled even when they were on. Sighhh
+            mod_folder_path = modinfo_uuids.get(file_info['ModId'], None)
+            if mod_folder_path is None:
+                self.log_queue.put(f'Mod: {file_info["ModId"]} was not present in modding folder: {mod_folder_path}.'
+                                   f'\nThis likely means this mod was removed since you last launched Civ. Skipping.')
+                continue                    # if mod was removed since last civ launch
             file_info['full_path'] = os.path.join(mod_folder_path, file_info['File'])
             del file_info['Disabled']
             files_to_apply.append(file_info)

@@ -3,7 +3,7 @@ from graph.db_spec_singleton import ResourceLoader
 
 
 db_spec = ResourceLoader()
-excludes = ['toggle_extra']
+excludes = ['toggle_extra', 'table_name']
 
 
 def transform_json(json_file):
@@ -58,3 +58,31 @@ def transform_json(json_file):
 
 def start_analysis_graph(main_window):
     main_window.start_analysis(True)
+
+criteria_names = {
+    'ALWAYS': 'always',
+    'AGE_ANTIQUITY': 'antiquity-age-current',
+    'AGE_EXPLORATION': 'exploration-age-current',
+    'AGE_MODERN': 'modern-age-current'
+}
+
+
+def make_modinfo(graph):
+    meta_info = graph.property('meta')
+    mod_name = meta_info['Mod Name']
+    mod_description = meta_info['Mod Description']
+    mod_author = meta_info['Mod Author']
+    mod_uuid = meta_info['Mod UUID']
+    mod_action_id = meta_info['Mod Action']
+    mod_age = meta_info['Age']
+    mod_age_criteria = criteria_names[mod_age]
+
+    with open('resources/template.modinfo', 'r') as f:
+        template = f.read()
+    template = template.replace('$UUID$', mod_uuid)
+    template = template.replace('$MODNAME$', mod_name)
+    template = template.replace("$MOD_DESCRIPTION$", mod_description)
+    template = template.replace("$YOUR_NAME$", mod_author)
+    template = template.replace("$actionID$", mod_action_id)
+    template = template.replace("$actionCriteria$", mod_age_criteria)
+    return template, mod_name

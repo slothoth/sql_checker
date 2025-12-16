@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="SQL_GUI_ac4bfa68e6924092b0d30433c9b7f9ff" version="1"
+	xmlns="ModInfo">
+	<Properties>
+		<Name>SQL_GUI_Mod</Name>
+		<Description>A Mod built with Slothoths SQL GUI. They haven't customised their Description!</Description>
+		<Authors>Slothoth Mod GUI</Authors>
+		<ShowInBrowser>1</ShowInBrowser>
+		<Package>MOD</Package>
+	</Properties>
+	<Dependencies>
+		<Mod id="age-antiquity" title="LOC_MODULE_AGE_ANTIQUITY_NAME"/>
+	</Dependencies>
+	<ActionCriteria>
+		<Criteria id="always">
+			<AlwaysMet/>
+		</Criteria>
+        <Criteria id="antiquity-age-current">
+			<AgeInUse>AGE_ANTIQUITY</AgeInUse>
+		</Criteria>
+		<Criteria id="exploration-age-current">
+			<AgeInUse>AGE_EXPLORATION</AgeInUse>
+		</Criteria>
+		<Criteria id="modern-age-current">
+			<AgeInUse>AGE_MODERN</AgeInUse>
+		</Criteria>
+	</ActionCriteria>
+	<ActionGroups>
+		<ActionGroup id="always_slothoth_mod_gui" scope="game" criteria="antiquity-age-current">
+			<Actions>
+				<UpdateDatabase>
+					<Item>main.sql</Item>
+				</UpdateDatabase>
+			</Actions>
+		</ActionGroup>
+	</ActionGroups>
+</Mod>

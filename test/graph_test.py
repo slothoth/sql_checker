@@ -1,10 +1,12 @@
-from graph.node_controller import NodeEditorWindow
 import pytest
+import json
+
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtTest import QTest
 from PyQt5.QtWidgets import QMainWindow
-import json
 
+from graph.node_controller import NodeEditorWindow
+from graph.transform_json_to_sql import transform_json, make_modinfo
 
 
 def test_menu_actions_exist(qtbot):
@@ -34,20 +36,21 @@ def test_graph_widget_loaded(qtbot):
     assert window.centralWidget() == window.graph.widget
 
 
-def test_drag_port_to_empty_space_triggers_release(qtbot):
+def setup_types_node(qtbot):
     window = NodeEditorWindow()
     qtbot.addWidget(window)
     window.show()
-
-    viewer = window.graph.viewer()
-    qtbot.waitExposed(viewer)
-
-    # setup node
+    qtbot.waitExposed(window.graph.viewer())
     name = 'Types'
     class_name = f"{name.title().replace('_', '')}Node"
     node = window.graph.create_node(f'db.table.{name.lower()}.{class_name}')
-    ports = node.input_ports()
-    port_dict = {i.name(): i for i in ports}
+    return node, window
+
+
+def test_drag_port_to_empty_space_triggers_release(qtbot):
+    node, window = setup_types_node(qtbot)
+    viewer = window.graph.viewer()
+    port_dict = {i.name(): i for i in node.input_ports()}
     start_port = port_dict['Kind']
     scene_pos = start_port.view.scenePos()
     start_pos = viewer.mapFromScene(scene_pos)
@@ -82,3 +85,26 @@ def test_drag_port_to_empty_space_triggers_release(qtbot):
     assert new_node.get_property('table_name') == 'Kinds'
 
 
+def test_write_graph_to_mod(qtbot):
+    node, window = setup_types_node(qtbot)
+    node.set_property('Type', 'TYPE_TEST')
+    node.set_property('Kind', 'KIND_ABILITY')
+    current = window.graph.current_session()
+    if not current:
+        current = 'resources/graph.json'
+
+    window.graph.save_session(current)
+    transform_json(current)
+
+    # check the content
+    with open('resources/main.sql', 'r') as f:
+        test_sql = f.read()
+
+    with open('test/test_data/basic_mod.sql', 'r') as f:
+        expected_sql = f.read()
+
+    assert test_sql == expected_sql
+    # make modinfo
+    template, mod_name, = make_modinfo(window.graph)
+    # TODO refactor or find a way to get the same modinfo because different UUIDs. I dont wanna regex
+    # And also i dont really wanna refactor.

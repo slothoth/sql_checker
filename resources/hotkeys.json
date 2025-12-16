@@ -8,13 +8,6 @@
   },
   {
     "type":"command",
-    "label":"EditAntiquity",
-    "file":"./hotkey_functions.py",
-    "function_name":"edit_antiquity_scene",
-    "shortcut":"Shift+1"
-  },
-  {
-    "type":"command",
     "label":"DeleteNode",
     "file":"./hotkey_functions.py",
     "function_name":"install_delete_at_cursor_shortcut",
