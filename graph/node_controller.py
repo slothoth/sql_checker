@@ -47,10 +47,6 @@ class NodeEditorWindow(QMainWindow):
         # custom pullout
         self.enable_auto_node_creation()
 
-        def on_nodes_deleted(node_ids):             # TODO make this actually do something
-            if False:
-                sync_node_options(graph)
-        self.graph.nodes_deleted.connect(on_nodes_deleted)
         self.graph.property_changed.connect(on_property_changed)
 
         viewer = self.graph.viewer()

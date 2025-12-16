@@ -127,7 +127,6 @@ class App(QWidget):
                     self.log_display.appendPlainText(str(message))
                     # keep view scrolled to bottom
                     cursor = self.log_display.textCursor()
-                    # cursor.movePosition(cursor.End)                 # TODO cursor .end fails on Pyside6
                     self.log_display.setTextCursor(cursor)
         except queue.Empty:
             pass

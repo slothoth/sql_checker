@@ -3,6 +3,7 @@ import sys, os, json, shutil
 
 from sqlalchemy import inspect
 
+from filepath_utils import find_civ_config
 from graph.db_node_support import NodeCreationDialog
 from graph.mod_conversion import modinfo_into_jobs
 from graph.model_positioning import force_forward_spring_graphs
@@ -480,21 +481,15 @@ def save_session_to_mod(graph, parent=None):
 
     # if local mod dir exists, use that
     base_home = os.path.expanduser("~")
-    mac_path = f'{base_home}/Library/Application Support/Civilization VII/Mods'
-    win_path = f'{base_home}/Library/Application Support/Civilization VII/Mods' # TODO get win path
-
-    if os.path.exists(mac_path):
-        base_dir = mac_path
-    elif os.path.exists(win_path):
-        base_dir = win_path
-    else:
-        base_dir = QtWidgets.QFileDialog.getExistingDirectory(
+    civ_mods_path = find_civ_config() + '/Mods'
+    if not os.path.exists(civ_mods_path):
+        civ_mods_path = QtWidgets.QFileDialog.getExistingDirectory(
             parent,
             "Select Save Location",
             "",
             QtWidgets.QFileDialog.ShowDirsOnly
         )
-        if not base_dir:
+        if not civ_mods_path:
             return
 
     meta_info = graph.property('meta')
@@ -505,7 +500,7 @@ def save_session_to_mod(graph, parent=None):
     mod_action_id = meta_info['Mod Action']
     mod_age = meta_info['Age']
     mod_age_criteria = criteria_names[mod_age]
-    target = os.path.join(base_dir, mod_name)
+    target = os.path.join(civ_mods_path, mod_name)
 
     with open('resources/template.modinfo', 'r') as f:
         template = f.read()

@@ -614,7 +614,7 @@ def model_run(civ_install, civ_config, workshop, log_queue, extra_sql):
     for key, val in sql_statements_mods.items():
         full_dump.extend([DASHS + key + DASHS] + val)
     try:
-        log_path = os.path.join(tempfile.gettempdir(), 'sql_statements.log')  # todo, log these in non-temp location?
+        log_path = os.path.join(tempfile.gettempdir(), 'sql_statements.log')
         with open(log_path, 'w') as file:
             file.write("\n".join(full_dump))
         wrapped_q.put(f"Wrote transformed SQL as a single file to {log_path}")
