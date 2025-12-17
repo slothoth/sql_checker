@@ -31,4 +31,4 @@ It also includes a graph GUI where you can package and plan your own mod.
 - frontend modelling
 - VI port (ahhh)
 - Tabbed graphs, so you can see content in different criteria.
-- Node connections can only happen between valid connectors (PK-FK)
+- Node connections can only happen between valid connectors (PK-FK), node.add_accept_port_type

@@ -4,7 +4,7 @@ from PyQt5 import QtGui, QtWidgets
 from PyQt5.QtWidgets import QMainWindow
 from NodeGraphQt import NodeGraph
 
-from graph.db_node_support import NodeCreationDialog, sync_node_options
+from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
 from graph.nodes.dynamic_nodes import generate_tables
 from graph.db_spec_singleton import ResourceLoader
 from graph.set_hotkeys import set_hotkeys
@@ -49,6 +49,9 @@ class NodeEditorWindow(QMainWindow):
 
         viewer = self.graph.viewer()
         viewer.connection_changed.connect(on_connection_changed)
+
+        hide = self.graph.property("Hide Types") or False
+        set_nodes_visible_by_type(self.graph, 'db.table.types.TypesNode', not hide)
 
     def closeEvent(self, event):
         self.hide()

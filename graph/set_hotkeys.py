@@ -7,7 +7,6 @@ from graph.db_node_support import NodeCreationDialog
 from graph.model_positioning import force_forward_spring_graphs
 from graph.transform_json_to_sql import transform_json, start_analysis_graph, make_modinfo
 from graph.db_spec_singleton import ResourceLoader
-from graph.windows import MetadataDialog
 
 db_spec = ResourceLoader()
 
@@ -476,15 +475,6 @@ def save_session_to_mod(graph, parent=None):
     graph.message_dialog(f'Saved Mod to mods folder {target}', title='Mod Saved')
 
 
-def open_metadata_dialog(graph, parent=None):
-    dialog = MetadataDialog(graph, graph.viewer())
-
-    if dialog.exec_() != QtWidgets.QDialog.Accepted:
-        return None
-
-    return dialog.values()
-
-
 def import_mod(graph):
     """
     Prompts a file open dialog to load an existing mod folder.
@@ -509,3 +499,11 @@ def import_mod(graph):
             graph.message_dialog(f'No Modinfo found in folder {path}', title='Mod Not Loaded')
     graph.auto_layout_nodes()
     graph.message_dialog('Finished loading Mod', title='Mod Loaded')
+
+
+def open_settings(graph):
+    from graph.windows import MetadataDialog
+    dialog = MetadataDialog(graph, graph.viewer())
+
+    if dialog.exec_() != QtWidgets.QDialog.Accepted:
+        return None

@@ -13,8 +13,9 @@ from graph.windows import get_combo_value
 # this is a bitch because it needs to parse the .modinfo
 # unsure if how this will deal with different ages. Possibly our main graph model
 # needs to be updated to have 3 separate tabs for each different age.
-
 ages = ['AGE_ANTIQUITY', 'AGE_EXPLORATION', 'AGE_MODERN']
+
+
 def parse_mod_folder(mod_folder_path, graph):
     modinfo_list = [f for f in glob.glob(f'{mod_folder_path}/*.modinfo*')]
     if len(modinfo_list) != 1:

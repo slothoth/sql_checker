@@ -75,13 +75,6 @@
       },
       {
         "type":"command",
-        "label":"Set Metadata",
-        "file":"./hotkey_functions.py",
-        "function_name":"open_metadata_dialog",
-        "shortcut":"Ctrl+M"
-      },
-      {
-        "type":"command",
         "label":"Exit",
         "file":"./hotkey_functions.py",
         "function_name":"quit_qt",
@@ -219,6 +212,13 @@
         "file":"./hotkey_functions.py",
         "function_name":"reset_zoom",
         "shortcut":"H"
+      },
+      {
+        "type":"command",
+        "label":"Settings...",
+        "file":"./hotkey_functions.py",
+        "function_name":"open_settings",
+        "shortcut":"O"
       }
     ]
   },

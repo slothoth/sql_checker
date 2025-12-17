@@ -165,3 +165,15 @@ def sync_node_options_all(graph):
                     combo_widget.add_items(sorted_options)
                     if current_val in sorted_options:
                         combo_widget.set_value(current_val)
+
+
+def set_nodes_visible_by_type(graph, node_cls, visible):
+    for node in graph.all_nodes():
+        if node.type_ == node_cls:
+            node.view.setVisible(visible)
+
+            ports = node.view.inputs + node.view.outputs
+            for port in ports:
+                for pipe in port.connected_pipes:
+                    pipe.setVisible(visible)
+

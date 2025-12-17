@@ -1,85 +1,104 @@
-from graph.db_node_support import sync_node_options_all
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QLineEdit, QFormLayout, QHBoxLayout,
-                               QPushButton, QCheckBox)
+from PyQt5 import QtWidgets
+from graph.db_node_support import sync_node_options_all, set_nodes_visible_by_type
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QCheckBox)
+
+class MetaStore:
+    @staticmethod
+    def get(graph, key, default=None):
+        meta = graph.property('meta') or {}
+        return meta.get(key, default)
+
+    @staticmethod
+    def set(graph, key, value):
+        meta = graph.property('meta') or {}
+        meta[key] = value
+        graph.setProperty('meta', meta)
 
 
-class MetadataDialog(QDialog):
+class MetadataDialog(QtWidgets.QDialog):
     def __init__(self, graph, parent=None):
         super().__init__(parent)
         self.graph = graph
         self.setWindowTitle("Mod Metadata")
         self.setMinimumWidth(320)
 
-        layout = QVBoxLayout(self)
+        layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(6)
 
-        form = QFormLayout()
-        self.mod_name = QLineEdit()
-        self.mod_desc = QLineEdit()
-        self.mod_author = QLineEdit()
-        self.mod_uuid = QLineEdit()
-        self.mod_action_id = QLineEdit()
-        self.mod_age = QComboBox()
+        form = QtWidgets.QFormLayout()
 
-        form.addRow("Mod Name", self.mod_name)
-        form.addRow("Mod Description", self.mod_desc)
-        form.addRow("Mod Author", self.mod_author)
-        form.addRow("Mod UUID", self.mod_uuid)
-        form.addRow("Mod Action", self.mod_action_id)
-        form.addRow("Age", self.mod_age)
+        self.mod_name = QtWidgets.QLineEdit()
+        self.mod_desc = QtWidgets.QLineEdit()
+        self.mod_author = QtWidgets.QLineEdit()
+        self.mod_uuid = QtWidgets.QLineEdit()
+        self.mod_action_id = QtWidgets.QLineEdit()
+        self.mod_age = QtWidgets.QComboBox()
         self.mod_age.addItems(["AGE_ANTIQUITY", "AGE_EXPLORATION", "AGE_MODERN"])
 
-        meta = self.graph.property('meta')
-        self.mod_name.setText(meta.get('Mod Name', ''))
-        self.mod_desc.setText(meta.get('Mod Description', ''))
-        self.mod_author.setText(meta.get('Mod Author', ''))
-        self.mod_uuid.setText(meta.get('Mod UUID', ''))
-        self.mod_action_id.setText(meta.get('Mod Action', ''))
-        self.mod_age.setCurrentText(meta.get('Age', 'AGE_ANTIQUITY'))           # for some reason this fails
+        self.hide_types = QtWidgets.QCheckBox()
 
-        layout.addLayout(form)
+        self.mod_name.setText(MetaStore.get(graph, "Mod Name", ""))
+        self.mod_desc.setText(MetaStore.get(graph, "Mod Description", ""))
+        self.mod_author.setText(MetaStore.get(graph, "Mod Author", ""))
+        self.mod_uuid.setText(MetaStore.get(graph, "Mod UUID", ""))
+        self.mod_action_id.setText(MetaStore.get(graph, "Mod Action", ""))
+        self.mod_age.setCurrentText(MetaStore.get(graph, "Age", "AGE_ANTIQUITY"))
 
-        buttons = QHBoxLayout()
-        buttons.addStretch(1)
+        self.hide_types.setChecked(MetaStore.get(graph, "Hide Types", False))
 
-        apply_btn = QPushButton("Apply")
-        cancel_btn = QPushButton("Cancel")
+        meta_group = QtWidgets.QGroupBox("Metadata")
+        meta_layout = QtWidgets.QFormLayout(meta_group)
 
-        apply_btn.clicked.connect(self.accept_with_changes)
-        cancel_btn.clicked.connect(self.reject)
+        meta_layout.addRow("Mod Name", self.mod_name)
+        meta_layout.addRow("Mod Description", self.mod_desc)
+        meta_layout.addRow("Mod Author", self.mod_author)
+        meta_layout.addRow("Mod UUID", self.mod_uuid)
+        meta_layout.addRow("Mod Action", self.mod_action_id)
+        meta_layout.addRow("Age", self.mod_age)
+        layout.addWidget(meta_group)
 
-        buttons.addWidget(apply_btn)
-        buttons.addWidget(cancel_btn)
+        graph_group = QtWidgets.QGroupBox("Graph")
+        graph_setting_layout = QtWidgets.QFormLayout(graph_group)
 
-        layout.addLayout(buttons)
-
-    def values(self):
-        return {
-            "ModName": self.mod_name.text(),
-            "ModDescription": self.mod_desc.text(),
-            "ModAuthor": self.mod_author.text(),
-            "ModUUID": self.mod_uuid.text(),
-            "ModActionId": self.mod_action_id.text(),
-            "ModAge": self.mod_age.currentText(),
-        }
-
-    def accept_with_changes(self):
-        meta = self.graph.property('meta')
-        meta['Mod Name'] = self.mod_name.text()
-        meta['Mod Description'] = self.mod_desc.text()
-        meta['Mod Author'] = self.mod_author.text()
-        meta['Mod UUID'] = self.mod_uuid.text()
-        meta['Mod Action'] = self.mod_action_id.text()
-        changed_age = not (meta['Age'] == self.mod_age.currentText())
-        meta['Age'] = self.mod_age.currentText()
-        self.graph.setProperty('meta', meta)
-        if changed_age:
-            sync_node_options_all(self.graph)             # todo refactor so it only syncs valid ones
-        self.accept()
+        graph_setting_layout.addRow("Hide Types", self.hide_types)
+        layout.addWidget(graph_group)
 
 
-# dialog for choosing condition on loading mod
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
+        )
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout.addWidget(buttons)
+
+    def accept(self):
+        old_age = MetaStore.get(self.graph, "Age")
+
+        MetaStore.set(self.graph, "Mod Name", self.mod_name.text())
+        MetaStore.set(self.graph, "Mod Description", self.mod_desc.text())
+        MetaStore.set(self.graph, "Mod Author", self.mod_author.text())
+        MetaStore.set(self.graph, "Mod UUID", self.mod_uuid.text())
+        MetaStore.set(self.graph, "Mod Action", self.mod_action_id.text())
+        MetaStore.set(self.graph, "Age", self.mod_age.currentText())
+        MetaStore.set(self.graph, "Hide Types", self.hide_types.isChecked())
+
+        if old_age != self.mod_age.currentText():
+            sync_node_options_all(self.graph)
+
+        hide = self.hide_types.isChecked()
+        set_nodes_visible_by_type(self.graph, 'db.table.types.TypesNode', not hide)
+        super().accept()
+
+
+def open_metadata_dialog(graph, parent=None):
+    dlg = MetadataDialog(graph, parent)
+    if dlg.exec() == QtWidgets.QDialog.Accepted:
+        return dlg.age.currentText(), {i.text(): i.isChecked() for i in dlg.mod_items}
+    return None, None
+
+
 class ComboDialog(QDialog):
     def __init__(self, age_list, mod_list, parent=None):
         super().__init__(parent)
