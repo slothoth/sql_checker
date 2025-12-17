@@ -18,7 +18,7 @@ ages = ['AGE_ANTIQUITY', 'AGE_EXPLORATION', 'AGE_MODERN']
 def parse_mod_folder(mod_folder_path, graph):
     modinfo_list = [f for f in glob.glob(f'{mod_folder_path}/*.modinfo*')]
     if len(modinfo_list) != 1:
-        raise Exception('plural or no modinfos in this mod folder')
+        return False
 
     modinfo_dict = parse_modinfo(modinfo_list[0], mod_folder_path)
     sql_info_dict = modinfo_into_jobs(modinfo_dict)
@@ -38,6 +38,7 @@ def parse_mod_folder(mod_folder_path, graph):
     file_list = get_files(possible_workloads, mod_dict)
     orm_list = mod_info_into_orm(sql_info_dict, file_list)
     build_graph_from_orm(graph, orm_list)
+    return True
 
 
 def parse_modinfo(modinfo_path, mod_folder_path):
@@ -155,6 +156,9 @@ def mod_info_into_orm(sql_info_dict, file_path_list):
 
     return orm_list
 
+# technically we cant get the value of the child port with just fk_index. Consider
+# parent Types.Type and child DynamicModifiers. All 3 columns in DynamicModifiers could link to Types.
+
 
 def connect_foreign_keys(fk_index, nodes_dict):
     for (parent_table, parent_col, parent_pk), children in fk_index.items():
@@ -162,7 +166,7 @@ def connect_foreign_keys(fk_index, nodes_dict):
 
         for child_table, child_pk in children:
             child_node = nodes_dict[(child_table, child_pk)]
-            primary_key = parent_pk[0]
+            primary_key = parent_pk[0]   # technically multiple pks possible, but ports system means just connect one
             src_ports = [i for i in parent_node.output_ports() if i.name() == parent_col]
             if len(src_ports) != 1:
                 raise Exception('plural pk col somehow when trying to build graph of loaded mod foreign keys')

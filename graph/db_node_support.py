@@ -3,34 +3,26 @@ from graph.db_spec_singleton import ResourceLoader
 
 db_spec = ResourceLoader()
 subsets = {}
-
+# <class 'NodeGraphQt.qgraphics.node_base.NodeItem'>
+# <class 'graph.nodes.dynamic_nodes.ModifiersNode'>
 
 # used for searchable node creation
 class NodeCreationDialog(QtWidgets.QDialog):
-    def __init__(self, subset=None):
+    def __init__(self, table_subset_info=None):
         super().__init__()
-        if subset is None:
-            self.templates = db_spec.node_templates
-        else:
-            valid_tables = db_spec.node_templates[subset.node.name]['backlink_fk'][subset.name]
-            self.templates = {key: val for key, val in db_spec.node_templates.items() if key in valid_tables}
+        self.templates = db_spec.node_templates if table_subset_info is None else table_subset_info
 
         self.setWindowFlags(QtCore.Qt.Popup)
         self.setMinimumWidth(300)
-
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
-
         self.search = QtWidgets.QLineEdit()
         self.list = QtWidgets.QListWidget()
-
         layout.addWidget(self.search)
         layout.addWidget(self.list, 1)
-
         self.search.textChanged.connect(self._filter)
         self.search.returnPressed.connect(self._choose_first)
         self.list.itemDoubleClicked.connect(self.accept)
-
         self._filter("")
 
     def _filter(self, text):

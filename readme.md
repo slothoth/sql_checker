@@ -23,9 +23,12 @@ It also includes a graph GUI where you can package and plan your own mod.
 - PK port connections with just the first PK value if combined PK  []
 - setEditable on ComboxBox to add new values?
 - Big Graphs compress tables of the same type into one node.
+- Toggle Types nodes being added for performance/clarity. 
+- backlink FK lists have duplicates, but seems covered where it matters, like port connections since it gets Dictionaried
   Big Features:
 - Image imports
 - Localisation entries (and displaying them as options in relevant gameplay graph)
 - frontend modelling
 - VI port (ahhh)
 - Tabbed graphs, so you can see content in different criteria.
+- Node connections can only happen between valid connectors (PK-FK)

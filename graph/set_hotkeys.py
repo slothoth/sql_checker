@@ -502,6 +502,10 @@ def import_mod(graph):
     dlg.exec()
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
     if path is not None:
-        parse_mod_folder(path, graph)
-        layout_graph_down(graph)
+        mod_info_found = parse_mod_folder(path, graph)
+        if mod_info_found:
+            layout_graph_down(graph)
+        else:
+            graph.message_dialog(f'No Modinfo found in folder {path}', title='Mod Not Loaded')
+    graph.auto_layout_nodes()
     graph.message_dialog('Finished loading Mod', title='Mod Loaded')

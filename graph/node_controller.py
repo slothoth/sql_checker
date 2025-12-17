@@ -82,8 +82,10 @@ class NodeEditorWindow(QMainWindow):
                     if source_port_item.port_type == 'out':
                         src_port = src_node.get_output(src_port_name)
                         valid_tables = db_spec.node_templates[src_node.get_property('table_name')]['backlink_fk'][src_port_name]
-                        if len(valid_tables) > 1:        # it could be multiple tables, open dialog
-                            dialog = NodeCreationDialog(subset=source_port_item)
+                        possible_table_info = {key: val for key, val in db_spec.node_templates.items() if
+                                               key in valid_tables}
+                        if len(possible_table_info) > 1:        # it could be multiple tables, open dialog
+                            dialog = NodeCreationDialog(table_subset_info=possible_table_info)
                             viewer = self.graph.viewer()
                             pos = viewer.mapToGlobal(QtGui.QCursor.pos())
                             dialog.move(pos)

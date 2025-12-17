@@ -23,7 +23,6 @@ class DynamicNode(BaseNode):
                 self.hide_widget(col, push_undo=False)
 
         btn = self.get_widget('toggle_extra')
-        btn.set_value('V' if self._extra_visible else '>')
 
         try:
             self.update()
@@ -37,24 +36,26 @@ class DynamicNode(BaseNode):
             if backlinks is not None:
                 for backlink_port, backlink_table_list in backlinks.items():
                     for backlink_table in backlink_table_list:
-                        if backlink_table == self.NODE_NAME:
-                            base_spec = db_spec.node_templates[backlink_table]
-                            fk_ports = [key for key, val in base_spec['foreign_keys'].items() if val == connect_table]
+                        if backlink_table == self.get_property('table_name'):
+                            backlink_spec = db_spec.node_templates[backlink_table]
+                            fk_ports = [key for key, val in backlink_spec['foreign_keys'].items() if val == connect_table]
                             if len(fk_ports) > 1:
-                                print('error multiple ports possible for connect!')
+                                print(f'error multiple ports possible for connect!'
+                                      f' the connection was: {connect_table} -> {backlink_table}.'
+                                      f' defaulting to first option')
                             return fk_ports[0]
 
     def add_search_menu(self, name, label='', items=None, tooltip=None, tab=None):
         self.create_property(
             name,
-            value=items[0] if items else None,
+            value=items[0] if items else '',
             items=items or [],
             widget_type='SEARCH_MENU',
             widget_tooltip=tooltip,
             tab=tab
         )
+
         widget = NodeSearchMenu(self.view, name, label, items)
-        widget.setToolTip(tooltip or '')
         widget.value_changed.connect(lambda k, v: self.set_property(k, v))
         self.view.add_widget(widget)
         self.view.draw_node()
@@ -127,22 +128,26 @@ def create_table_node_class(table_name, spec, graph):
         self._initial_fields = list(spec.get('primary_texts', []))
         self._extra_fields = list(spec.get('secondary_texts', []))
         self.create_property('table_name', value=table_name)
-        self.create_property('toggle_extra', value='>')
-        self.add_button(name='toggle_extra', label='', text='>')
-        btn = self.get_widget('toggle_extra')
-        btn.value_changed.connect(lambda *a: self._toggle_extra())
+
+        toggle = ToggleExtraButton(self.view)
+        toggle._btn.clicked.connect(self._toggle_extra)
+        self.add_custom_widget(toggle, tab=None)
+
         age = graph.property('meta').get('Age')
         if age == 'ALWAYS':
             self._possible_vals = db_spec.all_possible_vals.get(table_name, {})
         else:
             self._possible_vals = db_spec.possible_vals.get(age, {}).get(table_name, {})
         # Initialize ports and widgets based on the schema
-
-        for col in spec['all_cols']:
+        primary_keys = spec.get('primary_keys', [])
+        prim_texts = [i for i in spec.get('primary_texts', []) if i not in primary_keys]
+        second_texts = spec.get('secondary_texts', [])
+        cols_ordered = primary_keys + prim_texts + second_texts
+        for idx, col in enumerate(cols_ordered):
             default_val = spec.get("default_values", {}).get(col, '')
             fk_table = spec.get("foreign_keys", {}).get(col, None)
             if fk_table is not None:
-                if col in spec['primary_texts']:            # mandatory FK
+                if col in spec.get('primary_texts', []):            # Port addition
                     self.add_input(col)
                 else:
                     self.add_input(col, painter_func=draw_square_port)
@@ -150,13 +155,18 @@ def create_table_node_class(table_name, spec, graph):
             col_poss_vals = self._possible_vals.get(col, None)
             if col in spec.get('mined_bools', {}):
                 default_on = int(spec.get('default_values', {}).get(col, '0')) == 1
-                self.add_checkbox(col, label=col, state=default_on)
+                self.add_checkbox(col, label=pad_label(index_label(idx, col)), state=default_on)
+                cb = self.get_widget(col).get_custom_widget()
+                cb.setMinimumHeight(24)
+                cb.setStyleSheet("QCheckBox { padding-top: 2px; }")
             elif col_poss_vals is not None:
-                self.add_search_menu(name=col, label=col,
+                self.add_search_menu(name=col, label=pad_label(index_label(idx, col)),
                                      items=[''] + col_poss_vals['vals'],
                                      tab='fields')
             else:
-                self.add_text_input(name=col, label=col, text=str(default_val or ''), tab='fields')
+                self.add_text_input(name=col, label=pad_label(index_label(idx, col)), text=str(default_val or ''), tab='fields')
+                widget = self.get_widget(col)
+                widget.get_custom_widget().setMinimumHeight(24)
             if col in self._extra_fields:
                 self.hide_widget(col, push_undo=False)
 
@@ -184,14 +194,6 @@ def create_table_node_class(table_name, spec, graph):
     return NewClass
 
 
-def generate_tables(graph):
-    all_custom_nodes = []
-    for name, spec in db_spec.node_templates.items():
-        NodeClass = create_table_node_class(name, spec, graph)
-        all_custom_nodes.append(NodeClass)
-    return all_custom_nodes
-
-
 # support for searchable combo box
 class NodeSearchMenu(NodeBaseWidget):
     def __init__(self, parent=None, name='', label='', items=None):
@@ -200,12 +202,16 @@ class NodeSearchMenu(NodeBaseWidget):
 
         self._items = items or []
 
-        button = QtWidgets.QToolButton()
-        button.setMinimumHeight(24)
-        button.setText(self._items[0] if self._items else '')
-        button.clicked.connect(self._open_dialog)
-
-        self.set_custom_widget(button)
+        self._button = QtWidgets.QToolButton()
+        self._button.setMinimumHeight(24)
+        self._button.setMinimumWidth(120)
+        self._button.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding,
+            QtWidgets.QSizePolicy.Fixed
+        )
+        self._button.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
+        self._button.clicked.connect(self._open_dialog)
+        self.set_custom_widget(self._button)
 
     @property
     def type_(self):
@@ -213,22 +219,21 @@ class NodeSearchMenu(NodeBaseWidget):
 
     def _open_dialog(self):
         dialog = SearchListDialog(self._items, self.parent())
-        pos = QtGui.QCursor.pos()
-        dialog.move(pos)
+        dialog.move(QtGui.QCursor.pos())
 
         if dialog.exec_() != QtWidgets.QDialog.Accepted:
             return
 
         value = dialog.selected()
-        if value:
+        if value is not None:
             self.set_value(value)
             self.on_value_changed()
 
     def get_value(self):
-        return self.get_custom_widget().text()
+        return self._button.text()
 
     def set_value(self, value):
-        self.get_custom_widget().setText(value)
+        self._button.setText(value if value else '')
 
     def add_items(self, items):
         self._items.extend(items)
@@ -236,3 +241,51 @@ class NodeSearchMenu(NodeBaseWidget):
     def clear(self):
         self._items.clear()
         self.set_value('')
+
+
+color_hex_swapper = {'#ffcc00': '#00ccff', '#00ccff': '#ffcc00'}
+
+
+class ToggleExtraButton(NodeBaseWidget):
+    def __init__(self, parent=None, name='toggle_extra', label=''):
+        super().__init__(parent, name, label)
+        self.set_name('toggle_extra')
+        self.set_label('')
+        btn = QtWidgets.QToolButton()
+        btn.setCheckable(True)
+        btn.setFixedSize(10, 10)
+        btn.setStyleSheet("""
+        QToolButton {
+            background-color: #333;
+        }
+        QToolButton:checked {
+            background-color: #2e7d32;
+        }
+        """)
+
+        self._btn = btn
+        self.set_custom_widget(btn)
+
+    def set_value(self, value):
+        self._btn.setText(value)
+
+    def get_value(self):
+        return self._btn.text()
+
+
+def pad_label(text, width=20):
+    return text.ljust(width)
+
+
+def index_label(order, text):
+    PREFIX = '\u200B\u200B'   # Toxic Zero White Space character to order labels with numbers without those showing
+    label = PREFIX * order + text
+    return label
+
+
+def generate_tables(graph):
+    all_custom_nodes = []
+    for name, spec in db_spec.node_templates.items():
+        NodeClass = create_table_node_class(name, spec, graph)
+        all_custom_nodes.append(NodeClass)
+    return all_custom_nodes
