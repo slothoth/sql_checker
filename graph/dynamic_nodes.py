@@ -2,9 +2,10 @@ from NodeGraphQt import BaseNode, NodeBaseWidget
 from NodeGraphQt.constants import Z_VAL_NODE_WIDGET
 from PyQt5 import QtWidgets
 
-from ..db_node_support import SearchListDialog
-from ..db_spec_singleton import ResourceLoader
+from graph.db_node_support import SearchListDialog
+from graph.db_spec_singleton import ResourceLoader
 from PyQt5 import QtCore, QtGui
+from schema_generator import validate_field, SchemaInspectorAntiquity
 
 db_spec = ResourceLoader()
 
@@ -13,6 +14,94 @@ class DynamicNode(BaseNode):
     _initial_fields = []
     _extra_fields = []
     _extra_visible = False
+    _validation_errors = {}  # Track validation errors for each field
+
+    def _validate_field(self, field_name, field_value):
+        """
+        Validate a single field and update its visual state.
+
+        Args:
+            field_name: Name of the field to validate
+            field_value: Value to validate
+
+        Returns:
+            bool: True if valid, False otherwise
+        """
+        if not hasattr(self, 'NODE_NAME'):
+            return True
+
+        table_name = self.NODE_NAME
+
+        # Get all current field values for context
+        all_data = {}
+        for col in self._initial_fields + self._extra_fields:
+            widget = self.get_widget(col)
+            if widget:
+                try:
+                    val = widget.get_value()
+                    if val is not None and val != '':
+                        all_data[col] = val
+                except:
+                    pass
+
+        is_valid, error_msg = validate_field(table_name, field_name, field_value, all_data)
+
+        if is_valid:
+            self._validation_errors.pop(field_name, None)
+        else:
+            self._validation_errors[field_name] = error_msg
+
+        self._update_field_style(field_name, is_valid)
+
+        return is_valid
+
+    def _update_field_style(self, field_name, is_valid):
+        """
+        Update the visual style of a field widget based on validation state.
+
+        Args:
+            field_name: Name of the field
+            is_valid: Whether the field is valid
+        """
+        widget = self.get_widget(field_name)
+        if not widget:
+            return
+
+        qt_widget = None
+        if hasattr(widget, 'get_custom_widget'):
+            qt_widget = widget.get_custom_widget()
+        elif hasattr(widget, 'widget'):
+            qt_widget = widget.widget
+
+        # For NodeSearchMenu, we need to style the button
+        if 'SearchMenu' in type(widget).__name__:
+            qt_widget = widget.get_custom_widget() if hasattr(widget, 'get_custom_widget') else None
+
+        if qt_widget is None:
+            return
+
+        # Set background color based on validation state
+        if is_valid:
+            current_style = qt_widget.styleSheet() or ""         # Reset to default (white/transparent)
+            # Remove red background but keep other styles
+            new_style = current_style.replace("background-color: #ffcccc;", "").strip()
+            qt_widget.setStyleSheet(new_style if new_style else "")
+        else:
+            current_style = qt_widget.styleSheet() or ""        # Set red background for invalid fields
+            if "background-color: #ffcccc;" not in current_style:
+                new_style = current_style + ("; " if current_style else "") + "background-color: #ffcccc;"
+                qt_widget.setStyleSheet(new_style)
+
+    def _validate_all_fields(self):
+        """Validate all fields in the node."""
+        for col in self._initial_fields + self._extra_fields:
+            widget = self.get_widget(col)
+            if widget:
+                try:
+                    value = widget.get_value()
+                    self._validate_field(col, value)
+                except:
+                    pass
 
     def _toggle_extra(self):
         self._extra_visible = not self._extra_visible
@@ -48,15 +137,21 @@ class DynamicNode(BaseNode):
     def add_search_menu(self, name, label='', items=None, tooltip=None, tab=None):
         self.create_property(
             name,
-            value=items[0] if items else '',
+            value=items[0] if items else None,
             items=items or [],
             widget_type='SEARCH_MENU',
             widget_tooltip=tooltip,
             tab=tab
         )
-
         widget = NodeSearchMenu(self.view, name, label, items)
-        widget.value_changed.connect(lambda k, v: self.set_property(k, v))
+        widget.setToolTip(tooltip or '')
+
+        # Connect validation to value changes
+        def on_value_changed(k, v):
+            self.set_property(k, v)
+            self._validate_field(k, v)
+
+        widget.value_changed.connect(on_value_changed)
         self.view.add_widget(widget)
         self.view.draw_node()
 
@@ -69,16 +164,33 @@ class DynamicNode(BaseNode):
                     if 'CheckBox' in type(widget).__name__:
                         if isinstance(value, str):
                             value = int(value)
-                        value = True if 0 else False
+                        value = True if value != 0 else False
                     if 'LineEdit' in type(widget).__name__:
                         if not isinstance(value, str):
                             value = str(value)
                     widget.set_value(value)
+                    # Validate after setting value
+                    self._validate_field(col_name, value)
 
     def _delete_self(self):
         graph = self.graph
         if graph:
             graph.delete_node(self)
+
+    def setup_validate(self, widget, col):
+        try:
+            qt_widget = widget.widget if hasattr(widget, 'widget') else None
+            if qt_widget and hasattr(qt_widget, 'textChanged'):
+                def make_validator(field_name):
+                    def validate_on_change():
+                        value = qt_widget.text()
+                        self._validate_field(field_name, value)
+
+                    return validate_on_change
+
+                qt_widget.textChanged.connect(make_validator(col))
+        except:
+            print('failed to setup widget', col)
 
 
 def draw_square_port(painter, rect, info):
@@ -144,33 +256,46 @@ def create_table_node_class(table_name, spec, graph):
         second_texts = spec.get('secondary_texts', [])
         cols_ordered = primary_keys + prim_texts + second_texts
         for idx, col in enumerate(cols_ordered):
-            default_val = spec.get("default_values", {}).get(col, '')
-            fk_table = spec.get("foreign_keys", {}).get(col, None)
-            if fk_table is not None:
-                if col in spec.get('primary_texts', []):            # Port addition
+            default_val = SchemaInspectorAntiquity.default_map[table_name].get(col, None)
+            fk_to_table_link = SchemaInspectorAntiquity.fk_to_tbl_map[table_name].get(col, None)
+            fk_to_pk_link = SchemaInspectorAntiquity.fk_to_pk_map[table_name].get(col, None)
+            is_required = SchemaInspectorAntiquity.required_map[table_name].get(col, None)
+            if fk_to_pk_link is not None:
+                if is_required is not None:
                     self.add_input(col)
                 else:
                     self.add_input(col, painter_func=draw_square_port)
 
             col_poss_vals = self._possible_vals.get(col, None)
             if col in spec.get('mined_bools', {}):
-                default_on = int(spec.get('default_values', {}).get(col, '0')) == 1
-                self.add_checkbox(col, label=pad_label(index_label(idx, col)), state=default_on)
+                is_default_on = default_val is not None and int(default_val) == 1
+                self.add_checkbox(col, label=pad_label(index_label(idx, col)), state=is_default_on)
                 cb = self.get_widget(col).get_custom_widget()
                 cb.setMinimumHeight(24)
                 cb.setStyleSheet("QCheckBox { padding-top: 2px; }")
+
             elif col_poss_vals is not None:
                 self.add_search_menu(name=col, label=pad_label(index_label(idx, col)),
                                      items=[''] + col_poss_vals['vals'],
                                      tab='fields')
+                search_menu_widget = self.get_widget(col)
+                if search_menu_widget:
+                    self.setup_validate(search_menu_widget, col)
+
             else:
                 self.add_text_input(name=col, label=pad_label(index_label(idx, col)), text=str(default_val or ''), tab='fields')
-                widget = self.get_widget(col)
-                widget.get_custom_widget().setMinimumHeight(24)
+                text_widget = self.get_widget(col)
+                text_widget.get_custom_widget().setMinimumHeight(24)
+                if text_widget:
+                    self.setup_validate(text_widget, col)
+
             if col in self._extra_fields:
                 self.hide_widget(col, push_undo=False)
 
-        fk_backlink = spec.get("backlink_fk", None)
+        # Validate all fields after initialization
+        self._validate_all_fields()
+
+        fk_backlink = spec.get("backlink_fk", None)         # SchemaInspectorAntiquity.pk_ref_map[table_name]['col_first']['Ages']
         if fk_backlink is not None:
             self.add_output(spec["primary_keys"][0])  # what if combined pk? can that even link
 
@@ -192,6 +317,14 @@ def create_table_node_class(table_name, spec, graph):
     })
 
     return NewClass
+
+
+def generate_tables(graph):
+    all_custom_nodes = []
+    for name, spec in db_spec.node_templates.items():
+        NodeClass = create_table_node_class(name, spec, graph)
+        all_custom_nodes.append(NodeClass)
+    return all_custom_nodes
 
 
 # support for searchable combo box
@@ -219,21 +352,22 @@ class NodeSearchMenu(NodeBaseWidget):
 
     def _open_dialog(self):
         dialog = SearchListDialog(self._items, self.parent())
-        dialog.move(QtGui.QCursor.pos())
+        pos = QtGui.QCursor.pos()
+        dialog.move(pos)
 
         if dialog.exec_() != QtWidgets.QDialog.Accepted:
             return
 
         value = dialog.selected()
-        if value is not None:
+        if value:
             self.set_value(value)
             self.on_value_changed()
 
     def get_value(self):
-        return self._button.text()
+        return self.get_custom_widget().text()
 
     def set_value(self, value):
-        self._button.setText(value if value else '')
+        self.get_custom_widget().setText(value)
 
     def add_items(self, items):
         self._items.extend(items)
@@ -281,11 +415,3 @@ def index_label(order, text):
     PREFIX = '\u200B\u200B'   # Toxic Zero White Space character to order labels with numbers without those showing
     label = PREFIX * order + text
     return label
-
-
-def generate_tables(graph):
-    all_custom_nodes = []
-    for name, spec in db_spec.node_templates.items():
-        NodeClass = create_table_node_class(name, spec, graph)
-        all_custom_nodes.append(NodeClass)
-    return all_custom_nodes

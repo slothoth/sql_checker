@@ -27,7 +27,6 @@ for table in metadata.tables.values():
     classes[table.name] = cls
 
 
-
 def create_instances_from_sql(sql_text):
     cleaned_sql = clean_sql(sql_text)
     parsed = sqlglot.parse_one(cleaned_sql, dialect="sqlite")

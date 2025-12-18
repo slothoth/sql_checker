@@ -12,6 +12,7 @@ It also includes a graph GUI where you can package and plan your own mod.
 - ALWAYS mode uses subset of possible values present in all 3 ages   [x]
 - Include some hotkeys in top section, like File [x]
 - Convert existing mod to diagram[x]
+- Toggle Types nodes being added for performance/clarity. [x]
 - ModifierArgs/RequirementArgs Value completions using Name   []
 - ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier  []
 - pk fk connects done prior to making the connection or the downstream node get the value  [ ]
@@ -23,7 +24,6 @@ It also includes a graph GUI where you can package and plan your own mod.
 - PK port connections with just the first PK value if combined PK  []
 - setEditable on ComboxBox to add new values?
 - Big Graphs compress tables of the same type into one node.
-- Toggle Types nodes being added for performance/clarity. 
 - backlink FK lists have duplicates, but seems covered where it matters, like port connections since it gets Dictionaried
   Big Features:
 - Image imports
@@ -32,3 +32,5 @@ It also includes a graph GUI where you can package and plan your own mod.
 - VI port (ahhh)
 - Tabbed graphs, so you can see content in different criteria.
 - Node connections can only happen between valid connectors (PK-FK), node.add_accept_port_type
+## Known bugs
+- Some uncommonly used integers are viewed as Bools, like Ages.AgeTechBackgroundTextureOffsetX

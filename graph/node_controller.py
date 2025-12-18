@@ -5,9 +5,10 @@ from PyQt5.QtWidgets import QMainWindow
 from NodeGraphQt import NodeGraph
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
-from graph.nodes.dynamic_nodes import generate_tables
+from graph.dynamic_nodes import generate_tables
 from graph.db_spec_singleton import ResourceLoader
 from graph.set_hotkeys import set_hotkeys
+from graph.dynamic_nodes import generate_tables
 
 db_spec = ResourceLoader()
 # bodge job for blocking recursion
