@@ -1,10 +1,24 @@
 [
   {
     "type": "command",
-    "label": "NewDynamicNode",
+    "label": "Database Node",
     "file": "./hotkey_functions.py",
     "function_name": "create_dynamic_node_with_search",
     "shortcut": "Shift+N"
+  },
+  {
+    "type": "command",
+    "label": "Modifier Node",
+    "file": "./hotkey_functions.py",
+    "function_name": "create_modifier_game_effects",
+    "shortcut": "Ctrl+Shift+N"
+  },
+  {
+    "type": "command",
+    "label": "Requirement Node",
+    "file": "./hotkey_functions.py",
+    "function_name": "create_requirement_game_effects",
+    "shortcut": "Ctrl+Shift+N"
   },
   {
     "type":"command",

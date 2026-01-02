@@ -1,0 +1,12 @@
+INSERT INTO DynamicModifiers (ModifierType, CollectionType, EffectType) VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_TYPE', NULL, 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE');
+INSERT INTO Types (Type, Kind) VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_TYPE', 'KIND_MODIFIER');
+INSERT INTO Modifiers (ModifierId, SubjectRequirementSetId, OwnerRequirementSetId, NewOnly, OwnerStackLimit, Permanent, RunOnce, SubjectStackLimit, ModifierType) VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE', NULL, NULL, '0', '0', '0', '0', '0', 'ADJUST_UNIT_RESOURCE_DAMAGE_TYPE');
+INSERT INTO ModifierArguments (ModifierId, Name, Value) VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE', 'Amount', 6);
+INSERT INTO ModifierArguments (ModifierId, Name, Value) VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE', 'ResourceClassType', 3);
+INSERT INTO ModifierStrings (ModifierId, Text, Context) VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE', NULL, NULL);
+INSERT INTO Requirements (RequirementId, RequirementType) VALUES (NULL, 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS');
+INSERT INTO RequirementArguments (RequirementId, Name, Value) VALUES (NULL, 'Amount', 0);
+INSERT INTO RequirementArguments (RequirementId, Name, Value) VALUES (NULL, 'BuildingTag', '4');
+INSERT INTO RequirementArguments (RequirementId, Name, Value) VALUES (NULL, 'BuildingType', 'BUILDING_TEST');
+INSERT INTO RequirementArguments (RequirementId, Name, Value) VALUES (NULL, 'CurrentAge', '0');
+INSERT INTO RequirementArguments (RequirementId, Name, Value) VALUES (NULL, 'DistantLands', '0');

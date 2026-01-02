@@ -1,0 +1,8 @@
+INSERT INTO "DynamicModifiers" ("ModifierType", "CollectionType", "EffectType") VALUES ('ADJUST_PLAYER_YIELD_FOR_RESOURCE_ON_PLAYER_CITIES_TYPE', 'COLLECTION_ALL_PLAYERS', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE');
+INSERT INTO "Types" ("Type", "Kind") VALUES ('ADJUST_PLAYER_YIELD_FOR_RESOURCE_ON_PLAYER_CITIES_TYPE', 'KIND_MODIFIER');
+INSERT INTO "Modifiers" ("ModifierId", "ModifierType", "NewOnly", "OwnerStackLimit", "Permanent", "RunOnce", "SubjectStackLimit") VALUES ('ADJUST_PLAYER_YIELD_FOR_RESOURCE_ON_PLAYER_CITIES', 'ADJUST_PLAYER_YIELD_FOR_RESOURCE_ON_PLAYER_CITIES_TYPE', 0, 0, 0, 0, 0);
+INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_PLAYER_YIELD_FOR_RESOURCE_ON_PLAYER_CITIES', 'Amount', '6');
+INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_PLAYER_YIELD_FOR_RESOURCE_ON_PLAYER_CITIES', 'ResourceClassType', '3');
+INSERT INTO "Requirements" ("RequirementId", "RequirementType") VALUES ('REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS');
+INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingTag', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', '4');
+INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingType', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'BUILDING_TEST');

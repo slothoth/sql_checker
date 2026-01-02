@@ -1,0 +1,858 @@
+{
+  "REQUIREMENT_AGE_CRISIS_STAGE_IS_X": [
+    "Player"
+  ],
+  "REQUIREMENT_AGE_PROGRESSION_TOTAL_IS_X": [
+    "Player"
+  ],
+  "REQUIREMENT_ATTACKER_PLOT_BIOME_MATCHES": [
+    "Combat"
+  ],
+  "REQUIREMENT_BUILDING_IS_ADJACENT_TO_X": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_CITY_BUILT_CONSTRUCTIBLE_TYPE": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_BUILT_TAGGED_CONSTRUCTIBLE": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_CONVERTED": [
+    "Player"
+  ],
+  "REQUIREMENT_CITY_FOLLOWS_RELIGION": [
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_CITY_FOUNDED_BY_UNIT_TYPE": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_FOUNDED_WITH_X_BIOME_TILES": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAPPINESS": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_ANY_WONDER": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_BUILDING": [
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_BUILD_QUEUE": [
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_FEATURE": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_GARRISON_UNIT": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_GREAT_WORK": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_PROJECT": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_RESOURCE": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_TERRAIN": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_UNIQUE_QUARTER": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_X_OPEN_RESOURCE_SLOTS": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_HAS_X_RESOURCES_ASSIGNED": [
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_CAPITAL": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_CITY": [
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_DISTANT_LANDS": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_HOLY_CITY": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_INFECTED": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_ISLAND": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_ORIGINAL_OWNER": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_IS_TOWN": [
+    "City"
+  ],
+  "REQUIREMENT_CITY_POPULATION": [
+    "City"
+  ],
+  "REQUIREMENT_COLLECTION_ALL_MET": [
+    "Player"
+  ],
+  "REQUIREMENT_COLLECTION_ANY_MET": [
+    "Player"
+  ],
+  "REQUIREMENT_COLLECTION_COUNT_ATLEAST": [
+    "Player"
+  ],
+  "REQUIREMENT_COMBAT_TYPE_MATCHES": [
+    "Combat"
+  ],
+  "REQUIREMENT_COMMANDER_EARNED_PROMOTION": [
+    "Unit"
+  ],
+  "REQUIREMENT_COMMANDER_HAS_MAXED_DISCIPLINE": [
+    "Unit"
+  ],
+  "REQUIREMENT_COMMANDER_HAS_X_PROMOTIONS": [
+    "Unit"
+  ],
+  "REQUIREMENT_COMMANDER_IN_COMMAND_RADIUS": [
+    "Unit"
+  ],
+  "REQUIREMENT_CONSTRUCTIBLE_HAS_GREAT_WORK_SLOT": [
+    "Constructibles"
+  ],
+  "REQUIREMENT_DEFENDER_IS_PLAYER_OWNED_DISTRICT": [
+    "Combat"
+  ],
+  "REQUIREMENT_GAME_AGE_TYPE_MATCH": [
+    "Player"
+  ],
+  "REQUIREMENT_GAME_IS_STARTED": [
+    "Player"
+  ],
+  "REQUIREMENT_GAME_TURN_ATLEAST": [
+    "Player",
+    "Unit",
+    "City"
+  ],
+  "REQUIREMENT_GAME_TURN_ENDED": [
+    "Player"
+  ],
+  "REQUIREMENT_GAME_TURN_IS_X_NARRATIVE": [
+    "Player"
+  ],
+  "REQUIREMENT_IS_AGE_COUNT": [
+    "Player",
+    "Unit"
+  ],
+  "REQUIREMENT_LEGACY_PATH_COMPLETED": [
+    "Player"
+  ],
+  "REQUIREMENT_LEGACY_PATH_ENABLED": [
+    "Player"
+  ],
+  "REQUIREMENT_LEGACY_PATH_MILESTONE_COMPLETED": [
+    "Player"
+  ],
+  "REQUIREMENT_MAP_HAS_FEATURE": [
+    "Game"
+  ],
+  "REQUIREMENT_METAPROGRESSION_COMPLETED_CHALLENGES": [
+    "Player"
+  ],
+  "REQUIREMENT_METAPROGRESSION_LEGEND_PATH_LEVEL": [
+    "Player"
+  ],
+  "REQUIREMENT_NEAR_RELIGIOUS_CITY": [
+    "Unit"
+  ],
+  "REQUIREMENT_OPPONENT_IS_DISTRICT": [
+    "Combat"
+  ],
+  "REQUIREMENT_OPPONENT_IS_DISTRICT_WITH_SPECIFIC_CONSTRUCTIBLE": [
+    "Combat"
+  ],
+  "REQUIREMENT_OPPONENT_IS_INDEPENDENT": [
+    "Combat"
+  ],
+  "REQUIREMENT_OPPONENT_IS_MINOR_CIV": [
+    "Combat"
+  ],
+  "REQUIREMENT_OPPONENT_IS_OTHER_IDEOLOGY": [
+    "Combat"
+  ],
+  "REQUIREMENT_OPPONENT_IS_SLOWER": [
+    "Combat"
+  ],
+  "REQUIREMENT_OPPONENT_UNIT_DOMAIN_MATCHES": [
+    "Combat"
+  ],
+  "REQUIREMENT_OPPONENT_UNIT_TAG_MATCHES": [
+    "Combat"
+  ],
+  "REQUIREMENT_PLAYER_AT_PEACE_X_TURNS_AGO": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_BEHIND_TECH": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_CARD_EFFECTS_COMPLETE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_CIVILIZATION_TYPE_MATCHES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_COMPLETED_ESPIONAGE_ACTION": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_CONQUERED_RELIGIOUS_CITY": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_CONQUERED_SETTLEMENT_WITH_BUILDING": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_CONQUERED_WONDER": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_CONQUERED_X_CITIES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_CONVERTS_OPPONENTS_TO_FOUNDED_RELIGION": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_DARK_AGE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_DECLARED_WAR": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_DEFAULT_DEFEAT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_DIPLOMACY_ENGAGED_WITH_X_CIVS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_DIPLOMACY_INDEPENDENT_UPDATE_TYPE_MATCHES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_DIPLOMACY_IS_INVOLVED_WITH_X_ACTIONS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_DISCOVERED_NATURAL_WONDER": [
+    "Player",
+    "Game"
+  ],
+  "REQUIREMENT_PLAYER_DISCOVERED_NATURAL_WONDER_FIRST": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_ELIGIBLE_CS_BONUS": [
+    "Plot",
+    "Player",
+    "Unit",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_ESTABLISHED_SETTLEMENT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_EXTRACTS_ARTIFACT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_FIRST_TIME_SETTLEMENT_OCCUPATION": [
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_FOUNDED_RELIGION": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_FOUNDED_RELIGION_WITH_BELIEF": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HANDICAP_AT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_ACTIVE_TRADITION": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_INDEPENDENT_RELATIONSHIP": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_COASTAL_RAIDS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_GOSSIPS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_MILITARY_UNITS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_NARRATIVE_TAGS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_TRIBUTARIES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_TRIBUTARY_TYPES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_CIRCUMNAVIGATED": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_CITY_REVOLT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_CITY_WITH_X_WORKERS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_CIVILIZATION_OR_LEADER_TRAIT": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMMANDERS_MAXED_DISCIPLINES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMMANDERS_WITH_X_LEVELS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_ATTRIBUTE_TREE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_NARRATIVE_STORY": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_PROGRESSION_TREE_NODE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_X_DIPLOMACY_ACTIONS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_X_PROGRESSION_TREE_NODES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_X_STORIES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_CONSTRUCTIBLE_FILLED_WITH_GREATWORKS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_CONVERTED_X_SETTLEMENTS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_ENGAGED_DIPLOMACY_ACTIONS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_EXPLORED_X_TILES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_FEATURE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_FEWEST_SETTLEMENTS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_FOUNDED_X_CITIES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_GOVERNMENT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_HIGHER_PROGRESSION": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_IMPROVEMENT_HIT_WITH_FERTILITY": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_MOST_TRADE_ROUTES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_NUM_RESOURCES_ASSIGNED": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_PANTHEON": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_PLUNDERED_X_TRADE_ROUTES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_RESOURCE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_SETTLEMENTS_WITH_POPULATION": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_SPENT_AN_ATTRIBUTE_POINT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_SPENT_ATTRIBUTE_POINT": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_HAS_UNHAPPY_CITIES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_UNLOCK": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_UNLOCKED_SPECIFIC_REWARD": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_ALLIANCES": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_CITIES_WITH_BUILDING_SET": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_DISTINCTIVE_BUILDINGS_FROM_CURRENT_AGE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_GREAT_WORKS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_IMPORTED_RESOURCES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_INFECTED_SETTLEMENTS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_MASTERIES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_RELATIONSHIPS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_RELIGIONS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_RESOURCES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_RESOURCES_IN_ONE_CITY": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_RESOURCE_TYPE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_AT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_FOREIGN_HEMISPHERE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_IN_BIOME": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_WITH_RELIGION": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_STARTING_YIELD": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_TOWNS_PRODUCING_PROJECT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_TRADE_ROUTES_WITH_PLAYER": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_URBAN_DISTRICTS_WITH_YIELD": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_WARS": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_WAR_SUPPORT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_WONDERS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_HAS_X_WORKERS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_INITIATED_DIPLOMACY_ACTION_RESPONSE_TYPE_MATCHES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_IS_ATTACKING": [
+    "Combat"
+  ],
+  "REQUIREMENT_PLAYER_IS_AT_PEACE_WITH_ALL_MAJORS": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_IS_AT_WAR_WITH_OPPOSING_IDEOLOGY": [
+    "Player",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_IS_HUMAN": [
+    "Player",
+    "Unit"
+  ],
+  "REQUIREMENT_PLAYER_IS_IN_GOLDEN_AGE": [
+    "Player",
+    "Plot",
+    "City",
+    "Unit"
+  ],
+  "REQUIREMENT_PLAYER_IS_MAJOR": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_IS_MINOR": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_IS_RELIGION_FOUNDER": [
+    "District",
+    "Player",
+    "Unit",
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_LEADER_TYPE_MATCHES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_LEGACY_PATH_MILESTONE_ACHIEVED": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_MET_IMMEDIATE_GOSSIP": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_MET_NUM_CIVS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_OVERBUILDS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_OVER_SETTLEMENT_CAP": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_OWNS_OBJECT": [
+    "City"
+  ],
+  "REQUIREMENT_PLAYER_PLOTS_REVEALED_ARE_X": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_PRODUCES_AT_LEAST_X_RESOURCE": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_RECONQUERED_X_CITIES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_SEEN_STORYLET": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_SPECIFIC_WONDER_BUILT": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_STARTS_TRADE_ROUTE_WITH_MATCHING_BUILDING": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TOTAL_DISTRICTS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TOTAL_IMPROVED_RESOURCES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TOTAL_POPULATION": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TRADES_FOR_X_RESOURCES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TRADES_WITH_PLAYERS_AT_WAR": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TRADES_WITH_X_PLAYERS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TRADES_X_RESOURCES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TRADE_ROUTE_HAS_X_RESOURCES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TRADITION_SLOTS": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_TRIGGERED_DISCOVERY": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_UNIT_DESTROYS_DISTRICT_DEFENSES": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_UNIT_DESTROYS_DISTRICT_DEFENSES_TRIGGER": [
+    "Unit"
+  ],
+  "REQUIREMENT_PLAYER_UNLOCKED_CIVIC": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_UNLOCKED_TECHNOLOGY": [
+    "Player"
+  ],
+  "REQUIREMENT_PLAYER_VICTORY_PLACED": [
+    "Player"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_CONSTRUCTIBLE_TYPE_MATCHES": [
+    "City"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_FEATURE_TYPE_MATCHES": [
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_FRIENDLY_UNIT_TAG_MATCHES": [
+    "Combat",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_NUM_ENEMY_UNITS": [
+    "Combat",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_RESOURCE_CLASS_TYPE_MATCHES": [
+    "City"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_TERRAIN_TYPE_MATCHES": [
+    "Combat",
+    "Plot",
+    "City",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_TO_COAST": [
+    "Combat",
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_TO_LAKE": [
+    "Combat"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_TO_OWNER": [
+    "Combat",
+    "Plot",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_TO_OWNER_AT_WAR": [
+    "Combat"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_TO_RIVER": [
+    "City"
+  ],
+  "REQUIREMENT_PLOT_ADJACENT_UNIT_TAG_MATCHES": [
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_BIOME_TYPE_MATCHES": [
+    "Combat",
+    "Plot",
+    "City",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_DISTRICT_CLASS": [
+    "District",
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_PLOT_FEATURE_TYPE_MATCHES": [
+    "Combat",
+    "Plot",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_HAS_ANY_FEATURE": [
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_HAS_CONSTRUCTIBLE": [
+    "District",
+    "Plot",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_HAS_NUM_CONSTRUCTIBLES": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_HAS_ROUTE_TYPE": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_HAS_YIELD": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_IN_COMMAND_RADIUS": [
+    "Unit",
+    "Units"
+  ],
+  "REQUIREMENT_PLOT_IS_COASTAL_LAND": [
+    "Plot",
+    "City"
+  ],
+  "REQUIREMENT_PLOT_IS_HOMELANDS": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_IS_LAKE": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_IS_NATURAL_WONDER": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_IS_OWNER": [
+    "Combat",
+    "Unit",
+    "City"
+  ],
+  "REQUIREMENT_PLOT_IS_QUARTER": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_IS_RIVER": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_IS_SUZERAIN": [
+    "Combat",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_NEAR_CAPITAL": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_RESOURCE_CLASS_TYPE_MATCHES": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_RESOURCE_TAG_MATCHES": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_RESOURCE_TYPE_MATCHES": [
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_RESOURCE_VISIBLE": [
+    "Combat",
+    "Plot"
+  ],
+  "REQUIREMENT_PLOT_TERRAIN_TYPE_MATCHES": [
+    "Plot",
+    "Combat",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_UNIQUE_QUARTER": [
+    "Plot",
+    "Unit"
+  ],
+  "REQUIREMENT_PLOT_WAS_ASSIGNED_A_SPECIALIST": [
+    "Player"
+  ],
+  "REQUIREMENT_REQUIREMENTSET_IS_MET": [
+    "Combat",
+    "Unit",
+    "City"
+  ],
+  "REQUIREMENT_TARGET_IS_ADJACENT_TO_FRIENDLY_UNIT": [
+    "Combat"
+  ],
+  "REQUIREMENT_TEAM_DOMINATION_VICTORY": [
+    "Player"
+  ],
+  "REQUIREMENT_TEAM_LEGACY_VICTORY": [
+    "Player"
+  ],
+  "REQUIREMENT_TOWN_WAS_UPGRADED_TO_CITY": [
+    "City"
+  ],
+  "REQUIREMENT_UNIT_ARMY_HAS_UNITS": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_ARMY_REINFORCEMENT_STARTED": [
+    "Player",
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_CLASS_MATCHES": [
+    "Combat",
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_CORE_CLASS_MATCHES": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_DAMAGE_MINIMUM": [
+    "Combat"
+  ],
+  "REQUIREMENT_UNIT_DOMAIN_MATCHES": [
+    "Unit",
+    "Units"
+  ],
+  "REQUIREMENT_UNIT_FOCUSED_ATTACK": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_HAS_ABILITY": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_HAS_PACKED_UNITS": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_HAS_PACKED_UNITS_AFTER_TURN": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_HAS_PACKED_UNITS_BY_TAGS_OR_CORE_CLASSES": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_HAS_XP": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_HEALTH_THRESHOLD": [
+    "Combat"
+  ],
+  "REQUIREMENT_UNIT_IN_ENEMY_TERRITORY": [
+    "Combat"
+  ],
+  "REQUIREMENT_UNIT_IN_OWNER_TERRITORY": [
+    "Combat",
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_IS_ENEMY_OF_OWNER": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_IS_FORTIFIED": [
+    "Combat"
+  ],
+  "REQUIREMENT_UNIT_IS_INDEPENDENT": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_IS_IN_HOMELANDS": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_IS_STATIONED_ON_DISTRICT": [
+    "Combat",
+    "Unit",
+    "City"
+  ],
+  "REQUIREMENT_UNIT_IS_WOUNDED": [
+    "Combat"
+  ],
+  "REQUIREMENT_UNIT_ON_FEATURE": [
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_TAG_MATCHES": [
+    "Units",
+    "Combat",
+    "Unit",
+    "Narrative"
+  ],
+  "REQUIREMENT_UNIT_TRADE_ROUTE_ESTABLISHED": [
+    "Player",
+    "Unit"
+  ],
+  "REQUIREMENT_UNIT_TYPE_MATCHES": [
+    "Unit"
+  ],
+  "REQUIREMENT_WONDER_IS_ACTIVE": [
+    "District",
+    "Plot",
+    "Combat",
+    "Player",
+    "Unit",
+    "City"
+  ]
+}

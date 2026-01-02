@@ -1,0 +1,62 @@
+{
+  "BeliefModifiers": [
+    "Player"
+  ],
+  "CityStateBonusModifiers": [
+    "Game"
+  ],
+  "ConstructibleModifiers": [
+    "Plot"
+  ],
+  "EnterStageModifiers": [
+    "DiplomacyAE"
+  ],
+  "GameModifiers": [
+    "Game"
+  ],
+  "GoldenAgeModifiers": [
+    "Player"
+  ],
+  "MementoModifiers": [
+    "Player"
+  ],
+  "MetaprogressionModifiers": [
+    "Player"
+  ],
+  "NarrativeRewards": [
+    "Narrative"
+  ],
+  "PlayerModifiers": [
+    "Player"
+  ],
+  "ProjectModifiers": [
+    "City"
+  ],
+  "TraditionModifiers": [
+    "Player"
+  ],
+  "TraitModifiers": [
+    "Player"
+  ],
+  "UnitAbilityModifiers": [
+    "Unit"
+  ],
+  "UnitPromotionModifiers": [
+    "Unit"
+  ],
+  "Defeats": [
+    "Player"
+  ],
+  "UnlockRequirements": [
+    "Player"
+  ],
+  "Victories": [
+    "Player"
+  ],
+  "LegacyModifiers": [
+    "Player"
+  ],
+  "NarrativeStories": [
+    "Player"
+  ]
+}

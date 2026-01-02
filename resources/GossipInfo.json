@@ -1,0 +1,2353 @@
+{
+  "GOSSIP_ACTIVATE_GREAT_PERSON01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_XUN_KUANG",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_SHANG_YANG",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_MENCIUS",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_ZHANG_HENG",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_XENOPHON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_WANG_YANGMING",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_PASER",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_HEMIUNU",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_SHEN_BUHAI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_IMHOTEP",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_HAN_FEI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_BAN_ZHAO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_MOZI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SHI_DAFU_LAOZI"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_ALLIED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,Civilization,CIVILIZATION_ROME",
+      "Numeric,NavalStrengthRatio,133,Hash,OtherPlayer,Other",
+      "Hash,Civilization,CIVILIZATION_CHOLA",
+      "Hash,IsForeignHemisphere,1",
+      "Hash,Civilization,CIVILIZATION_CARTHAGE"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_ARMY_FILLED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Numeric,DifferentUnitCount,2",
+      "Numeric,DifferentUnitCount,3,Numeric,CivUniqueUnitCount,2"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_ARTIFACT_EXTRACTED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,RelationshipLevel,PLAYER_RELATIONSHIP_HOSTILE,Hash,Civilization,CIVILIZATION_MUGHAL,Hash,AtWar,0",
+      "Hash,Urban,1",
+      "Hash,Urban,0",
+      "Hash,RelationshipLevel,PLAYER_RELATIONSHIP_HOSTILE,Hash,AtWar,0"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_BANKRUPT_UNIT_DISBAND01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,UnitType,UNIT_NUMIDIAN_CAVALRY_2",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_BANKRUPT_UNIT_DISBAND02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,UnitType,UNIT_NUMIDIAN_CAVALRY",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_BECOME_SUZERAIN01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,CityStateType,ECONOMIC",
+      "Hash,CityStateType,CULTURAL",
+      "Hash,CityStateType,SCIENTIFIC",
+      "Hash,CityStateType,MILITARISTIC",
+      "Hash,IsForeignHemisphere,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_BECOME_SUZERAIN02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,IsForeignHemisphere,1",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_BELIEF_ADDED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,BeliefType,BELIEF_BONUS_3",
+      "Hash,BeliefType,BELIEF_BONUS_7",
+      "Hash,BeliefType,BELIEF_BONUS_6",
+      "Hash,BeliefType,BELIEF_BONUS_19",
+      "Hash,BeliefType,BELIEF_SWORDS_INTO_PLOWSHARES",
+      "Hash,BeliefType,BELIEF_BONUS_21",
+      "Hash,BeliefType,BELIEF_BONUS_8",
+      "Hash,BeliefType,BELIEF_BONUS_9",
+      "Hash,BeliefType,BELIEF_BONUS_2"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_BELIEF_ADDED02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,BeliefType,BELIEF_BONUS_21",
+      "Hash,BeliefType,BELIEF_BONUS_1",
+      "Hash,BeliefType,BELIEF_FEED_THE_WORLD"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CHANGE_GOVERNMENT01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,NewGovernment,GOVERNMENT_THEOCRACY",
+      "Hash,NewGovernment,GOVERNMENT_FEUDAL_MONARCHY",
+      "Hash,NewGovernment,GOVERNMENT_PLUTOCRACY",
+      "Hash,NewGovernment,GOVERNMENT_DESPOTISM",
+      "Hash,NewGovernment,GOVERNMENT_BUREAUCRATIC_MONARCHY",
+      "Hash,NewGovernment,GOVERNMENT_ELECTIVE_REPUBLIC"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CHANGE_GOVERNMENT02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,NewGovernment,GOVERNMENT_THEOCRACY",
+      "Hash,NewGovernment,GOVERNMENT_REVOLUCION",
+      "Hash,NewGovernment,GOVERNMENT_BUREAUCRATIC_MONARCHY",
+      "Hash,NewGovernment,GOVERNMENT_AUTHORITARIANISM",
+      "Hash,NewGovernment,GOVERNMENT_ELECTIVE_REPUBLIC"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CITY_LIBERATED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,OtherPlayer,Other",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CITY_POPULATION_HEIGHT_CHANGED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Numeric,TotalPop,30",
+      "Numeric,TotalPop,5",
+      "Hash,IsCapital,1,Numeric,TotalPop,10",
+      "Hash,IsCapital,1,Numeric,TotalPop,20",
+      "Numeric,TotalPop,60,Hash,IsCapital,1",
+      "Numeric,TotalPop,45",
+      "Numeric,TotalPop,50,Hash,IsCapital,1",
+      "Numeric,TotalPop,20,Hash,IsCapital,1",
+      "Numeric,TotalPop,20",
+      "Numeric,TotalPop,10",
+      "Numeric,TotalPop,40,Hash,IsCapital,1",
+      "Numeric,TotalPop,30,Hash,IsCapital,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CITY_POPULATION_HEIGHT_CHANGED02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Numeric,TotalPop,40,Hash,IsCapital,1",
+      "Numeric,TotalPop,30,Hash,IsCapital,1",
+      "Numeric,TotalPop,15"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CITY_RAZED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Other",
+      "Hash,IsForeignHemisphere,1,Hash,OtherPlayer,Other"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_COMPLETED_PROGRESSION_TREE_NODE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_MILITARY_SCIENCE",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_INCA_QHAPAQ_NAN,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_SOCIAL_QUESTION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_SIAM_SRIWILAI,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAURYA_MANTRIPARISHAD,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_WRITING,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_SPAIN_NEW_WORLD_RICHES,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_FRENCH_EMPIRE_CODE_CIVIL,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_CITIZENSHIP",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_COMBUSTION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_NORMAN_DOMESDAY_BOOK,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_EX_ASTRONOMY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_HAN_ZHI,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_MATHEMATICS,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_CODE_OF_LAWS",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_SIAM_NINE_GEMS,Numeric,TreeDepth,2",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_SAILING",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_SOCIAL_CLASS,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_PIETY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_COMMUNISM",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_ELECTRICTY",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_WHEEL,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_EX_URBAN_PLANNING",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_PERSIA_ACHAEMENID_EMPIRE,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_COMBUSTION,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_CHIEFDOM",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_AUTHORITY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MUGHAL_GARDENS_OF_PARADISE,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_URBANIZATION,Numeric,TreeDepth,2",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_PRUSSIA_BEWEGUNGSKRIEG,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_INSPIRATION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_DEMOCRACY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_BRANCH_THEOLOGY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BUGANDA_NYANZA,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_WRITING",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_POLITICAL_THEORY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_AUTHORITY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_EX_CARTOGRAPHY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAJAPAHIT_GAMELAN,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_ABBASID_ROUND_CITY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_HAWAII_HE_E_NALU,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MISSISSIPPIAN_WAAHIH,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BUGANDA_NNALUBAALE,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_EX_EDUCATION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_SOCIETY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_BUREAUCRACY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_MYSTICISM",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_CHOLA_MONSOON_WINDS,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_ELECTRICITY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_LITERACY",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_STEAM_ENGINE",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_BRANCH_THEOLOGY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_ENGINEERING",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_MODERNIZATION,Numeric,TreeDepth,2",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_NATIONALISM,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_FASCISM,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_QING_TEN_GREAT_CAMPAIGNS",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_URBANIZATION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MEXICO_PLANES_POLITICOS,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_NAVIGATION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_EGYPT_LIGHT_OF_AMUN_RA,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_DAI_VIET_CHU_NOM",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_NATIONALISM",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_FRENCH_EMPIRE_CODE_CIVIL",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_STEAM_ENGINE,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_SILLA_SAMGUK_SAGI",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAYA_CALENDAR_ROUND,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_AMERICA_YANKEE_INGENUITY",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_INDUSTRIALIZATION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_MODERNIZATION",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_GREECE_SYMMACHIA,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_SONGHAI_KANTA,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_SPAIN_COUNCIL_OF_THE_INDIES",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_DISCIPLINE",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MEXICO_PLAN_OF_IGUALA,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_SHAWNEE_MALEKI_KINTAKE",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MONGOLIA_YASSA,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_QING_STABILIZING_FRONTIER",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_ICELAND_VAERINGJAR",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_ROME_EXERCITUS_ROMANUS,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_HAN_JUNZI",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_GLOBALISM,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_NATURAL_HISTORY",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_HAWAII_MANA",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_ABBASID_AL_JABR,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_EX_FEUDALISM",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_FLIGHT",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_ANIMAL_HUSBANDRY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_RUSSIA_SAMODERZHAVIYE,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_EX_GUILDS",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MAIN_GLOBALISM",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_COMMUNISM,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_TACTICS",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BUGANDA_NNALUBAALE,Numeric,TreeDepth,2",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_MOBILIZATION,Numeric,TreeDepth,2",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_DEMOCRACY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MONGOLIA_ULUS",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_AKSUM_BOOK_OF_THE_HIMYARITES,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_KHMER_CHAKRAVARTI,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_CHOLA_NAGARAM",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_MAIN_PHILOSOPHY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_PRUSSIA_ZOLLVEREIN",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_ROME_SENATUS_POPULUSQUE_ROMANUS,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_DAI_VIET_TU_DAN",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_ACADEMICS",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_IRRIGATION,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_EX_ARCHITECTURE",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_AERODYNAMICS,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_MEIJI_RISING_SUN,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_ENGINEERING,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_ELECTRICITY,Numeric,TreeDepth,2",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_FRENCH_EMPIRE_BELLE_EPOQUE",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_URBANIZATION,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_MASS_PRODUCTION",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_RADIO,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_AMERICA_MANIFEST_DESTINY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAJAPAHIT_ALIRAN_KEPERCAYAAN,Numeric,TreeDepth,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_COMPLETED_PROGRESSION_TREE_NODE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_SILLA_SEONGGOL",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_MASONRY,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_AQ_IRON_WORKING",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_EX_MAIN_SOCIETY,Numeric,TreeDepth,2",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_DEMOCRACY",
+      "Hash,ProgressionTreeNodeType,NODE_TECH_MO_RADIO,Numeric,TreeDepth,1",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_FASCISM"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_COMPLETED_PROGRESSION_TREE_NODE03": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_COMMUNISM",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_AQ_SILLA_JINGOL",
+      "Hash,ProgressionTreeNodeType,NODE_CIVIC_MO_BRANCH_FASCISM"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONQUER_CITY01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Other,Hash,OriginalCivilization,CIVILIZATION_QAJAR",
+      "Hash,OtherPlayer,Other,Hash,BiomeType,BIOME_TUNDRA",
+      "Hash,OtherPlayer,Other,Hash,IsTown,1",
+      "Hash,ConqueringCivilization,CIVILIZATION_MONGOLIA,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Other,Hash,IsCapital,1",
+      "Hash,OriginalCivilization,CIVILIZATION_EGYPT,Hash,UnitType,UNIT_MAMLUK",
+      "Hash,OtherPlayer,Self,Hash,IsCapital,1,Hash,Civilization,CIVILIZATION_MUGHAL",
+      "Hash,OtherPlayer,Self,Hash,IsOriginalOwner,1,Hash,IsMinorPlayer,0,Hash,IsCapital,1",
+      "Hash,IsCapital,1,Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_ROME",
+      "Hash,OriginalCivilization,CIVILIZATION_EGYPT,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Other,Hash,IsForeignHemisphere,1",
+      "Hash,IsMinorPlayer,1,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,ConqueringCivilization,CIVILIZATION_AMERICA",
+      "Hash,IsCapital,1,Hash,OtherPlayer,Self",
+      "Hash,IsTown,0,Hash,IsCoastal,1",
+      "Hash,OtherPlayer,Other,Hash,IsDefeated,1",
+      "Hash,OtherPlayer,Self,Hash,IsMinorPlayer,1",
+      "Hash,IsCapital,1,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,IsTown,0",
+      "Hash,OtherPlayer,Self,Hash,ConqueringCivilization,CIVILIZATION_SPAIN",
+      "Hash,OtherPlayer,Other,Hash,IsCapital,1,Hash,Civilization,CIVILIZATION_MUGHAL",
+      "Hash,IsCoastal,1,Hash,Civilization,CIVILIZATION_MAJAPAHIT",
+      "Hash,OtherPlayer,Self,Hash,IsCapital,1",
+      "Hash,Leader,LEADER_NAPOLEON",
+      "Hash,IsCapital,1,Hash,OriginalCivilization,CIVILIZATION_GREECE,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,IsForeignHemisphere,0",
+      "Hash,OtherPlayer,Self"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONQUER_CITY02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Self,Hash,ConqueringCivilization,CIVILIZATION_QING",
+      "Hash,OtherPlayer,Self,Hash,IsOriginalOwner,1,Hash,IsMinorPlayer,0,Hash,IsCapital,1",
+      "Hash,OtherPlayer,Other,Hash,IsOriginalOwner,1,Hash,Civilization,CIVILIZATION_SPAIN",
+      "Hash,Civilization,CIVILIZATION_EGYPT,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,NegHash,OriginalCivilization,CIVILIZATION_QAJAR",
+      "Hash,OtherPlayer,Other"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONQUER_CITY03": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,OtherPlayer,Self,Hash,ConqueringCivilization,CIVILIZATION_FRENCH_EMPIRE",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONSTRUCTIBLE_DAMAGED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType,IMPROVEMENT_BANG,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_GRANARY"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONSTRUCTIBLE_DAMAGED02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,ConstructibleType,BUILDING_GRANARY",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONSTRUCTIBLE_REPAIRED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,ConstructibleType,BUILDING_AMPHITHEATER",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONSTRUCT_BUILDING01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType,BUILDING_SHIPYARD,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,IMPROVEMENT_PAIRIDAEZA",
+      "Hash,ConstructibleType,BUILDING_LABORATORY,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,BUILDING_LABORATORY,Numeric,PlayerCount,3",
+      "Hash,ConstructibleType,IMPROVEMENT_WOODCUTTER_RESOURCE,Hash,BiomeType,BIOME_TROPICAL,Hash,IsCapital,0",
+      "Hash,ConstructibleType,BUILDING_OPERA_HOUSE",
+      "Hash,ConstructibleType,WONDER_DOGO_ONSEN",
+      "Hash,ConstructibleType,BUILDING_BATH",
+      "Hash,ConstructibleType,BUILDING_MUSEUM,Hash,IsCapital,1",
+      "Hash,ConstructibleType,WONDER_NALANDA",
+      "Hash,ConstructibleType,BUILDING_RADIO_STATION",
+      "Hash,IsWonder,1,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_CITY_PARK",
+      "Hash,ConstructibleType,BUILDING_ARMORER",
+      "Hash,ConstructibleType,BUILDING_BRICKYARD,Hash,IsCapital,1",
+      "Hash,ConstructibleType,WONDER_TOMB_OF_ASKIA",
+      "Hash,ConstructibleType,WONDER_PYRAMIDS",
+      "Hash,ConstructibleType,IMPROVEMENT_HAWELT",
+      "Hash,ConstructibleType,BUILDING_ARENA",
+      "Hash,ConstructibleType,BUILDING_VILLA",
+      "Hash,ConstructibleType,BUILDING_ACADEMY",
+      "Hash,ConstructibleType,BUILDING_GUILDHALL,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,BUILDING_AIRFIELD",
+      "Hash,ConstructibleType,BUILDING_FACTORY,Numeric,PlayerCount,4",
+      "Hash,ConstructibleType,IMPROVEMENT_ENTREPOT",
+      "Hash,IsCapital,1,Hash,IsWonder,1",
+      "Hash,IsWonder,1",
+      "Hash,ConstructibleType,BUILDING_ARMORER,Numeric,AdjacencyBonus,3,Hash,IsCoastal,1",
+      "Hash,ConstructibleType,IMPROVEMENT_POTKOP",
+      "Hash,ConstructibleType,WONDER_MUZIBU_AZAALA_MPANGA",
+      "Hash,ConstructibleType,IMPROVEMENT_BARAY",
+      "Hash,ConstructibleType,BUILDING_FACTORY,Numeric,PlayerCount,3",
+      "Hash,ConstructibleType,BUILDING_MONUMENT,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_LIBRARY",
+      "Hash,ConstructibleType,BUILDING_DEPARTMENT_STORE",
+      "Hash,ConstructibleType,IMPROVEMENT_STEPWELL",
+      "Hash,ConstructibleType,BUILDING_OPERA_HOUSE,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,BUILDING_FISHING_QUAY,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,IMPROVEMENT_INSTITUTE",
+      "Hash,ConstructibleType,WONDER_FORBIDDEN_CITY",
+      "Hash,ConstructibleType,BUILDING_PAVILION,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,WONDER_ORACLE",
+      "Hash,BiomeType,BIOME_DESERT",
+      "Hash,ConstructibleType,BUILDING_ALTAR",
+      "Hash,ConstructibleType,BUILDING_ANCIENT_WALLS",
+      "Hash,ConstructibleType,BUILDING_BAILEY,Hash,IsCapital,1,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,IMPROVEMENT_OBSHCHINA",
+      "Hash,ConstructibleType,BUILDING_RADIO_STATION,Hash,IsCapital,1",
+      "Hash,ConstructibleType,IMPROVEMENT_BANG",
+      "Hash,ConstructibleType,BUILDING_ANCIENT_WALLS,Numeric,PlayerCount,3",
+      "Hash,ConstructibleType,WONDER_HOUSE_OF_WISDOM",
+      "Hash,ConstructibleType,WONDER_TAJ_MAHAL",
+      "Hash,ConstructibleType,BUILDING_BRICKYARD,Hash,IsTown,1",
+      "Hash,ConstructibleType,BUILDING_TEMPLE",
+      "Hash,ConstructibleType,BUILDING_BAZAAR",
+      "Hash,ConstructibleType,BUILDING_RAIL_STATION,Numeric,PlayerCount,4",
+      "Hash,ConstructibleType,IMPROVEMENT_KABAKAS_LAKE,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_TENEMENT,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_PORT",
+      "Hash,ConstructibleType,IMPROVEMENT_FARM,Numeric,PlayerCount,5",
+      "Hash,ConstructibleType,BUILDING_IRONWORKS",
+      "Hash,ConstructibleType,BUILDING_GROCER",
+      "Hash,ConstructibleType,BUILDING_UNIVERSITY,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,BUILDING_LABORATORY,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_SHIPYARD",
+      "Hash,ConstructibleType,IMPROVEMENT_MONASTERY",
+      "Hash,ConstructibleType,BUILDING_MEDIEVAL_WALLS",
+      "Hash,ConstructibleType,BUILDING_BRICKYARD",
+      "Hash,IsCapital,1,Hash,ConstructibleType,BUILDING_ANCIENT_WALLS",
+      "Hash,ConstructibleType,BUILDING_MOTTE",
+      "Hash,ConstructibleType,BUILDING_MENAGERIE",
+      "Hash,BiomeType,BIOME_TROPICAL,Hash,ConstructibleType,BUILDING_CITY_PARK",
+      "Hash,ConstructibleType,BUILDING_STOCK_EXCHANGE",
+      "Hash,ConstructibleType,BUILDING_PAVILION",
+      "Hash,ConstructibleType,IMPROVEMENT_HIGHLAND_POWER_STATION",
+      "Hash,ConstructibleType,BUILDING_MONUMENT",
+      "Hash,ConstructibleType,BUILDING_TAVERN",
+      "Hash,ConstructibleType,BUILDING_SCHOOLHOUSE",
+      "Hash,ConstructibleType,IMPROVEMENT_HAN_GREAT_WALL",
+      "Hash,ConstructibleType,IMPROVEMENT_CARAVANSERAI",
+      "Hash,ConstructibleType,BUILDING_BANK",
+      "Hash,ConstructibleType,IMPROVEMENT_OPEN_AIR_MUSEUM",
+      "Hash,ConstructibleType,BUILDING_OBSERVATORY,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,BUILDING_BAZAAR,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,BUILDING_GARDEN",
+      "Hash,ConstructibleType,IMPROVEMENT_KABAKAS_LAKE",
+      "Hash,ConstructibleType,BUILDING_OBSERVATORY,Numeric,AdjacencyBonus,6",
+      "Hash,ConstructibleType,BUILDING_UNIVERSITY",
+      "Numeric,AdjacencyBonus,4",
+      "Hash,ConstructibleType,IMPROVEMENT_STAATSEISENBAHN,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_LABORATORY,Numeric,AdjacencyBonus,3",
+      "Hash,ConstructibleType,BUILDING_DEFENSIVE_FORTIFICATIONS",
+      "Hash,BiomeType,BIOME_MARINE",
+      "Hash,ConstructibleType,WONDER_COLOSSUS",
+      "Hash,ConstructibleType,BUILDING_TEMPLE,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_BLACKSMITH",
+      "Hash,ConstructibleType,BUILDING_MUSEUM",
+      "Hash,ConstructibleType,WONDER_WHITE_TOWER",
+      "Hash,ConstructibleType,BUILDING_SCHOOLHOUSE,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,IMPROVEMENT_MEGALITH",
+      "Hash,ConstructibleType,BUILDING_TEMPLE,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,BUILDING_MENAGERIE,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_OPERA_HOUSE,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,WONDER_HERMITAGE",
+      "Hash,ConstructibleType,BUILDING_TENEMENT",
+      "Hash,ConstructibleType,BUILDING_TEMPLE,Numeric,PlayerCount,3",
+      "Hash,ConstructibleType,BUILDING_MOSQUE,Hash,IsCapital,1,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,BUILDING_FISHING_QUAY",
+      "Hash,ConstructibleType,WONDER_BOROBODUR",
+      "Hash,ConstructibleType,BUILDING_MONUMENT,Numeric,PlayerCount,3",
+      "Hash,ConstructibleType,WONDER_BRANDENBURG_GATE",
+      "Hash,ConstructibleType,IMPROVEMENT_LO_I_KALO",
+      "Hash,ConstructibleType,BUILDING_AMPHITHEATER",
+      "Hash,ConstructibleType,BUILDING_LABORATORY",
+      "Hash,ConstructibleType,BUILDING_MARKET,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_OBSERVATORY",
+      "Hash,ConstructibleType,WONDER_REYKHOLT",
+      "Hash,ConstructibleType,IMPROVEMENT_STAATSEISENBAHN",
+      "Hash,ConstructibleType,BUILDING_MUSEUM,Hash,ConstructibleType,BUILDING_MUSEUM,BUILDING_MUSEUM",
+      "Hash,ConstructibleType,BUILDING_FACTORY",
+      "Hash,ConstructibleType,BUILDING_KILN,Hash,IsForeignHemisphere,1",
+      "Hash,ConstructibleType,BUILDING_TEMPLE,Hash,IsForeignHemisphere,0",
+      "Hash,ConstructibleType,BUILDING_UNIVERSITY,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_GUILDHALL,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_MILITARY_ACADEMY",
+      "Hash,ConstructibleType,WONDER_STATUE_OF_LIBERTY",
+      "Hash,IsQuarter,1,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_LIGHTHOUSE",
+      "Hash,ConstructibleType,WONDER_COLOSSEUM",
+      "Hash,ConstructibleType,BUILDING_ALTAR,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,IMPROVEMENT_TERRACE_FARM",
+      "Hash,ConstructibleType,WONDER_BRIHADEESWARAR_TEMPLE",
+      "Hash,ConstructibleType,WONDER_EIFFEL_TOWER,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_RAIL_STATION",
+      "Hash,IsCapital,1,Hash,ConstructibleType,WONDER_OXFORD_UNIVERSITY",
+      "Hash,ConstructibleType,BUILDING_BARRACKS",
+      "Hash,ConstructibleType,BUILDING_GUILDHALL",
+      "Hash,ConstructibleType,IMPROVEMENT_ORTOO",
+      "Hash,ConstructibleType,BUILDING_LIBRARY,Numeric,PlayerCount,2"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONSTRUCT_BUILDING02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType,BUILDING_LIBRARY",
+      "Hash,ConstructibleType,BUILDING_OPERA_HOUSE",
+      "Hash,ConstructibleType,BUILDING_PAVILION",
+      "Hash,ConstructibleType,BUILDING_AMPHITHEATER",
+      "Hash,ConstructibleType,IMPROVEMENT_WOODCUTTER,Hash,BiomeType,BIOME_TROPICAL,Hash,IsCapital,0",
+      "Hash,ConstructibleType,BUILDING_HOSPITAL",
+      "Hash,ConstructibleType,BUILDING_MONUMENT",
+      "Hash,ConstructibleType,BUILDING_ALTAR",
+      "Hash,ConstructibleType,BUILDING_RADIO_STATION,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_FACTORY",
+      "Hash,ConstructibleType,BUILDING_CANNERY",
+      "Hash,ConstructibleType,BUILDING_OPERA_HOUSE,Hash,IsForeignHemisphere,0",
+      "Hash,ConstructibleType,WONDER_HA_AMONGA_A_MAUI",
+      "Hash,ConstructibleType,BUILDING_TEMPLE",
+      "Hash,ConstructibleType,BUILDING_GARDEN",
+      "Hash,ConstructibleType,BUILDING_OPERA_HOUSE,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_UNIVERSITY",
+      "Hash,ConstructibleType,BUILDING_ALTAR,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_KILN",
+      "Hash,ConstructibleType,IMPROVEMENT_THING",
+      "Hash,ConstructibleType,IMPROVEMENT_FARM,Numeric,PlayerCount,3",
+      "Hash,ConstructibleType,BUILDING_ACADEMY",
+      "Hash,ConstructibleType,BUILDING_AIRFIELD",
+      "Hash,ConstructibleType,BUILDING_OBSERVATORY,Hash,IsForeignHemisphere,0",
+      "Hash,ConstructibleType,IMPROVEMENT_MAWASKAWE_SKOTE,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_BLACKSMITH",
+      "Hash,ConstructibleType,BUILDING_MARKET",
+      "Hash,ConstructibleType,BUILDING_GUILDHALL,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,BUILDING_IRONWORKS",
+      "Hash,ConstructibleType,BUILDING_GROCER",
+      "Hash,ConstructibleType,WONDER_STATUE_OF_LIBERTY,Hash,IsCapital,1",
+      "Hash,ConstructibleType,BUILDING_MOTTE,Hash,IsCapital,1,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,IMPROVEMENT_MONASTERY",
+      "Hash,ConstructibleType,BUILDING_GRANARY",
+      "Hash,ConstructibleType,BUILDING_GUILDHALL",
+      "Hash,ConstructibleType,BUILDING_WHARF"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CONSTRUCT_BUILDING03": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType,BUILDING_TEMPLE,Numeric,PlayerCount,2",
+      "Hash,ConstructibleType,BUILDING_MUSEUM",
+      "Hash,ConstructibleType,BUILDING_BANK,Numeric,AdjacencyBonus,2",
+      "Hash,ConstructibleType,BUILDING_MENAGERIE"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CREATE_GREAT_PERSON01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_ITSARASUNTHON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_ZAPATA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_IBN_FADLAN",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_AL_JAHIZ",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_VAJRAVUDH",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_HERNAN_CORTES",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_AL_MAQDISI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_PHIBUN",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_ALVAR_NUNEZ_CABEZA_DE_VACA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_APEREL",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_FRANCISCO_DE_ORELLANA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_NJALL_THORGEIRSSON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_GUERRERO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_GUDRUN_OSVIFRSDOTTIR",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_D_AELDERS",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_AL_SHAYBANI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_FRANCISCO_PIZARRO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_GUDRIDR_THORBJARNARDOTTIR",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_SENANURAK",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_AL_JAZARI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_BARRAS",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_KHAY",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_PINKLAO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_USERAMEN",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_THALES",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_DANTON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_EGILL_SKALLAGRIMSSON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_ARETE",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_JIMENEZ",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_SAPPHO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_HERNANDO_DE_SOTO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_MORELOS",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_BILLAUD_VARENNE",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_MIGUEL_LOPEZ_DE_LEGAZPI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_AL_FARABI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_JUAN_PONCE_DE_LEON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_HRAFNKELL_HALLFREDSSON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_DESMOULINS",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_HYPATIA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_SUAREZ",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_VILLA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_ARISTOTLE",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_XENOPHON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_HIDALGO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_PYTHAGORAS",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_FREYDIS_EIRIKSDOTTIR",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_HERRERA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_SOCRATES",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_WICHAICHAN",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_AL_KHWARIZMI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_CHAKRABONGSE",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_NEBET",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_GRETTIR_ASMUNDARSON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_FERDINAND_MAGELLAN",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_RAMOSE",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_BRISSOT",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_ROBESPIERRE",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_AMHOSE",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_RABIA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_PLATO",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_TJATY_PTAHHOTEP",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_SAINT_JUST",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_GOUGES",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_RASMI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_IBN_SINA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_LOGIOS_ASPASIA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_ALIM_AL_FARGHANI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_PRIDI",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_JACOBIN_MARAT",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_AVILA",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_GISLI_SURSSON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_KJARTAN_OLAFSSON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_SAGA_HERO_GUNNAR_HAMUNDARSON",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_CONQUISTADOR_CHRISTOPHER_COLUMBUS",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_UPARAT_SAKDIPHONLASEP",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_JUAREZ",
+      "Hash,GreatPersonIndividualType,GREAT_PERSON_INDIVIDUAL_REVOLUCIONARIO_SANTA_ANNA"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CREATE_PANTHEON01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,BeliefType,PANTHEON_BONUS_16",
+      "Hash,BeliefType,PANTHEON_BONUS_12",
+      "Hash,BeliefType,PANTHEON_BONUS_6",
+      "Hash,BeliefType,PANTHEON_BONUS_8",
+      "Hash,BeliefType,PANTHEON_BONUS_4",
+      "Hash,BeliefType,PANTHEON_BONUS_9",
+      "Hash,BeliefType,PANTHEON_BONUS_11",
+      "Hash,BeliefType,PANTHEON_BONUS_10",
+      "Hash,BeliefType,PANTHEON_BONUS_7",
+      "Hash,BeliefType,PANTHEON_BONUS_2",
+      "Hash,BeliefType,PANTHEON_BONUS_3"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_CREATE_PANTHEON02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,BeliefType,PANTHEON_BONUS_1",
+      "Hash,BeliefType,PANTHEON_BONUS_10"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_DIPLOMACY_ACTION_STARTED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,DiplomacyActionType,DIPLOMACY_ACTION_GIFT_GURKHA,Hash,Civilization,CIVILIZATION_GREAT_BRITAIN,Numeric,RelationshipCount,80",
+      "Hash,OtherPlayer,Other,Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_ENDEAVOR",
+      "Hash,OtherPlayer,Other,Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_ENDEAVOR,Hash,WereEverAtWar,1",
+      "Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_ESPIONAGE,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,DiplomacyActionType,DIPLOMACY_ACTION_INCITE_RAID",
+      "Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_ENDEAVOR,Hash,OtherPlayer,Other",
+      "Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_SANCTION,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,DiplomacyActionType,DIPLOMACY_ACTION_SABOTAGE_MILITARY_PRODUCTION",
+      "Hash,OtherPlayer,Other,Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_SANCTION",
+      "Hash,DiplomacyActionType,DIPLOMACY_ACTION_FREE_CAPTURED_COMMANDER",
+      "Hash,OtherPlayer,Other,Hash,DiplomacyActionType,DIPLOMACY_ACTION_LOCAL_FESTIVALS"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_DIPLOMACY_ACTION_STARTED02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,OtherPlayer,Other,Hash,DiplomacyActionType,DIPLOMACY_ACTION_MINOR_TRADE",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_DIPLOMACY_RESPONSE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,DiplomacyResponseType,DIPLOMACY_RESPONSE_SUPPORT",
+      "Hash,OtherPlayer,Self,Hash,DiplomacyResponseType,DIPLOMACY_RESPONSE_REJECT,Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_ENDEAVOR",
+      "Hash,DiplomacyResponseType,DIPLOMACY_RESPONSE_ACCEPT,Hash,DiplomacyActionType,DIPLOMACY_ACTION_CULTURAL_EXCHANGE",
+      "Hash,DiplomacyResponseType,DIPLOMACY_RESPONSE_SUPPORT,Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_ENDEAVOR",
+      "Hash,DiplomacyActionType,HISTORICAL_EVENT_FIRST_MEET,Hash,DiplomacyResponseType,PLAYER_REALATIONSHIP_FIRSTMEET_UNFRIENDLY,Hash,Civilization,CIVILIZATION_SPAIN,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,DiplomacyResponseType,DIPLOMACY_RESPONSE_SUPPORT,Hash,DiplomacyActionGroup,DIPLOMACY_ACTION_GROUP_ENDEAVOR"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_DIPLOMACY_RESPONSE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,Civilization,CIVILIZATION_ROME,Hash,DiplomacyActionType,DIPLOMACY_ACTION_FORM_ALLIANCE,Hash,DiplomacyResponseType,DIPLOMACY_RESPONSE_ACCEPT",
+      "Hash,Civilization,CIVILIZATION_CARTHAGE,Hash,DiplomacyActionType,DIPLOMACY_ACTION_FORM_ALLIANCE,Hash,DiplomacyResponseType,DIPLOMACY_RESPONSE_ACCEPT"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_FIND_CONTINENT01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,IsForeignHemisphere,1",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_FOUND_CITY01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Numeric,PlayerCount,3",
+      "Hash,BiomeType,BIOME_TROPICAL",
+      "Hash,BiomeType,BIOME_DESERT",
+      "Hash,IsCoastal,1",
+      "Hash,IsForeignHemisphere,1,Hash,AdjacentToNavigableRiver,1",
+      "Hash,IsForeignHemisphere,1",
+      "Hash,IsForeignHemisphere,1,Hash,AdjacentToNaturalWonder,1",
+      "Hash,IsCoastal,0",
+      "Hash,IsCoastal,1,Hash,IsForeignHemisphere,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_FOUND_CITY02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,BiomeType,BIOME_DESERT",
+      "Hash,BiomeType,BIOME_GRASSLAND"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_FOUND_RELIGION01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,IsForeignHemisphere,1",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_GATHER_RESOURCE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ResourceType,RESOURCE_JADE,Numeric,PlayerCount,3",
+      "Hash,ResourceType,RESOURCE_DATES",
+      "Hash,ResourceType,RESOURCE_HARDWOOD",
+      "Hash,ResourceType,RESOURCE_NITER",
+      "Hash,ResourceType,RESOURCE_COCOA",
+      "Hash,ResourceType,RESOURCE_SPICES",
+      "Hash,ResourceType,RESOURCE_JADE",
+      "Hash,ResourceType,RESOURCE_CAMELS",
+      "Hash,ResourceType,RESOURCE_FISH",
+      "Hash,ResourceType,RESOURCE_HIDES,Hash,BiomeType,BIOME_GRASSLAND",
+      "Hash,ResourceType,RESOURCE_INCENSE,Numeric,PlayerCount,3",
+      "Hash,ResourceType,RESOURCE_SALT",
+      "Hash,ResourceType,RESOURCE_FURS,Numeric,PlayerCount,3",
+      "Hash,ResourceType,RESOURCE_FURS,Numeric,PlayerCount,2",
+      "Hash,ResourceType,RESOURCE_RUBIES",
+      "Hash,ResourceType,RESOURCE_WHALES",
+      "Hash,ResourceType,RESOURCE_IVORY,Numeric,PlayerCount,2",
+      "Hash,ResourceType,RESOURCE_DYES",
+      "Hash,ResourceType,RESOURCE_QUININE",
+      "Hash,ResourceType,RESOURCE_WINE,Numeric,PlayerCount,3",
+      "Hash,ResourceType,RESOURCE_WINE",
+      "Hash,ResourceType,RESOURCE_COTTON",
+      "Hash,ResourceType,RESOURCE_FLAX",
+      "Hash,IsForeignHemisphere,1",
+      "Hash,ResourceType,RESOURCE_FURS,Hash,IsForeignHemisphere,1,Hash,FeatureType,FEATURE_TAIGA",
+      "Hash,ResourceType,RESOURCE_OIL,Hash,IsForeignHemisphere,0",
+      "Hash,ResourceType,RESOURCE_GOLD,Numeric,PlayerCount,2",
+      "Hash,ResourceType,RESOURCE_SUGAR",
+      "Hash,ResourceType,RESOURCE_NITER,Numeric,PlayerCount,3",
+      "Hash,ResourceType,RESOURCE_HORSES",
+      "Hash,ResourceType,RESOURCE_SILK",
+      "Hash,ResourceType,RESOURCE_PEARLS",
+      "Hash,ResourceType,RESOURCE_CITRUS",
+      "Hash,ResourceType,RESOURCE_FURS",
+      "Hash,ResourceType,RESOURCE_GOLD,Hash,IsCapital,1",
+      "Hash,ResourceType,RESOURCE_WOOL",
+      "Hash,ResourceType,RESOURCE_FISH,Numeric,PlayerCount,3",
+      "Hash,ResourceType,RESOURCE_LIMESTONE",
+      "Hash,ResourceType,RESOURCE_HIDES,Numeric,PlayerCount,2",
+      "Hash,ResourceType,RESOURCE_SILVER",
+      "Hash,BiomeType,BIOME_MARINE",
+      "Hash,ResourceType,RESOURCE_GOLD",
+      "Hash,ResourceType,RESOURCE_IRON",
+      "Hash,ResourceType,RESOURCE_HORSES,Hash,IsCapital,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_GATHER_RESOURCE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ResourceType,RESOURCE_SILVER",
+      "Hash,ResourceType,RESOURCE_SILK",
+      "Hash,ResourceType,RESOURCE_WHALES",
+      "Hash,ResourceType,RESOURCE_IVORY,Hash,IsCapital,1",
+      "Hash,ResourceType,RESOURCE_PEARLS",
+      "Hash,ResourceType,RESOURCE_DYES",
+      "Hash,ResourceType,RESOURCE_NITER",
+      "Hash,ResourceType,RESOURCE_TEA",
+      "Hash,ResourceType,RESOURCE_SPICES",
+      "Hash,ResourceType,RESOURCE_CAMELS",
+      "Hash,ResourceType,RESOURCE_WOOL",
+      "Hash,ResourceType,RESOURCE_TRUFFLES",
+      "Hash,ResourceType,RESOURCE_MARBLE",
+      "Hash,ResourceType,RESOURCE_MANGOS",
+      "Hash,ResourceType,RESOURCE_COWRIE",
+      "Hash,ResourceType,RESOURCE_IRON"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_GATHER_RESOURCE03": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ResourceType,RESOURCE_HORSES",
+      "Hash,ResourceType,RESOURCE_COAL",
+      "Hash,ResourceType,RESOURCE_INCENSE",
+      "Hash,ResourceType,RESOURCE_OIL",
+      "Hash,ResourceType,RESOURCE_SUGAR"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_GATHER_RESOURCE04": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ResourceType,RESOURCE_HIDES",
+      "Hash,ResourceType,RESOURCE_TEA"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_INDEPENDENT_DISPERSE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,UnitType,UNIT_MAN_AT_ARMS",
+      "Hash,UnitType,UNIT_MEDJAY",
+      "Hash,IndependentType,SCIENTIFIC"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_INDEPENDENT_DISPERSE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,IsForeignHemisphere,1",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_LOST_WONDER_RACE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Other,Numeric,PercentComplete,75,Hash,IsLoserFavoredWonder,1",
+      "Hash,ConstructibleType,WONDER_RED_FORT,Hash,OtherPlayer,Other",
+      "Hash,ConstructibleType,WONDER_NOTRE_DAME,Numeric,PercentComplete,50,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Self,Numeric,PercentComplete,50,Hash,IsWinnerFavoredWonder,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_MAKE_DOW01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Other,Hash,WarType,SURPRISE_WAR",
+      "Hash,OtherPlayer,Self,Hash,IsForeignHemisphere,1",
+      "Hash,IsForeignHemisphere,1",
+      "Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_MEET_INDEPENDENT01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Equal,Influence,0",
+      "Hash,IsForeignHemisphere,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_MEET_INDEPENDENT02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,BiomeType,BIOME_DESERT",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PILLAGE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,Civilization,CIVILIZATION_EGYPT,Hash,OtherPlayer,Other,Hash,ConstructibleType,BUILDING_MONUMENT",
+      "Hash,OtherPlayer,Self,Hash,UnitType,UNIT_PRIVATEER",
+      "Hash,UnitType,UNIT_HULCHE,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,IsCapital,1",
+      "Hash,Civilization,CIVILIZATION_NORMAN,Hash,IsCoastal,1",
+      "Hash,OtherPlayer,Self,Hash,ConstructibleType,IMPROVEMENT_THING",
+      "Hash,ConstructibleType,BUILDING_OBSERVATORY,Hash,OtherPlayer,Other",
+      "Hash,UnitType,UNIT_BOYAR",
+      "Hash,DomainType,DOMAIN_SEA",
+      "Hash,UnitType,UNIT_VIKINGR_3,Hash,OtherPlayer,Other",
+      "Hash,UnitType,UNIT_BARBARY_CORSAIR,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,UnitType,UNIT_PRIVATEER_2",
+      "Hash,OtherPlayer,Other",
+      "Hash,UnitType,UNIT_VIKINGR_2,Hash,OtherPlayer,Other",
+      "Hash,UnitType,UNIT_BOYAR_3",
+      "Hash,UnitType,UNIT_BOYAR_2",
+      "Hash,UnitTypeReplaces,UNIT_ARMY_COMMANDER",
+      "Hash,UnitType,UNIT_VIKINGR,Hash,OtherPlayer,Other",
+      "Hash,UnitType,UNIT_MWAMI",
+      "Hash,OtherPlayer,Self"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PILLAGE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,UnitType,UNIT_HULCHE_2,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,ConstructibleType,BUILDING_TEMPLE",
+      "Hash,UnitType,UNIT_BARBARY_CORSAIR_2,Hash,OtherPlayer,Other",
+      "Hash,ConstructibleType,BUILDING_UNIVERSITY,Hash,OtherPlayer,Other"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PILLAGE03": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,UnitType,UNIT_BARBARY_CORSAIR_3,Hash,OtherPlayer,Other",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PLACED_WORKER01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType,BUILDING_OPERA_HOUSE",
+      "Hash,UniqueQuarter,QUARTER_NECROPOLIS",
+      "Hash,UniqueQuarter,QUARTER_ULEMA",
+      "Hash,ConstructibleType,BUILDING_DEPARTMENT_STORE"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PLACED_WORKER02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType2,BUILDING_OPERA_HOUSE",
+      "Hash,ConstructibleType2,BUILDING_DEPARTMENT_STORE"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PLAYERS_MEET01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_NORMAN",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MISSISSIPPIAN",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MAYA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_KHMER",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_CARTHAGE",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_DAI_VIET",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_SILLA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_ABBASID",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_HAWAII",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_SHAWNEE",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_ICELAND",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_ROME",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_PIRATE_REPUBLIC",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MING",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_AKSUM",
+      "Hash,IsForeignHemisphere,1",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MAURYA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_ASSYRIA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_GREECE",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MAJAPAHIT",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_BULGARIA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_SPAIN",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_HAN",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_TONGA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_AKSUM,Hash,IsForeignHemisphere,0",
+      "Hash,IsForeignHemisphere,1,Hash,Civilization,CIVILIZATION_PIRATE_REPUBLIC",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_EGYPT",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_PERSIA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_INCA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_SONGHAI",
+      "Hash,Leader,LEADER_NAPOLEON",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_CHOLA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MONGOLIA"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PLAYERS_MEET02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,IsForeignHemisphere,1",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PLUNDER_TRADE_ROUTE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,Civilization,CIVILIZATION_MING,Hash,OtherPlayer,Other",
+      "Hash,UnitType,UNIT_GOLD_BANGLES,Hash,OtherPlayer,Other"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_PLUNDER_TRADE_ROUTE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,OtherPlayer,Other",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_POLICY_SLOTS_CHANGED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Numeric,Amount,1",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_RANDOM_EVENT_DAMAGE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Numeric,TilesDamaged,1",
+      "Hash,RandomEventType,RANDOM_EVENT_VOLCANO_KILIMAJARO",
+      "Hash,EventClass,CLASS_DUSTSTORM,Numeric,TilesDamaged,1",
+      "Hash,EventClass,CLASS_TORNADO,Numeric,TilesDamaged,1",
+      "Hash,EffectOperatorType,STORM,Numeric,TilesDamaged,1",
+      "Hash,RandomEventType,RANDOM_EVENT_VOLCANO_THERA",
+      "Hash,EffectOperatorType,STORM",
+      "Hash,EffectOperatorType,VOLCANO,Numeric,TilesDamaged,1",
+      "Hash,EventClass,CLASS_THUNDERSTORM,Numeric,TilesDamaged,1",
+      "Hash,EventClass,CLASS_BLIZZARD,Numeric,TilesDamaged,1",
+      "Hash,EffectOperatorType,VOLCANO,Numeric,Fertility,2,Hash,IsCoastal,1",
+      "Hash,EffectOperatorType,FLOODPLAIN,Numeric,TilesDamaged,1",
+      "Hash,EventClass,CLASS_HURRICANE,Numeric,TilesDamaged,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_RANDOM_EVENT_DAMAGE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,EffectOperatorType,VOLCANO",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_RANDOM_EVENT_DAMAGED_CONSTRUCTIBLE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType,IMPROVEMENT_FARM",
+      "Hash,EffectOperatorType,STORM,Hash,ConstructibleType,IMPROVEMENT_ENTREPOT",
+      "Hash,EffectOperatorType,STORM,Hash,ConstructibleType,BUILDING_LIGHTHOUSE",
+      "Hash,EffectOperatorType,STORM",
+      "Hash,ConstructibleType,BUILDING_FACTORY",
+      "Hash,EffectOperatorType,STORM,Hash,ConstructibleType,BUILDING_LIBRARY"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_RANDOM_EVENT_DAMAGED_CONSTRUCTIBLE02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,EffectOperatorType,STORM,Hash,ConstructibleType,BUILDING_LIBRARY",
+      "Hash,RandomEventType,RANDOM_EVENT_TORNADO_OUTBREAK",
+      "Hash,EventClass,CLASS_HURRICANE",
+      "Hash,EffectOperatorType,VOLCANO"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_RANDOM_EVENT_UNIT_KILLED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,UnitType,UNIT_SHERPA,Hash,EventClass,CLASS_VOLCANO",
+      "Hash,EffectOperatorType,STORM,Hash,BiomeType,BIOME_DESERT",
+      "Hash,EventClass,CLASS_HURRICANE,Hash,UnitType,UNIT_FRIGATE,Hash,IsDyingUnitPlotOwner,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_REJECT_DEAL01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,OtherPlayer,Other,Hash,DealType,DEAL_ITEM_AGREEMENT_MAKE_PEACE",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_RELATIONSHIP_CHANGED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,RelationshipLevel,PLAYER_RELATIONSHIP_FRIENDLY",
+      "Hash,OtherPlayer,Self,Hash,RelationshipLevel,PLAYER_RELATIONSHIP_NEUTRAL,Hash,OldRelationshipLevel,PLAYER_RELATIONSHIP_HOSTILE",
+      "Hash,OtherPlayer,Self,Hash,RelationshipLevel,PLAYER_RELATIONSHIP_FRIENDLY,Hash,OldRelationshipLevel,PLAYER_RELATIONSHIP_HELPFUL",
+      "Hash,OtherPlayer,Self,Hash,RelationshipLevel,PLAYER_RELATIONSHIP_FRIENDLY,Hash,OldRelationshipLevel,PLAYER_RELATIONSHIP_NEUTRAL"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_RELATIONSHIP_CHANGED02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,OtherPlayer,Self,Hash,RelationshipLevel,PLAYER_RELATIONSHIP_NEUTRAL,Hash,OldRelationshipLevel,PLAYER_RELATIONSHIP_UNFRIENDLY",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_SCORED_VP01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Numeric,Amount,3,Hash,VictoryType,LEGACY_PATH_MODERN_MILITARY",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_SCORE_DISBAND_UNIT01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Numeric,Amount,2",
+      "Hash,IsOriginalOwner,0",
+      "Numeric,Amount,1",
+      "Numeric,Amount,3"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_SCORE_DISBAND_UNIT02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Numeric,Amount,1,Hash,IsOriginalOwner,0",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRADE_ROUTE_STARTED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_BUGANDA",
+      "Hash,OtherPlayer,Other,Hash,DomainType,DOMAIN_SEA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_RUSSIA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_GREAT_BRITAIN",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MEXICO",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MUGHAL",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_NEPAL",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_QING",
+      "Hash,Civilization,CIVILIZATION_CHOLA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MAURYA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_OTTOMANS",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_PRUSSIA",
+      "Hash,WereEverAtWar,1,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_FRENCH_EMPIRE",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_MEIJI",
+      "Hash,IsForeignHemisphere,1,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_QAJAR",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_AMERICA",
+      "Hash,OtherPlayer,Other,Hash,Civilization,CIVILIZATION_SIAM",
+      "Hash,OtherPlayer,Other",
+      "Hash,DomainType,DOMAIN_SEA,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,IsCapital,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRADITION_ACTIVATED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,TraditionType,TRADITION_FINE_ARTS",
+      "Hash,TraditionType,TRADITION_FAMILIA_REGIS,Hash,CivilizationTrait,TRAIT_NORMAN",
+      "Hash,TraditionType,TRADITION_PRIESTHOOD",
+      "Hash,TraditionType,TRADITION_HONOR",
+      "Hash,TraditionType,TRADITION_CITY_OF_PEACE,Hash,CivilizationTrait,TRAIT_ABBASID",
+      "Hash,TraditionType,TRADITION_MEDICINE",
+      "Hash,TraditionType,TRADITION_CHIVALRY",
+      "Hash,TraditionType,TRADITION_AVANT_GARDE",
+      "Hash,TraditionType,TRADITION_SERVITIUM_DEBITUM,Hash,CivilizationTrait,TRAIT_NORMAN",
+      "Hash,TraditionType,TRADITION_GOLD_RUSH,Hash,CivilizationTrait,TRAIT_AMERICA",
+      "Hash,TraditionType,TRADITION_COMMODITIES",
+      "Hash,TraditionType,TRADITION_PALISADING,Hash,CivilizationTrait,TRAIT_NORMAN",
+      "Hash,TraditionType,TRADITION_MERCANTILISM",
+      "Hash,TraditionType,TRADITION_CHARISMATIC_LEADER",
+      "Hash,TraditionType,TRADITION_RENAISSANCE",
+      "Hash,TraditionType,TRADITION_CONSCRIPTION",
+      "Hash,TraditionType,TRADITION_TOOL_MAKING",
+      "Hash,TraditionType,TRADITION_STRATEGOI,Hash,CivilizationTrait,TRAIT_GREECE",
+      "Hash,TraditionType,TRADITION_MAY_THIS_PLEASE_THE_PEOPLE,Hash,CivilizationTrait,TRAIT_AKSUM",
+      "Hash,TraditionType,TRADITION_RICHES_OF_THE_DUAT",
+      "Hash,TraditionType,TRADITION_DRAMA_AND_POETRY",
+      "Hash,TraditionType,TRADITION_PORT_OF_NATIONS,Hash,CivilizationTrait,TRAIT_AKSUM",
+      "Hash,TraditionType,TRADITION_GENERAL_MOROZ,Hash,CivilizationTrait,TRAIT_RUSSIA",
+      "Hash,TraditionType,TRADITION_THRONE_OF_MY_FATHERS,Hash,CivilizationTrait,TRAIT_AKSUM",
+      "Hash,TraditionType,TRADITION_TIMBUKTU,Hash,CivilizationTrait,TRAIT_SONGHAI",
+      "Hash,TraditionType,TRADITION_BOURGEOISIE",
+      "Hash,TraditionType,TRADITION_SUFFRAGE",
+      "Hash,TraditionType,TRADITION_QUINQUEREME",
+      "Hash,TraditionType,TRADITION_CLAN_NETWORKS"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRADITION_ACTIVATED02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,TraditionType,TRADITION_JURE,Hash,CivilizationTrait,TRAIT_NORMAN",
+      "Hash,TraditionType,TRADITION_CRAFTSMANSHIP",
+      "Hash,TraditionType,TRADITION_UPOSATHA"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRADITION_DEACTIVATED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,TraditionType,TRADITION_SURVEY",
+      "Hash,TraditionType,TRADITION_COMMODITIES",
+      "Hash,TraditionType,TRADITION_CLAN_NETWORKS",
+      "Hash,TraditionType,TRADITION_RITES_AND_RITUALS"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRAIN_UNIT01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,UnitTypeReplaces,UNIT_SETTLER,Numeric,PlayerCount,2",
+      "Hash,UnitTypeReplaces,UNIT_SUBMARINE",
+      "Hash,UnitType,UNIT_COG",
+      "Hash,UnitType,UNIT_DIVEBOMBER",
+      "Hash,UnitType,UNIT_CHEVALER",
+      "Hash,UnitType,UNIT_BOMBER",
+      "Hash,UnitType,UNIT_ARCHER",
+      "Hash,UnitTypeReplaces,UNIT_SETTLER",
+      "Hash,UnitType,UNIT_SPEARMAN",
+      "Hash,InfantryUnit,1",
+      "Hash,UnitTypeReplaces,UNIT_SCOUT,Numeric,PlayerCount,3",
+      "Hash,UnitType,UNIT_HEAVY_BOMBER",
+      "Hash,UnitType,UNIT_SETTLER",
+      "Hash,UnitType,UNIT_BALLISTA,Numeric,PlayerCount,2",
+      "Hash,UnitTypeReplaces,UNIT_SPEARMAN",
+      "Hash,UnitTypeReplaces,UNIT_BOMBARD",
+      "Hash,UnitTypeReplaces,UNIT_MISSIONARY",
+      "Hash,UnitTypeReplaces,UNIT_CHARIOT",
+      "Hash,UnitType,UNIT_MANDARIN",
+      "Hash,UnitType,UNIT_TREBUCHET",
+      "Hash,UnitTypeReplaces,UNIT_EXPLORER",
+      "Hash,UnitType,UNIT_CUIRASSIER",
+      "Hash,UnitTypeReplaces,UNIT_ARMY_COMMANDER,Numeric,PlayerCount,2",
+      "Hash,UnitTypeReplaces,UNIT_COG",
+      "Hash,UnitType,UNIT_MWAMI,Hash,IsCapital,1",
+      "Hash,DomainType,DOMAIN_SEA",
+      "Hash,UnitType,UNIT_MORTAR",
+      "Hash,UnitTypeReplaces,UNIT_CARRACK",
+      "Hash,UnitType,UNIT_HOCEEPKILENI",
+      "Hash,UnitTypeReplaces,UNIT_FLEET_COMMANDER",
+      "Hash,UnitTypeReplaces,UNIT_WARRIOR,Numeric,PlayerCount,3",
+      "Hash,UnitType,UNIT_SCOUT",
+      "Hash,UnitType,UNIT_PHALANX,Numeric,PlayerCount,4",
+      "Hash,UnitTypeReplaces,UNIT_MAN_AT_ARMS",
+      "Hash,UnitTypeReplaces,UNIT_FRIGATE",
+      "Hash,UnitTypeReplaces,UNIT_HORSEMAN",
+      "Hash,UnitType,UNIT_SLINGER",
+      "Hash,UnitTypeReplaces,UNIT_SLINGER",
+      "Hash,UnitType,UNIT_IMMORTAL,Numeric,PlayerCount,6",
+      "Hash,UnitType,UNIT_IMMORTAL,Numeric,PlayerCount,5",
+      "Hash,UnitTypeReplaces,UNIT_WARRIOR",
+      "Hash,UnitTypeReplaces,UNIT_TREASURE_FLEET",
+      "Hash,UnitTypeReplaces,UNIT_MERCHANT",
+      "Hash,UnitType,UNIT_MISSIONARY,Numeric,PlayerCount,3",
+      "Hash,UnitType,UNIT_MISSIONARY",
+      "Hash,UnitType,UNIT_FRIGATE",
+      "Hash,UnitTypeReplaces,UNIT_GALLEY,Numeric,PlayerCount,2",
+      "Hash,UnitTypeReplaces,UNIT_BIPLANE",
+      "Hash,UnitTypeReplaces,UNIT_ARMY_COMMANDER",
+      "Hash,UnitType,UNIT_FIGHTER"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRAIN_UNIT02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,UnitType,UNIT_MEDJAY",
+      "Hash,UnitType,UNIT_WATONATHI",
+      "Hash,UnitType,UNIT_COSSACK",
+      "Hash,UnitType,UNIT_CHEVALER",
+      "Hash,UnitTypeReplaces,UNIT_KNIGHT",
+      "Hash,UnitType,UNIT_CHANG_BEUN",
+      "Hash,UnitType,UNIT_ZAMINDAR",
+      "Hash,UnitType,UNIT_MWAMI",
+      "Hash,UnitType,UNIT_TANKWA",
+      "Hash,UnitType,UNIT_DANTINAS_TATHA,Numeric,PlayerCount,3",
+      "Hash,UnitTypeReplaces,UNIT_ARCHER",
+      "Hash,UnitTypeReplaces,UNIT_SQUADRON_COMMANDER,Numeric,PlayerCount,2",
+      "Hash,UnitType,UNIT_TAJIRO",
+      "Hash,UnitTypeReplaces,UNIT_SPEARMAN",
+      "Hash,UnitTypeReplaces,UNIT_PIKEMAN",
+      "Hash,UnitType,UNIT_CHASQUI",
+      "Hash,UnitType,UNIT_KAHUNA",
+      "Hash,UnitType,UNIT_VAISHYA",
+      "Hash,UnitType,UNIT_HUSSAR",
+      "Hash,UnitType,UNIT_HAZARAPATIS",
+      "Hash,UnitType,UNIT_CARRACK",
+      "Hash,UnitTypeReplaces,UNIT_SQUADRON_COMMANDER",
+      "Hash,UnitTypeReplaces,UNIT_GALLEON",
+      "Hash,UnitType,UNIT_NOYAN",
+      "Hash,UnitTypeReplaces,UNIT_TRENCH_FIGHTER"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRAIN_UNIT03": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,UnitType,UNIT_GALLEY",
+      "Hash,UnitTypeReplaces,UNIT_PHALANX",
+      "Hash,UnitTypeReplaces,UNIT_BOMBER,Numeric,PlayerCount,2",
+      "Hash,UnitTypeReplaces,UNIT_CROSSBOWMAN"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRAIN_UNIT04": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,UnitType,UNIT_SPEARMAN",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_TRAIN_UNIT05": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,UnitType,UNIT_ARCHER",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_UNIT_COMBAT_DEATH01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_DHOW",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_PRIVATEER,Numeric,KillingUnitKillCount,3",
+      "Hash,KillingUnitType,UNIT_IMMORTAL,Hash,OtherPlayer,Self,Hash,IsDyingUnitInfantry,1",
+      "Hash,OtherPlayer,Other,Hash,DomainType,DOMAIN_SEA",
+      "Hash,KillingUnitType,UNIT_NU,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_FRIGATE,Hash,IsDyingUnitPlotOwner,1",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_TREBUCHET,Hash,IsDyingUnitPlotOwner,1",
+      "Hash,DyingUnitType,UNIT_NU_2,Hash,KillingUnitType,UNIT_HORSEMAN",
+      "Hash,OtherPlayer,Other,Hash,IsDyingUnitCommander,1",
+      "Hash,DyingUnitType,UNIT_SPEARMAN,Hash,OtherPlayer,Other",
+      "Hash,KillingUnitType,UNIT_CHANG_BEUN,Hash,OtherPlayer,Self,Hash,IsDyingUnitStronger,1",
+      "Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_SEA,Hash,DyingCivilization,CIVILIZATION_ROME",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_XUNLEICHONG,Numeric,KillingUnitKillCount,3",
+      "Hash,OtherPlayer,Self,Numeric,DyingWarSupport,5",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_ARMY_COMMANDER",
+      "Hash,OtherPlayer,Self,Hash,IsKillingUnitPlotOwner,1,Hash,KillingDomainType,DOMAIN_AIR,Hash,DomainType,DOMAIN_AIR",
+      "Hash,KillingUnitType,UNIT_DESTROYER,Hash,DyingUnitType,UNIT_SUBMARINE,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Self,Hash,IsDyingUnitPlotOwner,1",
+      "Hash,DyingUnitType,UNIT_SETTLER,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_BOMBER,Hash,IsKillingUnitPlotOwner,1",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_KESHIG,Hash,DyingUnitInCommandRadius,1",
+      "Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_SEA,Hash,KillingUnitInCommandRadius,1",
+      "Hash,OtherPlayer,Self,Hash,IsDyingUnitCommander,1",
+      "Hash,KillingUnitType,UNIT_MAMLUK,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Self,Hash,IsDyingUnitCommander,1,Hash,DomainType,DOMAIN_SEA",
+      "Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_SEA",
+      "Hash,OtherPlayer,Self,Hash,IsKillingUnitPlotOwner,1",
+      "Hash,DyingUnitType,UNIT_IMMORTAL,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_CETBANG,Hash,DyingUnitType,UNIT_FLEET_COMMANDER,Hash,DyingCivilization,CIVILIZATION_MONGOLIA",
+      "Hash,KillingUnitType,UNIT_IMMORTAL,Hash,OtherPlayer,Self,Hash,IsDyingUnitRanged,1",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_ARQUEBUSIER,Hash,IsDyingUnitForeignHemisphere,1",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_MIKASA",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_CETBANG",
+      "Hash,KillingUnitType,UNIT_CHEVALER,Hash,OtherPlayer,Self,Hash,IsDyingUnitFaster,0,Hash,IsKillingUnitPlotOwner,1",
+      "Hash,IsKillingUnitForeignHemisphere,1,Hash,OtherPlayer,Self",
+      "Hash,DyingUnitType,UNIT_VIKINGR,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_TREASURE_FLEET,Hash,KillingUnitType,UNIT_PRIVATEER_2",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_DHOW",
+      "Hash,OtherPlayer,Self,Hash,IsDyingUnitForeignHemisphere,1",
+      "Hash,OtherPlayer,Self,Hash,IsKillingUnitPlotOwner,0",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_BOMBARD",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_TREASURE_FLEET",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_PRIVATEER,Hash,AtWar,0",
+      "Hash,IsDyingUnitCommander,1,Hash,OtherPlayer,Self",
+      "Hash,DyingUnitType,UNIT_SCOUT,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Numeric,KillingUnitKillCount,1",
+      "Hash,OtherPlayer,Self,Hash,IsDyingUnitCommander,1,Numeric,DyingUnitLevel,10,Hash,DomainType,DOMAIN_SEA",
+      "Hash,DyingUnitType,UNIT_WARRIOR,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,IsDyingUnitStronger,1,Hash,CombatType,COMBAT_MELEE",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_LEGATUS",
+      "Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_AIR,Hash,KillingDomainType,DOMAIN_AIR",
+      "Hash,OtherPlayer,Self,Hash,IsKillingUnitForeignHemisphere,1",
+      "Hash,OtherPlayer,Other,Hash,IsDyingUnitCavalry,1,Hash,IsDyingUnitPlotOwner,1",
+      "Hash,DyingUnitType,UNIT_SCOUT,Hash,KillingUnitType,UNIT_LEIOMANO,Hash,OtherPlayer,Other,Hash,IsKillingUnitPlotOwner,1",
+      "Hash,IsDyingUnitCommander,1,Hash,OtherPlayer,Self,Hash,IsKillingUnitPlotOwner,1",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_KISPOKO_NENA_TO",
+      "Hash,KillingUnitType,UNIT_IMMORTAL,Hash,OtherPlayer,Self,Hash,IsDyingUnitCavalry,1",
+      "Numeric,KillingUnitKillCount,5,Hash,KillingUnitType,UNIT_IMMORTAL",
+      "Hash,DyingUnitType,UNIT_SLINGER,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_GURKHA,Hash,DyingUnitType,UNIT_GURKHA",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_PIKEMAN",
+      "Hash,KillingUnitType,UNIT_GOLD_BANGLES,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Other,Numeric,KillingUnitKillCount,3,Hash,KillingUnitType,UNIT_LEIOMANO_3",
+      "Hash,OtherPlayer,Self,Hash,AtWar,0,Hash,IsDyingMinorPlayer,0",
+      "Hash,OtherPlayer,Other,Hash,DomainType,DOMAIN_SEA,Numeric,DyingUnitLevel,5",
+      "Hash,DyingCivilization,CIVILIZATION_NORMAN,Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_SEA",
+      "Hash,DyingCivilization,CIVILIZATION_RUSSIA,Hash,OtherPlayer,Self,Hash,IsDyingUnitCommander,1,Hash,KillingUnitType,UNIT_GHILMAN",
+      "Hash,DyingUnitType,UNIT_ARQUEBUSIER,Hash,KillingUnitType,UNIT_CROSSBOWMAN,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_TREASURE_FLEET,Hash,KillingUnitType,UNIT_PRIVATEER",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_GUSA",
+      "Hash,DyingUnitType,UNIT_GALLEON,Hash,IsDyingUnitForeignHemisphere,1,Hash,OtherPlayer,Other",
+      "Hash,IsDyingUnitForeignHemisphere,0,Hash,OtherPlayer,Self,Hash,IsKillingUnitForeignHemisphere,1,Hash,IsDyingUnitCommander,1",
+      "Hash,KillingUnitType,UNIT_AT_GUN,Hash,DyingUnitType,UNIT_TANK,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Other,Hash,KillingUnitType,UNIT_MIKASA",
+      "Hash,IsDyingUnitForeignHemisphere,0,Hash,OtherPlayer,Self,Hash,IsKillingUnitForeignHemisphere,1",
+      "Hash,KillingUnitType,UNIT_IMMORTAL,Hash,OtherPlayer,Self",
+      "Hash,DomainType,DOMAIN_SEA,Hash,KillingDomainType,DOMAIN_SEA,Hash,OtherPlayer,Self,Hash,IsDyingUnitStronger,1",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_PURABHETTARAH,Hash,IsDyingUnitPlotOwner,1,Hash,IsDyingUnitWalled,1",
+      "Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_LAND,Hash,IsDyingUnitCommander,1,Hash,IsKillingUnitForeignHemisphere,1",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_JANISSARY_2,Hash,KillingUnitType,UNIT_INFANTRY_COMPANY",
+      "Hash,DyingUnitType,UNIT_MIKASA,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_TREASURE_FLEET",
+      "Hash,DyingCivilization,CIVILIZATION_CHOLA,Hash,DyingUnitType,UNIT_TREASURE_FLEET,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_PRIVATEER",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_SUBMARINE",
+      "Hash,KillingUnitType,UNIT_LANDSHIP,Hash,OtherPlayer,Self",
+      "Hash,DyingUnitType,UNIT_IRONCLAD,Hash,KillingUnitType,UNIT_IRONCLAD,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_ARMY_COMMANDER",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_DANTINAS_TATHA,Hash,DyingUnitType,UNIT_PURABHETTARAH",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_KISPOKO_NENA_TO",
+      "Hash,OtherPlayer,Self"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_UNIT_COMBAT_DEATH02": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_LAND,Hash,IsDyingUnitCommander,1",
+      "Hash,DyingUnitType,UNIT_VIKINGR_2,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_MIKASA_2",
+      "Hash,OtherPlayer,Other,Hash,KillingUnitType,UNIT_MIKASA_2",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_CETBANG_2,Hash,DyingUnitType,UNIT_FLEET_COMMANDER,Hash,DyingCivilization,CIVILIZATION_MONGOLIA",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_FLEET_COMMANDER",
+      "Hash,OtherPlayer,Self,Hash,DomainType,DOMAIN_SEA,Hash,KillingDomainType,DOMAIN_SEA",
+      "Numeric,KillingUnitKillCount,5,Hash,KillingUnitType,UNIT_IMMORTAL_2",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_XUNLEICHONG_2,Numeric,KillingUnitKillCount,3",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_PRIVATEER_2",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_CETBANG_2",
+      "Hash,OtherPlayer,Self,Hash,BiomeType,BIOME_TUNDRA,Hash,IsKillingUnitPlotOwner,1",
+      "Hash,KillingUnitType,UNIT_CETBANG,Hash,OtherPlayer,Self,Hash,KillingUnitInCommandRadius,1",
+      "Hash,DyingUnitType,UNIT_FRIGATE,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_JANISSARY_2,Hash,KillingUnitType,UNIT_TANK",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_PRIVATEER_2,Hash,AtWar,0",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_PRIVATEER",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_GURKHA_2,Hash,DyingUnitType,UNIT_GURKHA_2",
+      "Hash,OtherPlayer,Other",
+      "Hash,DomainType,DOMAIN_SEA,Hash,OtherPlayer,Other",
+      "Hash,DyingCivilization,CIVILIZATION_RUSSIA,Hash,OtherPlayer,Self,Hash,IsDyingUnitCommander,1,Hash,KillingUnitType,UNIT_GHILMAN_2",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_KESHIG_2,Hash,DyingUnitInCommandRadius,1",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_DHOW_2",
+      "Hash,KillingUnitType,UNIT_GOLD_BANGLES_2,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_PRIVATEER_2,Numeric,KillingUnitKillCount,3",
+      "Hash,OtherPlayer,Self"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_UNIT_COMBAT_DEATH03": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,KillingUnitType,UNIT_GOLD_BANGLES_3,Hash,OtherPlayer,Self",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_CETBANG_3,Hash,DyingUnitType,UNIT_FLEET_COMMANDER,Hash,DyingCivilization,CIVILIZATION_MONGOLIA",
+      "Hash,DyingCivilization,CIVILIZATION_RUSSIA,Hash,OtherPlayer,Self,Hash,IsDyingUnitCommander,1,Hash,KillingUnitType,UNIT_GHILMAN_3",
+      "Hash,OtherPlayer,Self,Hash,DyingUnitType,UNIT_CETBANG_3",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_SETTLER",
+      "Hash,OtherPlayer,Other,Hash,DyingUnitType,UNIT_KESHIG_3,Hash,DyingUnitInCommandRadius,1",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_GURKHA_3,Hash,DyingUnitType,UNIT_GURKHA_3",
+      "Hash,DyingUnitType,UNIT_VIKINGR_3,Hash,OtherPlayer,Other",
+      "Hash,OtherPlayer,Self,Hash,KillingUnitType,UNIT_XUNLEICHONG_3,Numeric,KillingUnitKillCount,3"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_UNIT_DESTROYED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,UnitTypeReplaces,UNIT_GALLEY,Hash,BiomeType,BIOME_MARINE,Hash,IsDyingUnitPlotOwner,1",
+      "Hash,UnitType,UNIT_CARRACK,Hash,BiomeType,BIOME_MARINE,Hash,IsDyingUnitPlotOwner,1",
+      "Hash,UnitTypeReplaces,UNIT_COG,Hash,IsForeignHemisphere,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_UNIT_PROMOTION01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,IsCommendation,1",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_UNIT_USES_ABILITY_CHARGE01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,Ability,CHARGED_ABILITY_CONVERT_INDEPENDENT",
+      "Hash,Ability,CHARGED_ABILITY_RAIDING_PARTY,Hash,Civilization,CIVILIZATION_CHOLA",
+      "Hash,Ability,CHARGED_ABILITY_RAIDING_PARTY,Hash,IsForeignHemisphere,1",
+      "Hash,Ability,CHARGED_ABILITY_CLAIM_MOUNTAIN"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_URBAN_CONTROL_CHANGED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": "Hash,IsCapital,1,Hash,OtherPlayer,Self",
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  },
+  "GOSSIP_WONDER_STARTED01": {
+    "Description": NaN,
+    "Required": NaN,
+    "ArgumentType": NaN,
+    "DatabaseKind": NaN,
+    "DefaultValue": NaN,
+    "MinValue": NaN,
+    "MaxValue": NaN,
+    "Value": [
+      "Hash,ConstructibleType,WONDER_RILA_MONASTERY",
+      "Hash,ConstructibleType,WONDER_EIFFEL_TOWER,Hash,IsCapital,1"
+    ],
+    "Type,Extra,SecondExtra": [
+      null,
+      null,
+      null
+    ]
+  }
+}

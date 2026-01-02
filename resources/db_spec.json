@@ -80,13 +80,11 @@
       "AdjacentBiome": "Biomes",
       "YieldType": "Yields"
     },
-    "backlink_fk": {
-      "ID": [
-        "Constructible_Adjacencies",
-        "Constructible_WildcardAdjacencies",
-        "ExcludedAdjacencies"
-      ]
-    },
+    "backlink_fk": [
+      "Constructible_Adjacencies",
+      "Constructible_WildcardAdjacencies",
+      "ExcludedAdjacencies"
+    ],
     "mined_bools": [
       "AdjacentLake",
       "AdjacentNaturalWonder",
@@ -271,12 +269,10 @@
     "foreign_keys": {
       "Age": "Ages"
     },
-    "backlink_fk": {
-      "CardID": [
-        "AdvancedStartAIModifiers",
-        "AdvancedStartDeckCardEntries"
-      ]
-    },
+    "backlink_fk": [
+      "AdvancedStartAIModifiers",
+      "AdvancedStartDeckCardEntries"
+    ],
     "mined_bools": [
       "CultureCost",
       "DarkAgeCost",
@@ -389,11 +385,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "DeckID": [
-        "AdvancedStartDeckCardEntries"
-      ]
-    },
+    "backlink_fk": [
+      "AdvancedStartDeckCardEntries"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -571,11 +565,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "AdvisorType": [
-        "AdvisorSubjects"
-      ]
-    },
+    "backlink_fk": [
+      "AdvisorSubjects"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -662,9 +654,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "AdvisorWarningType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "AdvisoryClasses": {
     "primary_keys": [
@@ -683,14 +677,12 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "AdvisoryClassType": [
-        "AdvisorSubjects",
-        "Constructible_Advisories",
-        "ProgressionTree_Advisories",
-        "Unit_Advisories"
-      ]
-    },
+    "backlink_fk": [
+      "AdvisorSubjects",
+      "Constructible_Advisories",
+      "ProgressionTree_Advisories",
+      "Unit_Advisories"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -712,11 +704,9 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "AdvisorySubjectType": [
-        "AdvisorSubjects"
-      ]
-    },
+    "backlink_fk": [
+      "AdvisorSubjects"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -742,11 +732,9 @@
       "NeutralityChance": "50"
     },
     "foreign_keys": {},
-    "backlink_fk": {
-      "Affinity": [
-        "Independents"
-      ]
-    },
+    "backlink_fk": [
+      "Independents"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -804,45 +792,43 @@
       "NoVictoriesSecondaryHemisphere": "0",
       "NumDefenders": "0"
     },
-    "backlink_fk": {
-      "AgeType": [
-        "AdvancedStartAges",
-        "AdvancedStartCards",
-        "AdvancedStartCardEffects",
-        "AdvancedStartCardSets",
-        "AdvancedStartParameters",
-        "AdvancedStartTowns",
-        "AdvancedStartUnits",
-        "AgeConstructibleDefaultMaintenances",
-        "AgeConstructibleDefaultYields",
-        "AgeCrisisEvents",
-        "AgeGrowthBalances",
-        "AgeTransitionBoostableNodes",
-        "AgeTransitionCardSets",
-        "AgeTransitionLegacyPoints",
-        "AgeTransitionParameters",
-        "BonusMinorStartingUnits",
-        "Constructibles",
-        "DiscoveryStory_Yield_Rewards",
-        "EndGameMovies",
-        "GameModifiers",
-        "GameSpeed_Turns",
-        "GreatPersonIndividuals",
-        "GreatWorks",
-        "Legacies",
-        "LegacyCivilizations",
-        "LegacyPaths",
-        "LoadingInfo_Ages",
-        "MapIslandBehavior",
-        "NarrativeStory_Yield_Rewards",
-        "ProgressionTrees",
-        "Resource_ValidAges",
-        "Routes",
-        "StartingGovernments",
-        "Traditions",
-        "Types_ValidAges"
-      ]
-    },
+    "backlink_fk": [
+      "AdvancedStartAges",
+      "AdvancedStartCards",
+      "AdvancedStartCardEffects",
+      "AdvancedStartCardSets",
+      "AdvancedStartParameters",
+      "AdvancedStartTowns",
+      "AdvancedStartUnits",
+      "AgeConstructibleDefaultMaintenances",
+      "AgeConstructibleDefaultYields",
+      "AgeCrisisEvents",
+      "AgeGrowthBalances",
+      "AgeTransitionBoostableNodes",
+      "AgeTransitionCardSets",
+      "AgeTransitionLegacyPoints",
+      "AgeTransitionParameters",
+      "BonusMinorStartingUnits",
+      "Constructibles",
+      "DiscoveryStory_Yield_Rewards",
+      "EndGameMovies",
+      "GameModifiers",
+      "GameSpeed_Turns",
+      "GreatPersonIndividuals",
+      "GreatWorks",
+      "Legacies",
+      "LegacyCivilizations",
+      "LegacyPaths",
+      "LoadingInfo_Ages",
+      "MapIslandBehavior",
+      "NarrativeStory_Yield_Rewards",
+      "ProgressionTrees",
+      "Resource_ValidAges",
+      "Routes",
+      "StartingGovernments",
+      "Traditions",
+      "Types_ValidAges"
+    ],
     "foreign_keys": {
       "TradeSystemParameterSet": "TradeSystemParameterSets",
       "MainTechProgressionTreeType": "ProgressionTrees",
@@ -913,11 +899,9 @@
     "foreign_keys": {
       "AgeProgressionType": "AgeProgressions"
     },
-    "backlink_fk": {
-      "AgeCrisisType": [
-        "AgeCrisisEvents"
-      ]
-    },
+    "backlink_fk": [
+      "AgeCrisisEvents"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -943,11 +927,9 @@
       "Age": "Ages",
       "AgeCrisisType": "AgeCrises"
     },
-    "backlink_fk": {
-      "AgeCrisisEventType": [
-        "AgeCrisisStages"
-      ]
-    },
+    "backlink_fk": [
+      "AgeCrisisStages"
+    ],
     "possible_fks": {
       "NarrativeStoryType": [
         {
@@ -1050,13 +1032,11 @@
       "MaxPoints_Long": "0",
       "MaxPoints_Standard": "0"
     },
-    "backlink_fk": {
-      "AgeProgressionType": [
-        "AgeCrises",
-        "AgeProgressionEvents",
-        "AgeProgressionTurns"
-      ]
-    },
+    "backlink_fk": [
+      "AgeCrises",
+      "AgeProgressionEvents",
+      "AgeProgressionTurns"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "EndsAge"
@@ -1094,7 +1074,10 @@
       ]
     },
     "extra_fks": {
-      "AgeType": "Resource_Distribution"
+      "AgeType": {
+        "ref_column": "AgeType",
+        "ref_table": "Resource_Distribution"
+      }
     },
     "origin_pk": true
   },
@@ -1145,12 +1128,10 @@
     "foreign_keys": {
       "AgeProgressionType": "AgeProgressions"
     },
-    "backlink_fk": {
-      "AgeProgressionEventType": [
-        "AgeProgressionEventMapSizeOverrides",
-        "AgeProgressionMilestones"
-      ]
-    },
+    "backlink_fk": [
+      "AgeProgressionEventMapSizeOverrides",
+      "AgeProgressionMilestones"
+    ],
     "mined_bools": [
       "GameSpeedScaling"
     ],
@@ -1212,11 +1193,9 @@
       "AgeProgressionMilestoneType": "Types",
       "AgeProgressionEventType": "AgeProgressionEvents"
     },
-    "backlink_fk": {
-      "AgeProgressionMilestoneType": [
-        "AgeProgressionMilestoneRewards"
-      ]
-    },
+    "backlink_fk": [
+      "AgeProgressionMilestoneRewards"
+    ],
     "mined_bools": [
       "FinalMilestone"
     ],
@@ -1298,11 +1277,9 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "AgeProgressionRewardType": [
-        "AgeProgressionMilestoneRewards"
-      ]
-    },
+    "backlink_fk": [
+      "AgeProgressionMilestoneRewards"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -1595,11 +1572,9 @@
     "foreign_keys": {
       "DefaultPriority": "AiPriorities"
     },
-    "backlink_fk": {
-      "Component": [
-        "AiDefinitions"
-      ]
-    },
+    "backlink_fk": [
+      "AiDefinitions"
+    ],
     "mined_bools": [
       "Broker",
       "Consumer",
@@ -1646,11 +1621,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "EventType": [
-        "TriggeredBehaviorTrees"
-      ]
-    },
+    "backlink_fk": [
+      "TriggeredBehaviorTrees"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -1739,14 +1712,12 @@
       "ListType"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "ListType": [
-        "AiFavoredItems",
-        "AiLists",
-        "Belief_Priorities",
-        "Strategy_Priorities"
-      ]
-    },
+    "backlink_fk": [
+      "AiFavoredItems",
+      "AiLists",
+      "Belief_Priorities",
+      "Strategy_Priorities"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -1823,13 +1794,11 @@
       "TargetType": "TargetTypes",
       "BehaviorTree": "BehaviorTrees"
     },
-    "backlink_fk": {
-      "OperationName": [
-        "AiOperationTeams",
-        "AllowedOperations",
-        "BoostHandlers"
-      ]
-    },
+    "backlink_fk": [
+      "AiOperationTeams",
+      "AllowedOperations",
+      "BoostHandlers"
+    ],
     "mined_bools": [
       "AllowTargetUpdate",
       "MustBeAtWar",
@@ -1881,14 +1850,12 @@
       "BaseList"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "ListType": [
-        "AiOperationLimits",
-        "AiOperationLists",
-        "AllowedOperations",
-        "Leaders"
-      ]
-    },
+    "backlink_fk": [
+      "AiOperationLimits",
+      "AiOperationLists",
+      "AllowedOperations",
+      "Leaders"
+    ],
     "foreign_keys": {
       "BaseList": "AiOperationLists"
     },
@@ -1951,12 +1918,10 @@
       "OperationType"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "OperationType": [
-        "AiOperationDefs",
-        "AiOperationLimits"
-      ]
-    },
+    "backlink_fk": [
+      "AiOperationDefs",
+      "AiOperationLimits"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -1975,13 +1940,11 @@
       "Value"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "Priority": [
-        "AiComponents",
-        "AiDefinitions",
-        "AiTactics"
-      ]
-    },
+    "backlink_fk": [
+      "AiComponents",
+      "AiDefinitions",
+      "AiTactics"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -2035,12 +1998,10 @@
       "TeamName"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "TeamName": [
-        "AiOperationTeams",
-        "OpTeamRequirements"
-      ]
-    },
+    "backlink_fk": [
+      "AiOperationTeams",
+      "OpTeamRequirements"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -2146,13 +2107,11 @@
     "foreign_keys": {
       "ProgressionTreeType": "ProgressionTrees"
     },
-    "backlink_fk": {
-      "AttributeType": [
-        "Constructible_AttributePoints",
-        "GovernmentAttributes",
-        "TraditionAttributes"
-      ]
-    },
+    "backlink_fk": [
+      "Constructible_AttributePoints",
+      "GovernmentAttributes",
+      "TraditionAttributes"
+    ],
     "possible_fks": {
       "AttributeType": [
         {
@@ -2166,9 +2125,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "NarrativeStory_RewardIcons"
-    },
-    "origin_pk": true
+      "AttributeType": {
+        "ref_column": "Type",
+        "ref_table": "NarrativeStory_RewardIcons"
+      }
+    }
   },
   "BarbarianAttackForces": {
     "primary_keys": [
@@ -2218,11 +2179,9 @@
       "MaxTargetDifficulty": "Difficulties",
       "MinTargetDifficulty": "Difficulties"
     },
-    "backlink_fk": {
-      "AttackForceType": [
-        "BarbarianTribeForces"
-      ]
-    },
+    "backlink_fk": [
+      "BarbarianTribeForces"
+    ],
     "mined_bools": [
       "NumSupportUnits",
       "RaidingForce"
@@ -2285,12 +2244,10 @@
     "foreign_keys": {
       "RequiredResource": "Resources"
     },
-    "backlink_fk": {
-      "TribeType": [
-        "BarbarianTribeForces",
-        "BarbarianTribeNames"
-      ]
-    },
+    "backlink_fk": [
+      "BarbarianTribeForces",
+      "BarbarianTribeNames"
+    ],
     "mined_bools": [
       "IsCoastal"
     ],
@@ -2356,11 +2313,9 @@
     "default_values": {
       "NumMilitary": "5"
     },
-    "backlink_fk": {
-      "TribeNameType": [
-        "BarbarianTribeForces"
-      ]
-    },
+    "backlink_fk": [
+      "BarbarianTribeForces"
+    ],
     "foreign_keys": {
       "TribeType": "BarbarianTribes"
     },
@@ -2379,16 +2334,14 @@
       "TreeName"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "TreeName": [
-        "AiOperationDefs",
-        "BehaviorTreeNodes",
-        "BoostHandlers",
-        "Strategies",
-        "TreeData",
-        "TriggeredBehaviorTrees"
-      ]
-    },
+    "backlink_fk": [
+      "AiOperationDefs",
+      "BehaviorTreeNodes",
+      "BoostHandlers",
+      "Strategies",
+      "TreeData",
+      "TriggeredBehaviorTrees"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -2452,12 +2405,10 @@
       "BeliefType": "Types",
       "BeliefClassType": "BeliefClasses"
     },
-    "backlink_fk": {
-      "BeliefType": [
-        "Belief_Priorities",
-        "BeliefModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "Belief_Priorities",
+      "BeliefModifiers"
+    ],
     "mined_bools": [
       "Shareable"
     ],
@@ -2506,11 +2457,9 @@
       "AdoptionOrder": "1",
       "MaxInReligion": "1"
     },
-    "backlink_fk": {
-      "BeliefClassType": [
-        "Beliefs"
-      ]
-    },
+    "backlink_fk": [
+      "Beliefs"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "AdoptionOrder",
@@ -2546,7 +2495,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierID": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "Biomes": {
@@ -2568,24 +2520,22 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "BiomeType": [
-        "Adjacency_YieldChanges",
-        "Biome_ValidTerrains",
-        "Constructible_InvalidAdjacentBiomes",
-        "Constructible_ValidBiomes",
-        "District_FreeConstructibles",
-        "Feature_ValidBiomes",
-        "Feature_ValidBiomes",
-        "GreatPersonIndividuals",
-        "Independents",
-        "RandomEvents",
-        "Resource_ValidBiomes",
-        "StartBiasBiomes",
-        "TerrainBiomeFeature_YieldChanges",
-        "Warehouse_YieldChanges"
-      ]
-    },
+    "backlink_fk": [
+      "Adjacency_YieldChanges",
+      "Biome_ValidTerrains",
+      "Constructible_InvalidAdjacentBiomes",
+      "Constructible_ValidBiomes",
+      "District_FreeConstructibles",
+      "Feature_ValidBiomes",
+      "Feature_ValidBiomes",
+      "GreatPersonIndividuals",
+      "Independents",
+      "RandomEvents",
+      "Resource_ValidBiomes",
+      "StartBiasBiomes",
+      "TerrainBiomeFeature_YieldChanges",
+      "Warehouse_YieldChanges"
+    ],
     "foreign_keys": {},
     "possible_fks": {
       "BiomeType": [
@@ -2596,9 +2546,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "BiomeType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "Biome_ValidTerrains": {
     "primary_keys": [
@@ -2757,11 +2709,9 @@
       "BoostValue"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "BoostType": [
-        "Boosts"
-      ]
-    },
+    "backlink_fk": [
+      "Boosts"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -2883,9 +2833,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "CalendarType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "ChargedUnitAbilities": {
     "primary_keys": [
@@ -2906,11 +2858,9 @@
     "default_values": {
       "RechargeTurns": "-1"
     },
-    "backlink_fk": {
-      "UnitAbilityType": [
-        "AIUnitPrioritizedActions"
-      ]
-    },
+    "backlink_fk": [
+      "AIUnitPrioritizedActions"
+    ],
     "foreign_keys": {
       "ConstructibleType": "Constructibles"
     },
@@ -2948,11 +2898,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "CityExpansionType": [
-        "CityExpansionValidTerrains"
-      ]
-    },
+    "backlink_fk": [
+      "CityExpansionValidTerrains"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -3039,11 +2987,9 @@
     "foreign_keys": {
       "CityStateType": "CityStateTypes"
     },
-    "backlink_fk": {
-      "CityStateBonusType": [
-        "CityStateBonusModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "CityStateBonusModifiers"
+    ],
     "mined_bools": [
       "Shareable"
     ],
@@ -3056,9 +3002,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "CityStateBonusType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "CityStateBonusModifiers": {
     "primary_keys": [
@@ -3087,7 +3035,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierID": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "CityStateTypes": {
@@ -3115,12 +3066,10 @@
       "Weight": "100",
       "YieldType": "\"NO_YIELD\""
     },
-    "backlink_fk": {
-      "CityStateType": [
-        "CityStateBonuses",
-        "Independents"
-      ]
-    },
+    "backlink_fk": [
+      "CityStateBonuses",
+      "Independents"
+    ],
     "foreign_keys": {},
     "possible_fks": {
       "YieldType": [
@@ -3139,8 +3088,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "NarrativeStory_RewardIcons",
-      "YieldType": "Yields"
+      "YieldType": {
+        "ref_column": "YieldType",
+        "ref_table": "Yields"
+      }
     },
     "origin_pk": true
   },
@@ -3178,32 +3129,30 @@
       "AITargetCityPercentage": "50",
       "RandomCityNameDepth": "1"
     },
-    "backlink_fk": {
-      "CivilizationType": [
-        "CityNames",
-        "CivilizationCitizenNames",
-        "CivilizationFavoredWonders",
-        "CivilizationInfo",
-        "CivilizationTraits",
-        "EndGameMovies",
-        "FavoredReligions",
-        "LeaderCivPriorities",
-        "LoadingInfo_Civilizations",
-        "MetaprogressionModifiers",
-        "NarrativeDisplay_Civilizations",
-        "Resource_RequiredCivs",
-        "StartBiasAdjacentToCoasts",
-        "StartBiasBiomes",
-        "StartBiasFeatureClasses",
-        "StartBiasLakes",
-        "StartBiasNaturalWonders",
-        "StartBiasResources",
-        "StartBiasRivers",
-        "StartBiasTerrains",
-        "VisArt_CivilizationBuildingCultures",
-        "VisArt_CivilizationUnitCultures"
-      ]
-    },
+    "backlink_fk": [
+      "CityNames",
+      "CivilizationCitizenNames",
+      "CivilizationFavoredWonders",
+      "CivilizationInfo",
+      "CivilizationTraits",
+      "EndGameMovies",
+      "FavoredReligions",
+      "LeaderCivPriorities",
+      "LoadingInfo_Civilizations",
+      "MetaprogressionModifiers",
+      "NarrativeDisplay_Civilizations",
+      "Resource_RequiredCivs",
+      "StartBiasAdjacentToCoasts",
+      "StartBiasBiomes",
+      "StartBiasFeatureClasses",
+      "StartBiasLakes",
+      "StartBiasNaturalWonders",
+      "StartBiasResources",
+      "StartBiasRivers",
+      "StartBiasTerrains",
+      "VisArt_CivilizationBuildingCultures",
+      "VisArt_CivilizationUnitCultures"
+    ],
     "foreign_keys": {
       "CivilizationType": "Types",
       "UniqueCultureProgressionTree": "ProgressionTrees",
@@ -3284,7 +3233,10 @@
       ]
     },
     "extra_fks": {
-      "ConstructibleType": "Constructibles"
+      "FavoredWonderType": {
+        "ref_column": "ConstructibleType",
+        "ref_table": "Constructibles"
+      }
     }
   },
   "CivilizationInfo": {
@@ -3341,12 +3293,10 @@
     "default_values": {
       "IgnoresUnitStrategicResourceRequirements": "0"
     },
-    "backlink_fk": {
-      "CivilizationLevelType": [
-        "Civilizations",
-        "UnitDiplomacyAction_Targets"
-      ]
-    },
+    "backlink_fk": [
+      "Civilizations",
+      "UnitDiplomacyAction_Targets"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "CanBuildWonders",
@@ -3474,7 +3424,10 @@
       ]
     },
     "extra_fks": {
-      "SectionID": "CivilopediaSections"
+      "SectionID": {
+        "ref_column": "SectionID",
+        "ref_table": "CivilopediaSections"
+      }
     }
   },
   "CivilopediaPageExcludes": {
@@ -3570,8 +3523,10 @@
       ]
     },
     "extra_fks": {
-      "SectionID": "CivilopediaSections",
-      "Tag": "Tags"
+      "SectionID": {
+        "ref_column": "Tag",
+        "ref_table": "Tags"
+      }
     }
   },
   "CivilopediaPageLayouts": {
@@ -3591,12 +3546,10 @@
     "default_values": {
       "UseSidebar": "1"
     },
-    "backlink_fk": {
-      "PageLayoutID": [
-        "CivilopediaPages",
-        "CivilopediaPageLayoutChapters"
-      ]
-    },
+    "backlink_fk": [
+      "CivilopediaPages",
+      "CivilopediaPageLayoutChapters"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "UseSidebar"
@@ -3745,6 +3698,9 @@
     },
     "foreign_keys": {},
     "possible_fks": {},
+    "extra_backlinks": {
+      "CivilopediaPageChapterParagraphs": "SectionID"
+    },
     "origin_pk": true
   },
   "CivilopediaSectionExcludes": {
@@ -3887,55 +3843,53 @@
       "RequiresUnlock": "0",
       "VictoryItem": "0"
     },
-    "backlink_fk": {
-      "ConstructibleType": [
-        "Adjacency_YieldChanges",
-        "Boosts",
-        "Buildings",
-        "ChargedUnitAbilities",
-        "Constructible_Adjacencies",
-        "Constructible_Advisories",
-        "Constructible_AttributePoints",
-        "Constructible_BuildingCostProgressions",
-        "Constructible_CitizenYieldChanges",
-        "Constructible_GreatPersonPoints",
-        "Constructible_GreatWorks",
-        "Constructible_InvalidAdjacentBiomes",
-        "Constructible_InvalidFeatures",
-        "Constructible_Logistics",
-        "Constructible_Maintenances",
-        "Constructible_PillageRandomEvents",
-        "Constructible_Plunders",
-        "Constructible_RequiredFeatures",
-        "Constructible_RequiredFeatureClasses",
-        "Constructible_TransitionRemoves",
-        "Constructible_ValidBiomes",
-        "Constructible_ValidDistricts",
-        "Constructible_ValidFeatures",
-        "Constructible_ValidResources",
-        "Constructible_ValidTerrains",
-        "Constructible_WarehouseYields",
-        "Constructible_YieldChanges",
-        "District_FreeConstructibles",
-        "GameSystemPrereqs",
-        "GreatPersonClasses",
-        "GreatPersonIndividuals",
-        "GreatPersonIndividuals",
-        "GreatPersonIndividuals",
-        "Improvements",
-        "IndependentTribeTypes",
-        "Projects",
-        "Routes",
-        "UniqueQuarters",
-        "UniqueQuarters",
-        "Unit_BuildConstructibles",
-        "Unit_RequiredConstructibles",
-        "Warehouse_YieldChanges",
-        "Wonders",
-        "Wonders",
-        "Wonders"
-      ]
-    },
+    "backlink_fk": [
+      "Adjacency_YieldChanges",
+      "Boosts",
+      "Buildings",
+      "ChargedUnitAbilities",
+      "Constructible_Adjacencies",
+      "Constructible_Advisories",
+      "Constructible_AttributePoints",
+      "Constructible_BuildingCostProgressions",
+      "Constructible_CitizenYieldChanges",
+      "Constructible_GreatPersonPoints",
+      "Constructible_GreatWorks",
+      "Constructible_InvalidAdjacentBiomes",
+      "Constructible_InvalidFeatures",
+      "Constructible_Logistics",
+      "Constructible_Maintenances",
+      "Constructible_PillageRandomEvents",
+      "Constructible_Plunders",
+      "Constructible_RequiredFeatures",
+      "Constructible_RequiredFeatureClasses",
+      "Constructible_TransitionRemoves",
+      "Constructible_ValidBiomes",
+      "Constructible_ValidDistricts",
+      "Constructible_ValidFeatures",
+      "Constructible_ValidResources",
+      "Constructible_ValidTerrains",
+      "Constructible_WarehouseYields",
+      "Constructible_YieldChanges",
+      "District_FreeConstructibles",
+      "GameSystemPrereqs",
+      "GreatPersonClasses",
+      "GreatPersonIndividuals",
+      "GreatPersonIndividuals",
+      "GreatPersonIndividuals",
+      "Improvements",
+      "IndependentTribeTypes",
+      "Projects",
+      "Routes",
+      "UniqueQuarters",
+      "UniqueQuarters",
+      "Unit_BuildConstructibles",
+      "Unit_RequiredConstructibles",
+      "Warehouse_YieldChanges",
+      "Wonders",
+      "Wonders",
+      "Wonders"
+    ],
     "foreign_keys": {
       "AdjacentTerrain": "Terrains",
       "AdjacentDistrict": "Districts",
@@ -3972,9 +3926,14 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "ConstructibleType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     },
-    "origin_pk": true
+    "extra_backlinks": {
+      "CivilizationFavoredWonders": "FavoredWonderType"
+    }
   },
   "Constructible_Adjacencies": {
     "primary_keys": [
@@ -4688,7 +4647,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierId": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "Continents": {
@@ -4706,11 +4668,9 @@
       "Description"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "ContinentType": [
-        "CityNames"
-      ]
-    },
+    "backlink_fk": [
+      "CityNames"
+    ],
     "foreign_keys": {},
     "possible_fks": {
       "ContinentType": [
@@ -4721,9 +4681,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "ContinentType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "DataTypes": {
     "primary_keys": [
@@ -4740,11 +4702,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "TypeName": [
-        "NodeDataDefinitions"
-      ]
-    },
+    "backlink_fk": [
+      "NodeDataDefinitions"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -4794,7 +4754,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Type": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "Defeats": {
@@ -4833,11 +4796,9 @@
       "RequirementSetId": "RequirementSets",
       "DefeatType": "Types"
     },
-    "backlink_fk": {
-      "DefeatType": [
-        "EndGameMovies"
-      ]
-    },
+    "backlink_fk": [
+      "EndGameMovies"
+    ],
     "mined_bools": [
       "AllowAgeTransition",
       "AllowOneMoreTurn",
@@ -4860,20 +4821,18 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "DifficultyType": [
-        "AdvancedStartUnits",
-        "AdvisorWarnings",
-        "AiFavoredItems",
-        "AiFavoredItems",
-        "AiLists",
-        "AiLists",
-        "BarbarianAttackForces",
-        "BarbarianAttackForces",
-        "BonusMinorStartingUnits",
-        "StandardHandicaps"
-      ]
-    },
+    "backlink_fk": [
+      "AdvancedStartUnits",
+      "AdvisorWarnings",
+      "AiFavoredItems",
+      "AiFavoredItems",
+      "AiLists",
+      "AiLists",
+      "BarbarianAttackForces",
+      "BarbarianAttackForces",
+      "BonusMinorStartingUnits",
+      "StandardHandicaps"
+    ],
     "foreign_keys": {},
     "possible_fks": {
       "DifficultyType": [
@@ -4884,9 +4843,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "DifficultyType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "DiplomacyActions": {
     "primary_keys": [
@@ -5020,19 +4981,17 @@
       "DiplomacyActionTag": "Types",
       "DiplomacyActionType": "Types"
     },
-    "backlink_fk": {
-      "DiplomacyActionType": [
-        "DiplomacyBonusEnvoyData",
-        "DiplomaticActionResponses",
-        "DiplomaticActionResponseModifiers",
-        "DiplomaticActionStages",
-        "DiplomaticActionValidTokens",
-        "DiplomaticProjects_UI_Data",
-        "EnvoysInActionModifiers",
-        "UnitDiplomacyAction_Targets",
-        "UnitDiplomacyAction_ValidUnits"
-      ]
-    },
+    "backlink_fk": [
+      "DiplomacyBonusEnvoyData",
+      "DiplomaticActionResponses",
+      "DiplomaticActionResponseModifiers",
+      "DiplomaticActionStages",
+      "DiplomaticActionValidTokens",
+      "DiplomaticProjects_UI_Data",
+      "EnvoysInActionModifiers",
+      "UnitDiplomacyAction_Targets",
+      "UnitDiplomacyAction_ValidUnits"
+    ],
     "mined_bools": [
       "AllyOnly",
       "AlwaysNotifyTarget",
@@ -5072,11 +5031,9 @@
     "foreign_keys": {
       "DiplomacyActionGroupType": "Types"
     },
-    "backlink_fk": {
-      "DiplomacyActionGroupType": [
-        "DiplomaticProjects_UI_Data"
-      ]
-    },
+    "backlink_fk": [
+      "DiplomaticProjects_UI_Data"
+    ],
     "possible_fks": {
       "Name": [
         {
@@ -5086,7 +5043,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Name": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "DiplomacyActionGroupSubtypes": {
@@ -5115,7 +5075,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Name": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "DiplomacyActionTags": {
@@ -5168,7 +5131,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Name": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "DiplomacyAgendaAwardToTypes": {
@@ -5197,7 +5163,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Name": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "DiplomacyAgendaWeightingTypes": {
@@ -5226,7 +5195,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Name": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "DiplomacyBasicModifierValueTypes": {
@@ -5255,7 +5227,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Name": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "DiplomacyBonusEnvoyData": {
@@ -5398,7 +5373,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Name": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "DiplomacyPlayerRelationships": {
@@ -5433,9 +5411,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "DiplomacyPlayerRelationshipType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "DiplomacyStatements": {
     "primary_keys": [
@@ -5456,6 +5436,9 @@
     "default_values": {},
     "foreign_keys": {},
     "possible_fks": {},
+    "extra_backlinks": {
+      "TypeToDiplomacyStatements": "DiplomacyStatementType"
+    },
     "origin_pk": true
   },
   "DiplomacyStatementFrames": {
@@ -5675,12 +5658,10 @@
       "StageType": "Types",
       "DiplomacyActionType": "DiplomacyActions"
     },
-    "backlink_fk": {
-      "StageType": [
-        "EnterStageModifiers",
-        "EnvoysInStageModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "EnterStageModifiers",
+      "EnvoysInStageModifiers"
+    ],
     "mined_bools": [
       "CheckForCounterSpy",
       "CheckForFailure",
@@ -5882,7 +5863,10 @@
       ]
     },
     "extra_fks": {
-      "QueueType": "NarrativeStory_Queues"
+      "QueueType": {
+        "ref_column": "QueueType",
+        "ref_table": "NarrativeStory_Queues"
+      }
     }
   },
   "DiscoveryStory_Activations": {
@@ -5897,11 +5881,9 @@
       "Type"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "Type": [
-        "DiscoverySiftingImprovements"
-      ]
-    },
+    "backlink_fk": [
+      "DiscoverySiftingImprovements"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -6048,21 +6030,19 @@
       "Water": "0",
       "Workable": "0"
     },
-    "backlink_fk": {
-      "DistrictType": [
-        "Adjacency_YieldChanges",
-        "AdvancedStartUnits",
-        "Boosts",
-        "Constructibles",
-        "Constructible_ValidDistricts",
-        "District_FreeConstructibles",
-        "District_RemovedFeatures",
-        "ExcludedDistricts",
-        "GreatPersonIndividuals",
-        "UnitOperations",
-        "Warehouse_YieldChanges"
-      ]
-    },
+    "backlink_fk": [
+      "Adjacency_YieldChanges",
+      "AdvancedStartUnits",
+      "Boosts",
+      "Constructibles",
+      "Constructible_ValidDistricts",
+      "District_FreeConstructibles",
+      "District_RemovedFeatures",
+      "ExcludedDistricts",
+      "GreatPersonIndividuals",
+      "UnitOperations",
+      "Warehouse_YieldChanges"
+    ],
     "foreign_keys": {
       "DistrictType": "Types"
     },
@@ -6334,11 +6314,9 @@
     "foreign_keys": {
       "EventClass": "Types"
     },
-    "backlink_fk": {
-      "EventClass": [
-        "RandomEventUI"
-      ]
-    },
+    "backlink_fk": [
+      "RandomEventUI"
+    ],
     "possible_fks": {}
   },
   "EventPopupData": {
@@ -6535,34 +6513,32 @@
       "Removable": "0",
       "SightThroughModifier": "0"
     },
-    "backlink_fk": {
-      "FeatureType": [
-        "Adjacency_YieldChanges",
-        "Constructible_InvalidFeatures",
-        "Constructible_RequiredFeatures",
-        "Constructible_ValidFeatures",
-        "District_FreeConstructibles",
-        "District_RemovedFeatures",
-        "Feature_AdjacentFeatures",
-        "Feature_AdjacentFeatures",
-        "Feature_AdjacentTerrains",
-        "Feature_CityYields",
-        "Feature_NaturalWonders",
-        "Feature_NotAdjacentTerrains",
-        "Feature_NotNearFeatures",
-        "Feature_NotNearFeatures",
-        "Feature_Removes",
-        "Feature_ValidBiomes",
-        "Feature_ValidTerrains",
-        "GreatPersonIndividuals",
-        "RandomEvents",
-        "RegionClaimObstacles",
-        "Resource_ValidBiomes",
-        "TerrainBiomeFeature_YieldChanges",
-        "UnitMovementClassObstacles",
-        "Warehouse_YieldChanges"
-      ]
-    },
+    "backlink_fk": [
+      "Adjacency_YieldChanges",
+      "Constructible_InvalidFeatures",
+      "Constructible_RequiredFeatures",
+      "Constructible_ValidFeatures",
+      "District_FreeConstructibles",
+      "District_RemovedFeatures",
+      "Feature_AdjacentFeatures",
+      "Feature_AdjacentFeatures",
+      "Feature_AdjacentTerrains",
+      "Feature_CityYields",
+      "Feature_NaturalWonders",
+      "Feature_NotAdjacentTerrains",
+      "Feature_NotNearFeatures",
+      "Feature_NotNearFeatures",
+      "Feature_Removes",
+      "Feature_ValidBiomes",
+      "Feature_ValidTerrains",
+      "GreatPersonIndividuals",
+      "RandomEvents",
+      "RegionClaimObstacles",
+      "Resource_ValidBiomes",
+      "TerrainBiomeFeature_YieldChanges",
+      "UnitMovementClassObstacles",
+      "Warehouse_YieldChanges"
+    ],
     "foreign_keys": {
       "FeatureClassType": "FeatureClasses",
       "FeatureType": "Types"
@@ -6834,14 +6810,12 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "FeatureClassType": [
-        "Constructible_RequiredFeatureClasses",
-        "Features",
-        "StartBiasFeatureClasses",
-        "Warehouse_YieldChanges"
-      ]
-    },
+    "backlink_fk": [
+      "Constructible_RequiredFeatureClasses",
+      "Features",
+      "StartBiasFeatureClasses",
+      "Warehouse_YieldChanges"
+    ],
     "foreign_keys": {
       "FeatureClassType": "Types"
     },
@@ -6874,9 +6848,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "FertilityType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "GameCapabilities": {
     "primary_keys": [
@@ -6893,12 +6869,10 @@
     "foreign_keys": {
       "GameCapability": "Types"
     },
-    "backlink_fk": {
-      "GameCapability": [
-        "GameCapabilityDependencies",
-        "GameCapabilityDependencies"
-      ]
-    },
+    "backlink_fk": [
+      "GameCapabilityDependencies",
+      "GameCapabilityDependencies"
+    ],
     "possible_fks": {}
   },
   "GameCapabilityDependencies": {
@@ -6949,11 +6923,9 @@
     "foreign_keys": {
       "Type": "Types"
     },
-    "backlink_fk": {
-      "Type": [
-        "GameEffectArguments"
-      ]
-    },
+    "backlink_fk": [
+      "GameEffectArguments"
+    ],
     "possible_fks": {}
   },
   "GameEffectArguments": {
@@ -7024,7 +6996,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierId": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "GameSpeeds": {
@@ -7049,12 +7024,10 @@
       "CostMultiplier": "100"
     },
     "foreign_keys": {},
-    "backlink_fk": {
-      "GameSpeedType": [
-        "GameSpeed_Scalings",
-        "GameSpeed_Turns"
-      ]
-    },
+    "backlink_fk": [
+      "GameSpeed_Scalings",
+      "GameSpeed_Turns"
+    ],
     "possible_fks": {
       "GameSpeedType": [
         {
@@ -7064,9 +7037,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "GameSpeedType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "GameSpeed_Durations": {
     "primary_keys": [
@@ -7111,11 +7086,9 @@
     "default_values": {
       "DefaultCostMultiplier": "100"
     },
-    "backlink_fk": {
-      "GameSpeedScalingType": [
-        "GameSpeed_Durations"
-      ]
-    },
+    "backlink_fk": [
+      "GameSpeed_Durations"
+    ],
     "foreign_keys": {
       "GameSpeedType": "GameSpeeds"
     },
@@ -7210,12 +7183,10 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "GoldenAgeType": [
-        "GoldenAgeModifiers",
-        "Government_ValidGoldenAges"
-      ]
-    },
+    "backlink_fk": [
+      "GoldenAgeModifiers",
+      "Government_ValidGoldenAges"
+    ],
     "possible_fks": {
       "GoldenAgeType": [
         {
@@ -7225,9 +7196,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "GoldenAgeType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "GoldenAgeModifiers": {
     "primary_keys": [
@@ -7256,7 +7229,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierID": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "GoodyHuts": {
@@ -7274,11 +7250,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "GoodyHutType": [
-        "GoodyHutSubTypes"
-      ]
-    },
+    "backlink_fk": [
+      "GoodyHutSubTypes"
+    ],
     "possible_fks": {
       "GoodyHutType": [
         {
@@ -7288,9 +7262,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "GoodyHutType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "GoodyHutSubTypes": {
     "primary_keys": [
@@ -7354,7 +7330,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierID": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     },
     "origin_pk": true
   },
@@ -7400,14 +7379,12 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "GovernmentType": [
-        "Government_ValidGoldenAges",
-        "GovernmentAttributes",
-        "GovernmentModifiers",
-        "StartingGovernments"
-      ]
-    },
+    "backlink_fk": [
+      "Government_ValidGoldenAges",
+      "GovernmentAttributes",
+      "GovernmentModifiers",
+      "StartingGovernments"
+    ],
     "possible_fks": {
       "GovernmentType": [
         {
@@ -7417,9 +7394,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "GovernmentType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "Government_ValidGoldenAges": {
     "primary_keys": [
@@ -7526,15 +7505,13 @@
       "GenerateDuplicateIndividuals": "0",
       "PopulationRequired": "0"
     },
-    "backlink_fk": {
-      "GreatPersonClassType": [
-        "Constructible_GreatPersonPoints",
-        "ExcludedGreatPersonClasses",
-        "GreatPersonIndividuals",
-        "Map_GreatPersonClasses",
-        "Project_GreatPersonPoints"
-      ]
-    },
+    "backlink_fk": [
+      "Constructible_GreatPersonPoints",
+      "ExcludedGreatPersonClasses",
+      "GreatPersonIndividuals",
+      "Map_GreatPersonClasses",
+      "Project_GreatPersonPoints"
+    ],
     "foreign_keys": {
       "GreatPersonClassType": "Types",
       "PseudoYieldType": "PseudoYields",
@@ -7724,14 +7701,12 @@
       "AgeType": "Ages",
       "GreatPersonClassType": "GreatPersonClasses"
     },
-    "backlink_fk": {
-      "GreatPersonIndividualType": [
-        "GreatPersonIndividualActionModifiers",
-        "GreatPersonIndividualBirthModifiers",
-        "GreatPersonVictoryTypeEntries",
-        "GreatWorks"
-      ]
-    },
+    "backlink_fk": [
+      "GreatPersonIndividualActionModifiers",
+      "GreatPersonIndividualBirthModifiers",
+      "GreatPersonVictoryTypeEntries",
+      "GreatWorks"
+    ],
     "mined_bools": [
       "ActionCharges",
       "ActionEffectTileHighlighting",
@@ -7901,12 +7876,10 @@
       "GreatPersonIndividualType": "GreatPersonIndividuals",
       "AgeType": "Ages"
     },
-    "backlink_fk": {
-      "GreatWorkType": [
-        "GreatWork_YieldChanges",
-        "GreatWorkModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "GreatWork_YieldChanges",
+      "GreatWorkModifiers"
+    ],
     "mined_bools": [
       "Generic"
     ],
@@ -7997,14 +7970,12 @@
       "Value"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "GreatWorkObjectType": [
-        "GoodyHutSubTypes",
-        "GreatPersonIndividuals",
-        "GreatWorks",
-        "GreatWork_ValidSubTypes"
-      ]
-    },
+    "backlink_fk": [
+      "GoodyHutSubTypes",
+      "GreatPersonIndividuals",
+      "GreatWorks",
+      "GreatWork_ValidSubTypes"
+    ],
     "foreign_keys": {
       "PseudoYieldType": "PseudoYields"
     },
@@ -8020,9 +7991,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "GreatWorkObjectType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "GreatWorkSlotTypes": {
     "primary_keys": [
@@ -8036,12 +8009,10 @@
       "GreatWorkSlotType"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "GreatWorkSlotType": [
-        "Constructible_GreatWorks",
-        "GreatWork_ValidSubTypes"
-      ]
-    },
+    "backlink_fk": [
+      "Constructible_GreatWorks",
+      "GreatWork_ValidSubTypes"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -8058,11 +8029,9 @@
       "GreatWorkSourceType"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "GreatWorkSourceType": [
-        "GreatWorks"
-      ]
-    },
+    "backlink_fk": [
+      "GreatWorks"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -8087,11 +8056,9 @@
       "NumLevels": "2"
     },
     "foreign_keys": {},
-    "backlink_fk": {
-      "HandicapSystemType": [
-        "StandardHandicaps"
-      ]
-    },
+    "backlink_fk": [
+      "StandardHandicaps"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -8143,13 +8110,11 @@
       "FirstTreeNode": "ProgressionTreeNodes",
       "ProgressionTreeType": "ProgressionTrees"
     },
-    "backlink_fk": {
-      "IdeologyType": [
-        "Ideologies",
-        "IdeologyAdoptionModifiers",
-        "IdeologyPriorities"
-      ]
-    },
+    "backlink_fk": [
+      "Ideologies",
+      "IdeologyAdoptionModifiers",
+      "IdeologyPriorities"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -8354,12 +8319,10 @@
       "Affinity": "Affinities",
       "BiomeType": "Biomes"
     },
-    "backlink_fk": {
-      "IndependentType": [
-        "VisArt_IndependentBuildingCultures",
-        "VisArt_IndependentUnitCultures"
-      ]
-    },
+    "backlink_fk": [
+      "VisArt_IndependentBuildingCultures",
+      "VisArt_IndependentUnitCultures"
+    ],
     "mined_bools": [
       "CityStateIsCity"
     ],
@@ -8376,7 +8339,13 @@
       ]
     },
     "extra_fks": {
-      "IndependentType": "LegacyIndependents"
+      "IndependentType": {
+        "ref_column": "IndependentType",
+        "ref_table": "LegacyIndependents"
+      }
+    },
+    "extra_backlinks": {
+      "LegacyIndependents": "IndependentType"
     }
   },
   "IndependentTribeTypes": {
@@ -8420,14 +8389,12 @@
       "RespawnTime": "-1",
       "UnitBuildTime": "8"
     },
-    "backlink_fk": {
-      "TribeType": [
-        "Independents",
-        "TribeCombatTagSets",
-        "TribeCommanderTagSets",
-        "TribeScoutTagSets"
-      ]
-    },
+    "backlink_fk": [
+      "Independents",
+      "TribeCombatTagSets",
+      "TribeCommanderTagSets",
+      "TribeScoutTagSets"
+    ],
     "foreign_keys": {
       "CampConstructibleType": "Constructibles",
       "DefenderTagSet": "TribeTagSets"
@@ -8458,12 +8425,10 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "InterfaceModeType": [
-        "UnitCommands",
-        "UnitOperations"
-      ]
-    },
+    "backlink_fk": [
+      "UnitCommands",
+      "UnitOperations"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -8491,11 +8456,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "KeywordAbilityType": [
-        "UnitAbilities"
-      ]
-    },
+    "backlink_fk": [
+      "UnitAbilities"
+    ],
     "possible_fks": {
       "KeywordAbilityType": [
         {
@@ -8505,9 +8468,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "KeywordAbilityType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "Kinds": {
     "primary_keys": [
@@ -8527,11 +8492,9 @@
       "Hash": "0"
     },
     "foreign_keys": {},
-    "backlink_fk": {
-      "Kind": [
-        "Types"
-      ]
-    },
+    "backlink_fk": [
+      "Types"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -8572,29 +8535,27 @@
       "IsIndependentLeader": "0",
       "IsMajorLeader": "0"
     },
-    "backlink_fk": {
-      "LeaderType": [
-        "CityNames",
-        "EndGameMovies",
-        "FavoredReligions",
-        "Leaders",
-        "LeaderCivPriorities",
-        "LeaderInfo",
-        "LeaderTraits",
-        "LegacyLeaderCivPriorities",
-        "LoadingInfo_Leaders",
-        "MetaprogressionModifiers",
-        "Resource_RequiredLeaders",
-        "StartBiasAdjacentToCoasts",
-        "StartBiasBiomes",
-        "StartBiasFeatureClasses",
-        "StartBiasLakes",
-        "StartBiasNaturalWonders",
-        "StartBiasResources",
-        "StartBiasRivers",
-        "StartBiasTerrains"
-      ]
-    },
+    "backlink_fk": [
+      "CityNames",
+      "EndGameMovies",
+      "FavoredReligions",
+      "Leaders",
+      "LeaderCivPriorities",
+      "LeaderInfo",
+      "LeaderTraits",
+      "LegacyLeaderCivPriorities",
+      "LoadingInfo_Leaders",
+      "MetaprogressionModifiers",
+      "Resource_RequiredLeaders",
+      "StartBiasAdjacentToCoasts",
+      "StartBiasBiomes",
+      "StartBiasFeatureClasses",
+      "StartBiasLakes",
+      "StartBiasNaturalWonders",
+      "StartBiasResources",
+      "StartBiasRivers",
+      "StartBiasTerrains"
+    ],
     "foreign_keys": {
       "LeaderType": "Types",
       "InheritFrom": "Leaders",
@@ -8711,12 +8672,10 @@
       "TraitType": "Traits",
       "Age": "Ages"
     },
-    "backlink_fk": {
-      "LegacyType": [
-        "Legacy_LegacySets",
-        "LegacyModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "Legacy_LegacySets",
+      "LegacyModifiers"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -8764,11 +8723,9 @@
       "Age": "Ages",
       "CivilizationType": "Types"
     },
-    "backlink_fk": {
-      "CivilizationType": [
-        "LegacyCivilizationTraits"
-      ]
-    },
+    "backlink_fk": [
+      "LegacyCivilizationTraits"
+    ],
     "possible_fks": {}
   },
   "LegacyCivilizationTraits": {
@@ -8821,7 +8778,15 @@
         }
       ]
     },
-    "origin_pk": true
+    "extra_fks": {
+      "IndependentType": {
+        "ref_column": "IndependentType",
+        "ref_table": "Independents"
+      }
+    },
+    "extra_backlinks": {
+      "Independents": "IndependentType"
+    }
   },
   "LegacyLeaderCivPriorities": {
     "primary_keys": [
@@ -8890,16 +8855,14 @@
     "default_values": {
       "EnabledByDefault": "1"
     },
-    "backlink_fk": {
-      "LegacyPathType": [
-        "AgeProgressionDarkAgeRewardInfos",
-        "AgeProgressionMilestones",
-        "EndGameMovies",
-        "EndGameMovies",
-        "ResourceClassApplicableLegacyPaths",
-        "Strategies"
-      ]
-    },
+    "backlink_fk": [
+      "AgeProgressionDarkAgeRewardInfos",
+      "AgeProgressionMilestones",
+      "EndGameMovies",
+      "EndGameMovies",
+      "ResourceClassApplicableLegacyPaths",
+      "Strategies"
+    ],
     "foreign_keys": {
       "LegacyPathClassType": "LegacyPathClasses",
       "Age": "Ages"
@@ -8916,9 +8879,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "LegacyPathType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "LegacyPathClasses": {
     "primary_keys": [
@@ -8934,11 +8899,9 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "LegacyPathClassType": [
-        "LegacyPaths"
-      ]
-    },
+    "backlink_fk": [
+      "LegacyPaths"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -9121,13 +9084,11 @@
       "StartSectorCols": "3",
       "StartSectorRows": "3"
     },
-    "backlink_fk": {
-      "MapSizeType": [
-        "AgeProgressionEventMapSizeOverrides",
-        "Map_GreatPersonClasses",
-        "Map_Religions"
-      ]
-    },
+    "backlink_fk": [
+      "AgeProgressionEventMapSizeOverrides",
+      "Map_GreatPersonClasses",
+      "Map_Religions"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "AllOnLargestLandmass"
@@ -9141,9 +9102,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "MapSizeType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "Map_GreatPersonClasses": {
     "primary_keys": [
@@ -9402,11 +9365,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "MementoType": [
-        "MementoModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "MementoModifiers"
+    ],
     "mined_bools": [
       "Tier"
     ],
@@ -9419,9 +9380,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "MementoType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "MementoModifiers": {
     "primary_keys": [
@@ -9474,7 +9437,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierId": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "Modifiers": {
@@ -9510,21 +9476,19 @@
       "Permanent": "0",
       "RunOnce": "0"
     },
-    "backlink_fk": {
-      "ModifierId": [
-        "EnterStageModifiers",
-        "EnvoysInActionModifiers",
-        "EnvoysInStageModifiers",
-        "GovernmentModifiers",
-        "MementoModifiers",
-        "ModifierArguments",
-        "ModifierStrings",
-        "TraditionModifiers",
-        "TraitModifiers",
-        "UnitAbilityModifiers",
-        "UnitPromotionModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "EnterStageModifiers",
+      "EnvoysInActionModifiers",
+      "EnvoysInStageModifiers",
+      "GovernmentModifiers",
+      "MementoModifiers",
+      "ModifierArguments",
+      "ModifierStrings",
+      "TraditionModifiers",
+      "TraitModifiers",
+      "UnitAbilityModifiers",
+      "UnitPromotionModifiers"
+    ],
     "foreign_keys": {
       "SubjectRequirementSetId": "RequirementSets",
       "OwnerRequirementSetId": "RequirementSets"
@@ -9537,6 +9501,20 @@
       "SubjectStackLimit"
     ],
     "possible_fks": {},
+    "extra_backlinks": {
+      "BeliefModifiers": "ModifierID",
+      "CityStateBonusModifiers": "ModifierID",
+      "ConstructibleModifiers": "ModifierId",
+      "GameModifiers": "ModifierId",
+      "GoldenAgeModifiers": "ModifierID",
+      "GoodyHutSubTypes": "ModifierID",
+      "MetaprogressionModifiers": "ModifierId",
+      "ModifierMetadatas": "ModifierID",
+      "NarrativeRewards": "ModifierID",
+      "PlayerModifiers": "ModifierId",
+      "ProjectModifiers": "ModifierId",
+      "UniqueQuarterModifiers": "ModifierID"
+    },
     "origin_pk": true
   },
   "ModifierArguments": {
@@ -9619,7 +9597,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierID": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "ModifierStrings": {
@@ -9698,9 +9679,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "MonthType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "Movies": {
     "primary_keys": [
@@ -9754,11 +9737,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "NamedRiverType": [
-        "NamedRiverCivilizations"
-      ]
-    },
+    "backlink_fk": [
+      "NamedRiverCivilizations"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -9797,11 +9778,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "NamedVolcanoType": [
-        "NamedVolcanoCivilizations"
-      ]
-    },
+    "backlink_fk": [
+      "NamedVolcanoCivilizations"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -9880,11 +9859,9 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "backlink_fk": {
-      "NarrativeRewardType": [
-        "NarrativeStory_Rewards"
-      ]
-    },
+    "backlink_fk": [
+      "NarrativeStory_Rewards"
+    ],
     "possible_fks": {
       "ModifierID": [
         {
@@ -9894,7 +9871,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierID": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     },
     "origin_pk": true
   },
@@ -10009,16 +9989,14 @@
       "ShowProgress": "0",
       "StartEveryone": "0"
     },
-    "backlink_fk": {
-      "NarrativeStoryType": [
-        "NarrativeStoryOverrides",
-        "NarrativeRewardIcons",
-        "NarrativeStory_Links",
-        "NarrativeStory_Rewards",
-        "NarrativeStory_TextReplacements",
-        "NarrativeVariations"
-      ]
-    },
+    "backlink_fk": [
+      "NarrativeStoryOverrides",
+      "NarrativeRewardIcons",
+      "NarrativeStory_Links",
+      "NarrativeStory_Rewards",
+      "NarrativeStory_TextReplacements",
+      "NarrativeVariations"
+    ],
     "foreign_keys": {
       "CostYield": "Yields",
       "Queue": "NarrativeStory_Queues",
@@ -10053,11 +10031,9 @@
       "Type"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "Type": [
-        "NarrativeStories"
-      ]
-    },
+    "backlink_fk": [
+      "NarrativeStories"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -10113,16 +10089,17 @@
       "ActivationCount": "0",
       "StartAll": "0"
     },
-    "backlink_fk": {
-      "QueueType": [
-        "NarrativeStories"
-      ]
-    },
+    "backlink_fk": [
+      "NarrativeStories"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "StartAll"
     ],
     "possible_fks": {},
+    "extra_backlinks": {
+      "DiscoverySiftingImprovements": "QueueType"
+    },
     "origin_pk": true
   },
   "NarrativeStory_Rewards": {
@@ -10169,11 +10146,9 @@
       "Type"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "Type": [
-        "NarrativeStory_Rewards"
-      ]
-    },
+    "backlink_fk": [
+      "NarrativeStory_Rewards"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -10194,6 +10169,10 @@
     "default_values": {},
     "foreign_keys": {},
     "possible_fks": {},
+    "extra_backlinks": {
+      "Attributes": "AttributeType",
+      "Yields": "YieldType"
+    },
     "origin_pk": true
   },
   "NarrativeStory_TextReplacements": {
@@ -10268,11 +10247,9 @@
       "Type"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "Type": [
-        "NarrativeStories"
-      ]
-    },
+    "backlink_fk": [
+      "NarrativeStories"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -10326,9 +10303,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "NarrativeTagType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "NarrativeVariations": {
     "primary_keys": [
@@ -10443,12 +10422,10 @@
     "default_values": {
       "NodeId": "0"
     },
-    "backlink_fk": {
-      "NodeType": [
-        "BehaviorTreeNodes",
-        "NodeDataDefinitions"
-      ]
-    },
+    "backlink_fk": [
+      "BehaviorTreeNodes",
+      "NodeDataDefinitions"
+    ],
     "foreign_keys": {
       "ShapeId": "ShapeDefinitions"
     },
@@ -10501,11 +10478,9 @@
       "ShowIconSinglePlayer": "1",
       "VisibleInUI": "1"
     },
-    "backlink_fk": {
-      "NotificationType": [
-        "AgeProgressionNotifications"
-      ]
-    },
+    "backlink_fk": [
+      "AgeProgressionNotifications"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "AutoActivate",
@@ -10625,7 +10600,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierId": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "PlotEffects": {
@@ -10675,11 +10653,9 @@
       "UnoccupiedDecay": "0"
     },
     "foreign_keys": {},
-    "backlink_fk": {
-      "PlotEffectType": [
-        "VisArt_PlotEffectModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "VisArt_PlotEffectModifiers"
+    ],
     "mined_bools": [
       "AllowConstructWhileDamaged",
       "AllowOnWater",
@@ -10736,11 +10712,9 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "PlunderType": [
-        "Constructible_Plunders"
-      ]
-    },
+    "backlink_fk": [
+      "Constructible_Plunders"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -10799,16 +10773,14 @@
       "CostProgressionParam1": "0",
       "PrereqFormat": "\"AND\""
     },
-    "backlink_fk": {
-      "ProgressionTreeType": [
-        "Ages",
-        "Ages",
-        "Attributes",
-        "Civilizations",
-        "Ideologies",
-        "ProgressionTreeNodes"
-      ]
-    },
+    "backlink_fk": [
+      "Ages",
+      "Ages",
+      "Attributes",
+      "Civilizations",
+      "Ideologies",
+      "ProgressionTreeNodes"
+    ],
     "foreign_keys": {
       "AgeType": "Ages"
     },
@@ -10821,9 +10793,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "ProgressionTreeType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "ProgressionTree_Advisories": {
     "primary_keys": [
@@ -10893,17 +10867,15 @@
       "RepeatableCostProgressionParam1": "0",
       "StartingUnlockDepth": "-1"
     },
-    "backlink_fk": {
-      "ProgressionTreeNodeType": [
-        "GameSystemPrereqs",
-        "Ideologies",
-        "ProgressionTree_Advisories",
-        "ProgressionTreeNodeTraits",
-        "ProgressionTreeNodeUnlocks",
-        "ProgressionTreePrereqs",
-        "ProgressionTreePrereqs"
-      ]
-    },
+    "backlink_fk": [
+      "GameSystemPrereqs",
+      "Ideologies",
+      "ProgressionTree_Advisories",
+      "ProgressionTreeNodeTraits",
+      "ProgressionTreeNodeUnlocks",
+      "ProgressionTreePrereqs",
+      "ProgressionTreePrereqs"
+    ],
     "foreign_keys": {
       "ProgressionTree": "ProgressionTrees"
     },
@@ -11104,16 +11076,14 @@
       "PrereqResource": "Resources",
       "PrereqConstructible": "Constructibles"
     },
-    "backlink_fk": {
-      "ProjectType": [
-        "Project_GreatPersonPoints",
-        "Project_YieldConversions",
-        "ProjectCompletionModifiers",
-        "ProjectModifiers",
-        "ProjectPrereqs",
-        "ProjectPrereqs"
-      ]
-    },
+    "backlink_fk": [
+      "Project_GreatPersonPoints",
+      "Project_YieldConversions",
+      "ProjectCompletionModifiers",
+      "ProjectModifiers",
+      "ProjectPrereqs",
+      "ProjectPrereqs"
+    ],
     "mined_bools": [
       "CanPurchase",
       "CityOnly",
@@ -11239,7 +11209,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierId": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "ProjectPrereqs": {
@@ -11282,14 +11255,12 @@
     "default_values": {
       "DefaultValue": "1"
     },
-    "backlink_fk": {
-      "PseudoYieldType": [
-        "GreatPersonClasses",
-        "GreatWorkObjectTypes",
-        "Strategy_YieldPriorities",
-        "Units"
-      ]
-    },
+    "backlink_fk": [
+      "GreatPersonClasses",
+      "GreatWorkObjectTypes",
+      "Strategy_YieldPriorities",
+      "Units"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -11365,14 +11336,12 @@
       "BiomeType": "Biomes",
       "NaturalWonder": "Features"
     },
-    "backlink_fk": {
-      "RandomEventType": [
-        "RandomEventDamages",
-        "RandomEventFrequencies",
-        "RandomEventPlotEffects",
-        "RandomEventYields"
-      ]
-    },
+    "backlink_fk": [
+      "RandomEventDamages",
+      "RandomEventFrequencies",
+      "RandomEventPlotEffects",
+      "RandomEventYields"
+    ],
     "possible_fks": {
       "RandomEventType": [
         {
@@ -11382,9 +11351,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "RandomEventType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "RandomEventDamages": {
     "primary_keys": [
@@ -11517,11 +11488,9 @@
       "PercentVolcanoesActive"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "RealismSettingType": [
-        "RandomEventFrequencies"
-      ]
-    },
+    "backlink_fk": [
+      "RandomEventFrequencies"
+    ],
     "foreign_keys": {},
     "possible_fks": {
       "RealismSettingType": [
@@ -11532,9 +11501,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "RealismSettingType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "RegionClaimObstacles": {
     "primary_keys": [
@@ -11593,11 +11564,9 @@
       "Pantheon": "0",
       "RequiresCustomName": "0"
     },
-    "backlink_fk": {
-      "ReligionType": [
-        "FavoredReligions"
-      ]
-    },
+    "backlink_fk": [
+      "FavoredReligions"
+    ],
     "foreign_keys": {
       "ReligionType": "Types"
     },
@@ -11650,13 +11619,11 @@
       "Triggered": "0"
     },
     "foreign_keys": {},
-    "backlink_fk": {
-      "RequirementId": [
-        "RequirementArguments",
-        "RequirementSetRequirements",
-        "RequirementStrings"
-      ]
-    },
+    "backlink_fk": [
+      "RequirementArguments",
+      "RequirementSetRequirements",
+      "RequirementStrings"
+    ],
     "mined_bools": [
       "Impact",
       "Inverse",
@@ -11736,17 +11703,15 @@
     "default_values": {
       "RequirementSetType": "\"REQUIREMENTSET_TEST_ALL\""
     },
-    "backlink_fk": {
-      "RequirementSetId": [
-        "Defeats",
-        "LegacyModifiers",
-        "Modifiers",
-        "Modifiers",
-        "RequirementSetRequirements",
-        "UnlockRequirements",
-        "Victories"
-      ]
-    },
+    "backlink_fk": [
+      "Defeats",
+      "LegacyModifiers",
+      "Modifiers",
+      "Modifiers",
+      "RequirementSetRequirements",
+      "UnlockRequirements",
+      "Victories"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -11858,25 +11823,23 @@
       "UnlocksCiv": "0",
       "Weight": "0"
     },
-    "backlink_fk": {
-      "ResourceType": [
-        "BarbarianTribes",
-        "Boosts",
-        "Constructible_ValidResources",
-        "District_FreeConstructibles",
-        "GreatPersonIndividuals",
-        "Projects",
-        "Resource_Harvests",
-        "Resource_RequiredCivs",
-        "Resource_RequiredLeaders",
-        "Resource_ValidAges",
-        "Resource_ValidBiomes",
-        "Resource_YieldChanges",
-        "StartBiasResources",
-        "Units",
-        "Wonders"
-      ]
-    },
+    "backlink_fk": [
+      "BarbarianTribes",
+      "Boosts",
+      "Constructible_ValidResources",
+      "District_FreeConstructibles",
+      "GreatPersonIndividuals",
+      "Projects",
+      "Resource_Harvests",
+      "Resource_RequiredCivs",
+      "Resource_RequiredLeaders",
+      "Resource_ValidAges",
+      "Resource_ValidBiomes",
+      "Resource_YieldChanges",
+      "StartBiasResources",
+      "Units",
+      "Wonders"
+    ],
     "foreign_keys": {
       "ResourceClassType": "ResourceClasses",
       "ResourceType": "Types"
@@ -11931,6 +11894,9 @@
           "col": "Type"
         }
       ]
+    },
+    "extra_backlinks": {
+      "AgeProgressions": "AgeType"
     },
     "origin_pk": true
   },
@@ -12097,13 +12063,11 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "ResourceClassType": [
-        "GameSystemPrereqs",
-        "Resources",
-        "ResourceClassApplicableLegacyPaths"
-      ]
-    },
+    "backlink_fk": [
+      "GameSystemPrereqs",
+      "Resources",
+      "ResourceClassApplicableLegacyPaths"
+    ],
     "foreign_keys": {
       "ResourceClassType": "Types"
     },
@@ -12175,11 +12139,9 @@
       "RouteType": "Types",
       "PrereqAge": "Ages"
     },
-    "backlink_fk": {
-      "RouteType": [
-        "Route_ValidBuildUnits"
-      ]
-    },
+    "backlink_fk": [
+      "Route_ValidBuildUnits"
+    ],
     "mined_bools": [
       "PlacementRequiresOwnedTile",
       "PlacementRequiresRoutePresent",
@@ -12244,11 +12206,9 @@
       "Multiplier": "1"
     },
     "foreign_keys": {},
-    "backlink_fk": {
-      "CategoryType": [
-        "ScoringLineItems"
-      ]
-    },
+    "backlink_fk": [
+      "ScoringLineItems"
+    ],
     "possible_fks": {},
     "origin_pk": true
   },
@@ -12350,9 +12310,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "SeasonType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "SettlementPreferences": {
     "primary_keys": [
@@ -12394,11 +12356,9 @@
       "MaxChildren": "0",
       "MinChildren": "0"
     },
-    "backlink_fk": {
-      "ShapeId": [
-        "NodeDefinitions"
-      ]
-    },
+    "backlink_fk": [
+      "NodeDefinitions"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "MaxChildren",
@@ -12715,13 +12675,11 @@
       "LegacyPathType": "LegacyPaths",
       "BehaviorTree": "BehaviorTrees"
     },
-    "backlink_fk": {
-      "StrategyType": [
-        "Strategy_Priorities",
-        "Strategy_YieldPriorities",
-        "StrategyConditions"
-      ]
-    },
+    "backlink_fk": [
+      "Strategy_Priorities",
+      "Strategy_YieldPriorities",
+      "StrategyConditions"
+    ],
     "mined_bools": [
       "CityStrategy"
     ],
@@ -12839,18 +12797,20 @@
     "default_values": {
       "Hash": "0"
     },
-    "backlink_fk": {
-      "Tag": [
-        "OpTeamRequirements",
-        "TypeTags",
-        "UnitDiplomacyAction_Targets",
-        "UnitDiplomacyAction_ValidUnits"
-      ]
-    },
+    "backlink_fk": [
+      "OpTeamRequirements",
+      "TypeTags",
+      "UnitDiplomacyAction_Targets",
+      "UnitDiplomacyAction_ValidUnits"
+    ],
     "foreign_keys": {
       "Category": "TagCategories"
     },
     "possible_fks": {},
+    "extra_backlinks": {
+      "CivilopediaPageGroupQueries": "SectionID",
+      "Unit_TransitionShadows": "Tag"
+    },
     "origin_pk": true
   },
   "TagCategories": {
@@ -12865,11 +12825,9 @@
       "Category"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "Category": [
-        "Tags"
-      ]
-    },
+    "backlink_fk": [
+      "Tags"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -12886,11 +12844,9 @@
       "TargetType"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "TargetType": [
-        "AiOperationDefs"
-      ]
-    },
+    "backlink_fk": [
+      "AiOperationDefs"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -12939,26 +12895,24 @@
       "SightThroughModifier": "0",
       "Water": "0"
     },
-    "backlink_fk": {
-      "TerrainType": [
-        "Adjacency_YieldChanges",
-        "Biome_ValidTerrains",
-        "CityExpansionValidTerrains",
-        "Constructibles",
-        "Constructible_ValidTerrains",
-        "District_FreeConstructibles",
-        "EmbarkationValidTerrains",
-        "Feature_AdjacentTerrains",
-        "Feature_NotAdjacentTerrains",
-        "Feature_ValidTerrains",
-        "RegionClaimObstacles",
-        "Resource_ValidBiomes",
-        "StartBiasTerrains",
-        "TerrainBiomeFeature_YieldChanges",
-        "UnitMovementClassObstacles",
-        "Warehouse_YieldChanges"
-      ]
-    },
+    "backlink_fk": [
+      "Adjacency_YieldChanges",
+      "Biome_ValidTerrains",
+      "CityExpansionValidTerrains",
+      "Constructibles",
+      "Constructible_ValidTerrains",
+      "District_FreeConstructibles",
+      "EmbarkationValidTerrains",
+      "Feature_AdjacentTerrains",
+      "Feature_NotAdjacentTerrains",
+      "Feature_ValidTerrains",
+      "RegionClaimObstacles",
+      "Resource_ValidBiomes",
+      "StartBiasTerrains",
+      "TerrainBiomeFeature_YieldChanges",
+      "UnitMovementClassObstacles",
+      "Warehouse_YieldChanges"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "Appeal",
@@ -12979,9 +12933,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "TerrainType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "TerrainBiomeFeature_YieldChanges": {
     "primary_keys": [
@@ -13045,11 +13001,9 @@
       "SeaRouteRange": "10",
       "StartRoutesAtDistance": "0"
     },
-    "backlink_fk": {
-      "Type": [
-        "Ages"
-      ]
-    },
+    "backlink_fk": [
+      "Ages"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "BaseResourceCapacity",
@@ -13064,7 +13018,10 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "Type": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     }
   },
   "TradeYields": {
@@ -13131,12 +13088,10 @@
       "AgeType": "Ages",
       "TraitType": "Traits"
     },
-    "backlink_fk": {
-      "TraditionType": [
-        "TraditionAttributes",
-        "TraditionModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "TraditionAttributes",
+      "TraditionModifiers"
+    ],
     "mined_bools": [
       "IsCrisis",
       "OnlyLegacyCivTrait",
@@ -13208,28 +13163,26 @@
     "default_values": {
       "InternalOnly": "0"
     },
-    "backlink_fk": {
-      "TraitType": [
-        "AiDefinitions",
-        "Buildings",
-        "CivilizationTraits",
-        "ExcludedAdjacencies",
-        "ExcludedDistricts",
-        "ExcludedGreatPersonClasses",
-        "Improvements",
-        "LeaderTraits",
-        "Legacies",
-        "LegacyCivilizationTraits",
-        "ProgressionTreeNodeTraits",
-        "ProgressionTreeNodeUnlocks",
-        "ProgressionTreeNodeUnlocks",
-        "Routes",
-        "Traditions",
-        "TraitModifiers",
-        "UniqueQuarters",
-        "Units"
-      ]
-    },
+    "backlink_fk": [
+      "AiDefinitions",
+      "Buildings",
+      "CivilizationTraits",
+      "ExcludedAdjacencies",
+      "ExcludedDistricts",
+      "ExcludedGreatPersonClasses",
+      "Improvements",
+      "LeaderTraits",
+      "Legacies",
+      "LegacyCivilizationTraits",
+      "ProgressionTreeNodeTraits",
+      "ProgressionTreeNodeUnlocks",
+      "ProgressionTreeNodeUnlocks",
+      "Routes",
+      "Traditions",
+      "TraitModifiers",
+      "UniqueQuarters",
+      "Units"
+    ],
     "foreign_keys": {
       "TraitType": "Types"
     },
@@ -13433,17 +13386,15 @@
       "InitialUnitAmount": "0",
       "MaxUnitAmount": "1"
     },
-    "backlink_fk": {
-      "TribeTagName": [
-        "IndependentTribeTypes",
-        "TribeCombatTags",
-        "TribeCombatTagSets",
-        "TribeCommanderTagSets",
-        "TribeForbiddenCombatTags",
-        "TribeRequiredCombatTags",
-        "TribeScoutTagSets"
-      ]
-    },
+    "backlink_fk": [
+      "IndependentTribeTypes",
+      "TribeCombatTags",
+      "TribeCombatTagSets",
+      "TribeCommanderTagSets",
+      "TribeForbiddenCombatTags",
+      "TribeRequiredCombatTags",
+      "TribeScoutTagSets"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "InitialUnitAmount"
@@ -13550,12 +13501,10 @@
       "TimeLimit_PerCity": "0",
       "TimeLimit_PerUnit": "0"
     },
-    "backlink_fk": {
-      "TurnSegmentType": [
-        "TurnPhases",
-        "TurnPhases"
-      ]
-    },
+    "backlink_fk": [
+      "TurnPhases",
+      "TurnPhases"
+    ],
     "foreign_keys": {},
     "mined_bools": [
       "AllowStrategicCommands",
@@ -13571,9 +13520,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "TurnSegmentType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "TurnTimers": {
     "primary_keys": [
@@ -13614,70 +13565,108 @@
     "default_values": {
       "Hash": "0"
     },
-    "backlink_fk": {
-      "Type": [
-        "Ages",
-        "AgeProgressionMilestones",
-        "Beliefs",
-        "Civilizations",
-        "Defeats",
-        "DiplomacyActions",
-        "DiplomacyActions",
-        "DiplomacyActionGroups",
-        "DiplomacyActionGroupSubtypes",
-        "DiplomacyActionTags",
-        "DiplomacyAgendaAmountTypes",
-        "DiplomacyAgendaAwardToTypes",
-        "DiplomacyAgendaWeightingTypes",
-        "DiplomacyBasicModifierValueTypes",
-        "DiplomacyFavorsGrievancesEventsData",
-        "DiplomacyFavorGrievanceEventGroups",
-        "DiplomacyModifierTargetTypes",
-        "DiplomaticActionInfluenceCosts",
-        "DiplomaticActionResponses",
-        "DiplomaticActionResponseModifiers",
-        "DiplomaticActionStages",
-        "DiplomaticActionValidTokens",
-        "DiplomaticFirstMeetResponses",
-        "DiplomaticProjects_UI_Data",
-        "DiplomaticResponses",
-        "Districts",
-        "DynamicModifiers",
-        "DynamicModifiers",
-        "DynamicModifiers",
-        "EventClasses",
-        "Features",
-        "FeatureClasses",
-        "GameCapabilities",
-        "GameEffects",
-        "Gossips",
-        "GreatPersonClasses",
-        "GreatPersonIndividuals",
-        "Leaders",
-        "LegacyCivilizations",
-        "NarrativeStories",
-        "Projects",
-        "Quests",
-        "Religions",
-        "Resources",
-        "ResourceClasses",
-        "Routes",
-        "Traits",
-        "Types_ValidAges",
-        "TypeProperties",
-        "TypeQuotes",
-        "TypeTags",
-        "Units",
-        "UnitPromotions",
-        "UnitPromotionClasses",
-        "UnitPromotionDisciplines",
-        "Unlocks"
-      ]
-    },
+    "backlink_fk": [
+      "Ages",
+      "AgeProgressionMilestones",
+      "Beliefs",
+      "Civilizations",
+      "Defeats",
+      "DiplomacyActions",
+      "DiplomacyActions",
+      "DiplomacyActionGroups",
+      "DiplomacyActionGroupSubtypes",
+      "DiplomacyActionTags",
+      "DiplomacyAgendaAmountTypes",
+      "DiplomacyAgendaAwardToTypes",
+      "DiplomacyAgendaWeightingTypes",
+      "DiplomacyBasicModifierValueTypes",
+      "DiplomacyFavorsGrievancesEventsData",
+      "DiplomacyFavorGrievanceEventGroups",
+      "DiplomacyModifierTargetTypes",
+      "DiplomaticActionInfluenceCosts",
+      "DiplomaticActionResponses",
+      "DiplomaticActionResponseModifiers",
+      "DiplomaticActionStages",
+      "DiplomaticActionValidTokens",
+      "DiplomaticFirstMeetResponses",
+      "DiplomaticProjects_UI_Data",
+      "DiplomaticResponses",
+      "Districts",
+      "DynamicModifiers",
+      "DynamicModifiers",
+      "DynamicModifiers",
+      "EventClasses",
+      "Features",
+      "FeatureClasses",
+      "GameCapabilities",
+      "GameEffects",
+      "Gossips",
+      "GreatPersonClasses",
+      "GreatPersonIndividuals",
+      "Leaders",
+      "LegacyCivilizations",
+      "NarrativeStories",
+      "Projects",
+      "Quests",
+      "Religions",
+      "Resources",
+      "ResourceClasses",
+      "Routes",
+      "Traits",
+      "Types_ValidAges",
+      "TypeProperties",
+      "TypeQuotes",
+      "TypeTags",
+      "Units",
+      "UnitPromotions",
+      "UnitPromotionClasses",
+      "UnitPromotionDisciplines",
+      "Unlocks"
+    ],
     "foreign_keys": {
       "Kind": "Kinds"
     },
     "possible_fks": {},
+    "extra_backlinks": {
+      "AdvisorWarnings": "AdvisorWarningType",
+      "Biomes": "BiomeType",
+      "Calendars": "CalendarType",
+      "CityStateBonuses": "CityStateBonusType",
+      "Constructibles": "ConstructibleType",
+      "Continents": "ContinentType",
+      "DealItemAgreements": "Type",
+      "Difficulties": "DifficultyType",
+      "DiplomacyActionGroups": "Name",
+      "DiplomacyActionGroupSubtypes": "Name",
+      "DiplomacyAgendaAmountTypes": "Name",
+      "DiplomacyAgendaAwardToTypes": "Name",
+      "DiplomacyAgendaWeightingTypes": "Name",
+      "DiplomacyBasicModifierValueTypes": "Name",
+      "DiplomacyModifierTargetTypes": "Name",
+      "DiplomacyPlayerRelationships": "DiplomacyPlayerRelationshipType",
+      "Fertilities": "FertilityType",
+      "GameSpeeds": "GameSpeedType",
+      "GoldenAges": "GoldenAgeType",
+      "GoodyHuts": "GoodyHutType",
+      "Governments": "GovernmentType",
+      "GreatWorkObjectTypes": "GreatWorkObjectType",
+      "KeywordAbilities": "KeywordAbilityType",
+      "LegacyPaths": "LegacyPathType",
+      "Maps": "MapSizeType",
+      "Mementos": "MementoType",
+      "Months": "MonthType",
+      "NarrativeTags": "NarrativeTagType",
+      "ProgressionTrees": "ProgressionTreeType",
+      "RandomEvents": "RandomEventType",
+      "RealismSettings": "RealismSettingType",
+      "Seasons": "SeasonType",
+      "Terrains": "TerrainType",
+      "TradeSystemParameterSets": "Type",
+      "TurnSegments": "TurnSegmentType",
+      "UnitCommands": "CommandType",
+      "UnitEmbarkationTypes": "EmbarkationType",
+      "Wars": "WarType"
+    },
     "origin_pk": true
   },
   "Types_ValidAges": {
@@ -13815,10 +13804,15 @@
       ]
     },
     "extra_fks": {
-      "DiplomacyStatementType": "DiplomacyStatements",
-      "WarType": "Wars"
-    },
-    "origin_pk": true
+      "DiplomacyStatementType": {
+        "ref_column": "DiplomacyStatementType",
+        "ref_table": "DiplomacyStatements"
+      },
+      "Type": {
+        "ref_column": "WarType",
+        "ref_table": "Wars"
+      }
+    }
   },
   "UnhappinessEffects": {
     "primary_keys": [
@@ -13882,13 +13876,11 @@
       "TraitType"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "UniqueQuarterType": [
-        "GreatPersonClasses",
-        "GreatPersonIndividuals",
-        "UniqueQuarterModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "GreatPersonClasses",
+      "GreatPersonIndividuals",
+      "UniqueQuarterModifiers"
+    ],
     "foreign_keys": {
       "TraitType": "Traits",
       "BuildingType2": "Constructibles",
@@ -13924,7 +13916,10 @@
       ]
     },
     "extra_fks": {
-      "ModifierId": "Modifiers"
+      "ModifierID": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
     }
   },
   "Units": {
@@ -14110,38 +14105,36 @@
       "WMDCapable": "0",
       "ZoneOfControl": "0"
     },
-    "backlink_fk": {
-      "UnitType": [
-        "AdvancedStartUnits",
-        "AiUnitEfficiencyBonuses",
-        "AiUnitEfficiencyBonuses",
-        "AIUnitPrioritizedActions",
-        "BonusMinorStartingUnits",
-        "Boosts",
-        "Boosts",
-        "CivilopediaUnitsUniqueUpgrades",
-        "CivilopediaUnitsUniqueUpgrades",
-        "GreatPersonClasses",
-        "GreatPersonIndividuals",
-        "GreatPersonIndividuals",
-        "Route_ValidBuildUnits",
-        "Unit_Abilities",
-        "Unit_Advisories",
-        "Unit_BuildConstructibles",
-        "Unit_Costs",
-        "Unit_RequiredConstructibles",
-        "Unit_ShadowReplacements",
-        "Unit_Stats",
-        "Unit_TransitionRetains",
-        "UnitAiInfos",
-        "UnitCaptures",
-        "UnitCaptures",
-        "UnitReplaces",
-        "UnitReplaces",
-        "UnitUpgrades",
-        "UnitUpgrades"
-      ]
-    },
+    "backlink_fk": [
+      "AdvancedStartUnits",
+      "AiUnitEfficiencyBonuses",
+      "AiUnitEfficiencyBonuses",
+      "AIUnitPrioritizedActions",
+      "BonusMinorStartingUnits",
+      "Boosts",
+      "Boosts",
+      "CivilopediaUnitsUniqueUpgrades",
+      "CivilopediaUnitsUniqueUpgrades",
+      "GreatPersonClasses",
+      "GreatPersonIndividuals",
+      "GreatPersonIndividuals",
+      "Route_ValidBuildUnits",
+      "Unit_Abilities",
+      "Unit_Advisories",
+      "Unit_BuildConstructibles",
+      "Unit_Costs",
+      "Unit_RequiredConstructibles",
+      "Unit_ShadowReplacements",
+      "Unit_Stats",
+      "Unit_TransitionRetains",
+      "UnitAiInfos",
+      "UnitCaptures",
+      "UnitCaptures",
+      "UnitReplaces",
+      "UnitReplaces",
+      "UnitUpgrades",
+      "UnitUpgrades"
+    ],
     "foreign_keys": {
       "VictoryType": "Victories",
       "UnitType": "Types",
@@ -14369,7 +14362,10 @@
       ]
     },
     "extra_fks": {
-      "Tag": "Tags"
+      "Tag": {
+        "ref_column": "Tag",
+        "ref_table": "Unit_TransitionShadows"
+      }
     }
   },
   "Unit_Stats": {
@@ -14457,7 +14453,13 @@
       ]
     },
     "extra_fks": {
-      "Tag": "Tags"
+      "Tag": {
+        "ref_column": "Tag",
+        "ref_table": "Tags"
+      }
+    },
+    "extra_backlinks": {
+      "Unit_ShadowReplacements": "Tag"
     }
   },
   "UnitAbilities": {
@@ -14506,15 +14508,13 @@
       "ShareWithChildren": "0",
       "ShowFloatTextWhenEarned": "0"
     },
-    "backlink_fk": {
-      "UnitAbilityType": [
-        "Unit_Abilities",
-        "UnitAbility_TimedAbilities",
-        "UnitAbility_TimedAbilities",
-        "UnitAbilityModifiers",
-        "UnitClass_Abilities"
-      ]
-    },
+    "backlink_fk": [
+      "Unit_Abilities",
+      "UnitAbility_TimedAbilities",
+      "UnitAbility_TimedAbilities",
+      "UnitAbilityModifiers",
+      "UnitClass_Abilities"
+    ],
     "foreign_keys": {
       "OperationType": "UnitOperations",
       "CommandType": "UnitCommands",
@@ -14614,11 +14614,9 @@
     "default_values": {
       "Priority": "0"
     },
-    "backlink_fk": {
-      "AiType": [
-        "UnitAiInfos"
-      ]
-    },
+    "backlink_fk": [
+      "UnitAiInfos"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -14712,12 +14710,10 @@
       "RequiresAbility": "0",
       "ShowActivationPlots": "0"
     },
-    "backlink_fk": {
-      "CommandType": [
-        "AIUnitPrioritizedActions",
-        "UnitAbilities"
-      ]
-    },
+    "backlink_fk": [
+      "AIUnitPrioritizedActions",
+      "UnitAbilities"
+    ],
     "foreign_keys": {
       "InterfaceMode": "InterfaceModes"
     },
@@ -14736,9 +14732,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "CommandType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "UnitDiplomacyAction_Targets": {
     "primary_keys": [
@@ -14802,11 +14800,9 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "EmbarkationType": [
-        "EmbarkationValidTerrains"
-      ]
-    },
+    "backlink_fk": [
+      "EmbarkationValidTerrains"
+    ],
     "foreign_keys": {},
     "possible_fks": {
       "EmbarkationType": [
@@ -14817,9 +14813,11 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
-    },
-    "origin_pk": true
+      "EmbarkationType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "UnitFormationClasses": {
     "primary_keys": [
@@ -14966,12 +14964,10 @@
       "ShowActivationPlots": "0",
       "Turns": "0"
     },
-    "backlink_fk": {
-      "OperationType": [
-        "AIUnitPrioritizedActions",
-        "UnitAbilities"
-      ]
-    },
+    "backlink_fk": [
+      "AIUnitPrioritizedActions",
+      "UnitAbilities"
+    ],
     "foreign_keys": {
       "InterfaceMode": "InterfaceModes",
       "TargetDistrict": "Districts"
@@ -15015,13 +15011,11 @@
     "foreign_keys": {
       "UnitPromotionType": "Types"
     },
-    "backlink_fk": {
-      "UnitPromotionType": [
-        "UnitPromotionDisciplineDetails",
-        "UnitPromotionDisciplineDetails",
-        "UnitPromotionModifiers"
-      ]
-    },
+    "backlink_fk": [
+      "UnitPromotionDisciplineDetails",
+      "UnitPromotionDisciplineDetails",
+      "UnitPromotionModifiers"
+    ],
     "mined_bools": [
       "Commendation"
     ],
@@ -15041,12 +15035,10 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "PromotionClassType": [
-        "Units",
-        "UnitPromotionClassSets"
-      ]
-    },
+    "backlink_fk": [
+      "Units",
+      "UnitPromotionClassSets"
+    ],
     "foreign_keys": {
       "PromotionClassType": "Types"
     },
@@ -15090,12 +15082,10 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "UnitPromotionDisciplineType": [
-        "UnitPromotionClassSets",
-        "UnitPromotionDisciplineDetails"
-      ]
-    },
+    "backlink_fk": [
+      "UnitPromotionClassSets",
+      "UnitPromotionDisciplineDetails"
+    ],
     "foreign_keys": {
       "UnitPromotionDisciplineType": "Types"
     },
@@ -15214,12 +15204,10 @@
     "foreign_keys": {
       "UnlockType": "Types"
     },
-    "backlink_fk": {
-      "UnlockType": [
-        "UnlockConfigurationValues",
-        "UnlockRequirements"
-      ]
-    },
+    "backlink_fk": [
+      "UnlockConfigurationValues",
+      "UnlockRequirements"
+    ],
     "possible_fks": {}
   },
   "UnlockConfigurationValues": {
@@ -15327,13 +15315,11 @@
       "LegacyPathClassType": "\"NO_LEGACY_PATH_CLASS\"",
       "RequiresMultipleTeams": "0"
     },
-    "backlink_fk": {
-      "VictoryType": [
-        "EndGameMovies",
-        "Units",
-        "VictoryCinematics"
-      ]
-    },
+    "backlink_fk": [
+      "EndGameMovies",
+      "Units",
+      "VictoryCinematics"
+    ],
     "foreign_keys": {
       "RequirementSetId": "RequirementSets",
       "VictoryClassType": "VictoryClasses"
@@ -15380,11 +15366,9 @@
       "Name"
     ],
     "default_values": {},
-    "backlink_fk": {
-      "VictoryClassType": [
-        "Victories"
-      ]
-    },
+    "backlink_fk": [
+      "Victories"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -15452,11 +15436,9 @@
       "DominationAmount": "-1",
       "DominationPercent": "-1"
     },
-    "backlink_fk": {
-      "VictoryType": [
-        "Strategies"
-      ]
-    },
+    "backlink_fk": [
+      "Strategies"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -15591,9 +15573,14 @@
       ]
     },
     "extra_fks": {
-      "Type": "Types"
+      "WarType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
     },
-    "origin_pk": true
+    "extra_backlinks": {
+      "TypeToDiplomacyStatements": "Type"
+    }
   },
   "Warehouse_YieldChanges": {
     "primary_keys": [
@@ -15651,12 +15638,10 @@
       "RouteInCity": "0",
       "YieldChange": "0"
     },
-    "backlink_fk": {
-      "ID": [
-        "Constructible_WarehouseYields",
-        "Constructible_WildcardWarehouseYields"
-      ]
-    },
+    "backlink_fk": [
+      "Constructible_WarehouseYields",
+      "Constructible_WildcardWarehouseYields"
+    ],
     "foreign_keys": {
       "BiomeInCity": "Biomes",
       "DistrictInCity": "Districts",
@@ -15744,11 +15729,9 @@
       "ICBMStrikeRange": "0",
       "Maintenance": "0"
     },
-    "backlink_fk": {
-      "WeaponType": [
-        "Unit_Stats"
-      ]
-    },
+    "backlink_fk": [
+      "Unit_Stats"
+    ],
     "foreign_keys": {},
     "possible_fks": {},
     "origin_pk": true
@@ -15862,32 +15845,30 @@
       "DefaultValue": "1",
       "OccupiedCityChange": "0"
     },
-    "backlink_fk": {
-      "YieldType": [
-        "Adjacency_YieldChanges",
-        "AiBuildSpecializations",
-        "AiBuildSpecializations",
-        "Buildings",
-        "Constructible_CitizenYieldChanges",
-        "Constructible_Maintenances",
-        "Constructible_YieldChanges",
-        "Feature_CityYields",
-        "Feature_Removes",
-        "GreatWork_YieldChanges",
-        "NarrativeStories",
-        "Project_YieldConversions",
-        "RandomEventYields",
-        "Resource_Harvests",
-        "Resource_YieldChanges",
-        "Strategy_YieldPriorities",
-        "TerrainBiomeFeature_YieldChanges",
-        "TradeYields",
-        "Units",
-        "Unit_Costs",
-        "Warehouse_YieldChanges",
-        "WorkerYields"
-      ]
-    },
+    "backlink_fk": [
+      "Adjacency_YieldChanges",
+      "AiBuildSpecializations",
+      "AiBuildSpecializations",
+      "Buildings",
+      "Constructible_CitizenYieldChanges",
+      "Constructible_Maintenances",
+      "Constructible_YieldChanges",
+      "Feature_CityYields",
+      "Feature_Removes",
+      "GreatWork_YieldChanges",
+      "NarrativeStories",
+      "Project_YieldConversions",
+      "RandomEventYields",
+      "Resource_Harvests",
+      "Resource_YieldChanges",
+      "Strategy_YieldPriorities",
+      "TerrainBiomeFeature_YieldChanges",
+      "TradeYields",
+      "Units",
+      "Unit_Costs",
+      "Warehouse_YieldChanges",
+      "WorkerYields"
+    ],
     "foreign_keys": {},
     "possible_fks": {
       "YieldType": [
@@ -15902,9 +15883,14 @@
       ]
     },
     "extra_fks": {
-      "Type": "NarrativeStory_RewardIcons"
+      "YieldType": {
+        "ref_column": "Type",
+        "ref_table": "NarrativeStory_RewardIcons"
+      }
     },
-    "origin_pk": true
+    "extra_backlinks": {
+      "CityStateTypes": "YieldType"
+    }
   },
   "IProperties": {
     "primary_keys": [
