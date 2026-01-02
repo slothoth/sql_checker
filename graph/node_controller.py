@@ -5,9 +5,10 @@ from PyQt5.QtWidgets import QMainWindow
 from NodeGraphQt import NodeGraph
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
-from graph.db_spec_singleton import db_spec, modifier_system_tables
+from graph.db_spec_singleton import db_spec, modifier_system_tables, attach_tables
 from graph.set_hotkeys import set_hotkeys
 from graph.dynamic_nodes import generate_tables, GameEffectNode, RequirementEffectNode
+from schema_generator import SQLValidator
 # bodge job for blocking recursion
 recently_changed = {}
 
@@ -82,8 +83,10 @@ class NodeEditorWindow(QMainWindow):
                     if source_port_item.port_type == 'out':
                         src_port = src_node.get_output(src_port_name)
                         if src_node.get_property('table_name') == 'GameEffectCustom':
-                            # TODO we will add back in RequirementSets but currently removed from making those nodes
-                            possible_table_info = {'ReqEffectCustom': True, 'RequirementSets': True}
+                            if src_port.name() == 'ModifierId':
+                                possible_table_info = {k: True for k in attach_tables}
+                            else:
+                                possible_table_info = {'ReqEffectCustom': True, 'RequirementSets': True}
                         elif src_node.get_property('table_name') == 'ReqEffectCustom':
                             valid_tables = db_spec.node_templates['RequirementSets']['backlink_fk']
                             possible_table_info = {key: 'unused' for key, val in db_spec.node_templates.items() if
@@ -94,36 +97,28 @@ class NodeEditorWindow(QMainWindow):
                             possible_table_info = {key: 'unused' for key, val
                                                    in db_spec.node_templates.items() if key in valid_tables}
                             if 'Modifiers' in possible_table_info:
-                                del possible_table_info['Modifiers']
-                                valid_tables.remove('Modifiers')
                                 possible_table_info['GameEffectCustom'] = 'unused'
                             if 'RequirementSets' in possible_table_info:
-                                del possible_table_info['RequirementSets']
-                                valid_tables.remove('RequirementSets')
                                 possible_table_info['ReqEffectCustom'] = 'unused'
                         if len(possible_table_info) > 1:        # it could be multiple tables, open dialog
-                            dialog = NodeCreationDialog(table_subset_info=possible_table_info)
-                            viewer = self.graph.viewer()
-                            pos = viewer.mapToGlobal(QtGui.QCursor.pos())
-                            dialog.move(pos)
-                            if dialog.exec_() != QtWidgets.QDialog.Accepted:
-                                return
-                            name = dialog.selected()
+                            name = self.node_dialog_name(possible_table_info)
                             if not name:
                                 return
                         else:
                             name = valid_tables[0]
 
                     else:
-                        src_port = src_node.get_input(src_port_name)   # No Dialog as fk reference can only be one table
-                        node_name = src_node.get_property('table_name')
-                        if node_name =='ReqEffectCustom':
+                        src_port = src_node.get_input(src_port_name)   # Dialog only needed if associated with Effect
+                        src_node_name = src_node.get_property('table_name')     # System so like TraitModifiers,
+                        if src_node_name =='ReqEffectCustom':                # Modifiers.SubjectRequirementSetId
                             name = 'GameEffectCustom'
-                        elif node_name =='GameEffectCustom':
+                        elif src_node_name =='GameEffectCustom':
                             name = 'ReqEffectCustom'
+                        elif src_node_name in attach_tables:
+                            original_name = SQLValidator.fk_to_tbl_map[src_node_name][src_port_name]
+                            name = self.node_dialog_name({original_name: True, 'GameEffectCustom': True})
                         else:
-                            name = db_spec.node_templates[node_name]['foreign_keys'][src_port_name]
-                        # should we cover dealing with attachment tables?
+                            name = SQLValidator.fk_to_tbl_map[src_node_name][src_port_name]
 
                     if name == 'GameEffectCustom':
                         node_name = 'db.game_effects.GameEffectNode'
@@ -135,11 +130,19 @@ class NodeEditorWindow(QMainWindow):
 
                     # Connect nodes
                     if src_port.type_() == 'out':   # Connect to first available input of new node, which should be PK
-                        if new_node.input_ports():
-                            connect_port = new_node.get_link_port(src_node.get_property('table_name'), source_port_item.name)
-                            if connect_port:
-                                port_index = next((i for i, s in enumerate(new_node.input_ports()) if s.name() == connect_port), 0)
-                                src_port.connect_to(new_node.input_ports()[port_index])
+                        new_node_inputs = new_node.input_ports()
+                        port_index = None
+                        if new_node_inputs:
+                            if len(new_node_inputs) == 1:
+                                port_index = 0
+                                connect_port = new_node_inputs[0]
+                            else:
+                                connect_port = new_node.get_link_port(src_node.get_property('table_name'), source_port_item.name)
+                                if connect_port:
+                                    port_index = next((i for i, s in enumerate(new_node_inputs) if s.name() == connect_port), 0)
+
+                            if port_index is not None:
+                                src_port.connect_to(new_node_inputs[port_index])
                                 old_pk = source_port_item.node.get_widget(source_port_item.name).get_value()  # get val of connecting entry
                                 display_widget = new_node.get_widget(connect_port)
                                 if display_widget is not None:
@@ -149,8 +152,6 @@ class NodeEditorWindow(QMainWindow):
                                     if hidden_property is not None:
                                         new_node.set_property(connect_port, old_pk)
 
-                            else:
-                                src_port.connect_to(new_node.input_ports()[0])
                     elif src_port.type_() == 'in':
                         # Connect to first available output of new node, which should be primary key
                         if new_node.output_ports():
@@ -158,6 +159,16 @@ class NodeEditorWindow(QMainWindow):
 
         # Apply the patch
         self.graph.viewer().mouseReleaseEvent = custom_mouse_release
+
+    def node_dialog_name(self, possible_table_info):
+        dialog = NodeCreationDialog(table_subset_info=possible_table_info)
+        viewer = self.graph.viewer()
+        pos = viewer.mapToGlobal(QtGui.QCursor.pos())
+        dialog.move(pos)
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+        name = dialog.selected()
+        return name
 
 
 def on_property_changed(node, property_name, property_value):

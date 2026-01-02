@@ -63,16 +63,24 @@ class SchemaInspector:
 
         self.pk_map = {name: [c.name for c in table.primary_key.columns] for name, table in tables.items()}
 
-        self.fk_to_tbl_map = { name: {c.name: list(c.foreign_keys)[0].column.table.name
+        self.fk_to_tbl_map = {name: {c.name: list(c.foreign_keys)[0].column.table.name
                                        for c in table.columns if c.foreign_keys}
             for name, table in tables.items()
         }
+        extra_fks = {key: {k: v['ref_table'] for k, v in val['extra_fks'].items()} for key, val in
+                        db_spec.node_templates.items() if val.get('extra_fks') is not None}
+        [self.fk_to_tbl_map[k].update(v) for k, v in extra_fks.items() if k in self.fk_to_tbl_map]
+        # for each table, make a dict of all cols with foreign keys, and for val, the name of the foreign
+        # key reference table column
+        # we also added in the extra fks stuff
 
         self.fk_to_pk_map = {name: {c.name: list(c.foreign_keys)[0].column.name
-                                    for c in table.columns if c.foreign_keys
-            }
+                                    for c in table.columns if c.foreign_keys}
             for name, table in tables.items()
         }
+        extra_fks = {key: {k: v['ref_column'] for k, v in val['extra_fks'].items()} for key, val in
+                        db_spec.node_templates.items() if val.get('extra_fks') is not None}
+        [self.fk_to_pk_map[k].update(v) for k, v in extra_fks.items() if k in self.fk_to_pk_map]
 
         internal_fk_map = {
             name: {

@@ -191,12 +191,6 @@ effect_system_tables = ("Modifiers", "ModifierArguments", "DynamicModifiers", "M
 
 requirement_system_tables = ("Requirements", "RequirementArguments", "RequirementSets", "RequirementSetRequirements")
 
-modifierAttachTables = {"EnterStageModifiers": "ModifierId", "EnvoysInActionModifiers": "ModifierId",
-                        "EnvoysInStageModifiers": "ModifierId",
-                        "GovernmentModifiers": "ModifierId", "MementoModifiers": "ModifierId",
-                        "TraditionModifiers": "ModifierId", "TraitModifiers": "ModifierId",
-                        "UnitAbilityModifiers": "ModifierId", "UnitPromotionModifiers": "ModifierId",
-                        "NarrativeStory_Rewards": "NarrativeRewardType"}
 
 ages = ['AGE_ANTIQUITY', 'AGE_EXPLORATION', 'AGE_MODERN']
 
@@ -210,6 +204,7 @@ db_spec = ResourceLoader()
 
 attach_tables = [i for i in db_spec.node_templates['Modifiers']['extra_backlinks']] + db_spec.node_templates['Modifiers']['backlink_fk']
 attach_tables = [i for i in attach_tables if i not in modifier_system_tables]
+attach_tables.append('NarrativeStory_Rewards')      # TODO find out why missed
 
 
 def flatten(xss):

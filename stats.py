@@ -2,7 +2,7 @@ import pandas as pd
 from sqlalchemy import create_engine
 import json
 import math
-from graph.db_spec_singleton import db_spec, modifierAttachTables, attach_tables
+from graph.db_spec_singleton import db_spec, attach_tables
 
 
 def combine_db_df(df_combined, df_to_add):

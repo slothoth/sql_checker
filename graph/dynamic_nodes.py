@@ -1,12 +1,12 @@
 from NodeGraphQt import BaseNode
 from PyQt5 import QtCore, QtGui
 import math
+import time
 
-from graph.db_spec_singleton import (db_spec, modifier_system_tables, attach_tables, requirement_argument_info,
+from graph.db_spec_singleton import (db_spec, requirement_argument_info, attach_tables,
                                      req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
                                      mod_arg_type_list_map, all_param_arg_fields)
 from schema_generator import SQLValidator
-from sqlalchemy.sql.sqltypes import INTEGER, BOOLEAN, TEXT
 from graph.custom_widgets import NodeSearchMenu, ToggleExtraButton, IntSpinNodeWidget, FloatSpinNodeWidget
 
 
@@ -30,18 +30,15 @@ class BasicDBNode(BaseNode):
             pass
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
-        connect_spec = db_spec.node_templates[connect_table]
+        connection_spec = db_spec.node_templates.get(connect_table, {})
+        original_table = self.get_property('table_name')
+        if connect_table == 'GameEffectCustom':
+            if connect_port == 'ModifierId':
+                return backlink_port_get(original_table, 'Modifiers')
+            return 'ReqSet'  # needs more complicated behavior as ModifierId now also ports so could have any attach table
         if connect_port is not None:
-            backlinks = connect_spec.get('backlink_fk', {})
-            for backlink_table in backlinks:
-                if backlink_table == self.get_property('table_name'):
-                    backlink_spec = db_spec.node_templates[backlink_table]
-                    fk_ports = [key for key, val in backlink_spec['foreign_keys'].items() if val == connect_table]
-                    if len(fk_ports) > 1:
-                        print(f'error multiple ports possible for connect!'
-                              f' the connection was: {connect_table} -> {backlink_table}.'
-                              f' defaulting to first option')
-                    return fk_ports[0]
+            return backlink_port_get(original_table, connect_table)
+
 
     def set_spec(self, col_dict):
         for col_name, value in col_dict.items():
@@ -83,14 +80,11 @@ class BasicDBNode(BaseNode):
         cb.setMinimumHeight(24)
         cb.setStyleSheet("QCheckBox { padding-top: 2px; }")
 
-    def set_text_input(self, col, idx=0, default_val=None, validate=False):
+    def set_text_input(self, col, idx=0, default_val=None):
         lab = pad_label(index_label(idx, col))
         self.add_text_input(name=col, label=lab, text=str(default_val or ''), tab='fields')
         text_widget = self.get_widget(col)
         text_widget.get_custom_widget().setMinimumHeight(24)
-        if validate:
-            if text_widget:
-                self.setup_validate(text_widget, col)           # TODO remove or deal with validation
 
 
 class DynamicNode(BasicDBNode):
@@ -240,12 +234,21 @@ def create_table_node_class(table_name, graph):
             self._possible_vals = db_spec.possible_vals.get(age, {}).get(table_name, {})
         # Initialize ports and widgets based on the schema [i for idx, i in enumerate(columns) if notnulls[idx] == 1 and defaults[idx] is None]
 
+        # override for RequirementSet becausse needs output
+        if table_name == 'RequirementSets':
+            self.add_input('RequirementSetId')
+
         cols_ordered = primary_keys + prim_texts + second_texts
+        default_map = SQLValidator.default_map.get(table_name, {})
+        fk_to_tbl_map = SQLValidator.fk_to_tbl_map.get(table_name, {})
+        fk_to_pk_map = SQLValidator.fk_to_pk_map.get(table_name, {})
+        require_map = SQLValidator.required_map.get(table_name, {})
+
         for idx, col in enumerate(cols_ordered):
-            default_val = SQLValidator.default_map.get(table_name, {}).get(col, None)
-            fk_to_table_link = SQLValidator.fk_to_tbl_map[table_name].get(col, None)
-            fk_to_pk_link = SQLValidator.fk_to_pk_map[table_name].get(col, None)
-            is_required = SQLValidator.required_map[table_name].get(col, None)
+            default_val = default_map.get(col, None)
+            fk_to_tbl_link = fk_to_tbl_map.get(col, None)
+            fk_to_pk_link = fk_to_pk_map.get(col, None)
+            is_required = require_map.get(col, None)
             if fk_to_pk_link is not None:
                 if is_required is not None:
                     self.add_input(col)
@@ -376,7 +379,7 @@ class BaseEffectNode(BasicDBNode):
     def argument_info_map(self):
         return {}
 
-import time
+
 class GameEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
     NODE_NAME = 'CustomGameEffect'
@@ -399,6 +402,7 @@ class GameEffectNode(BaseEffectNode):
 
         # dynamicModifiers
         self.add_text_input('ModifierId', 'ModifierId', tab='fields')
+        self.add_output('ModifierId')
         self.add_combo_menu( "EffectType", label="EffectType", items=list(modifier_argument_info.keys()))
         self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
         self.create_property('ModifierType', '')
@@ -456,7 +460,6 @@ class GameEffectNode(BaseEffectNode):
         print(f'Apply setup time: {finished_time - apply_start_time}')
 
     def get_link_port(self, connect_table, connect_port):    # uses custom ReqCustom and all Modifier attachment tables
-        # TODO a version backporting to Modifier Attach Tables? attach_tables
         if connect_port is not None:
             for backlink_table in ['RequirementSets']:
                 if backlink_table == self.get_property('table_name'):
@@ -548,7 +551,6 @@ class RequirementEffectNode(BaseEffectNode):
         self._apply_mode(self.get_property("RequirementType"), push_undo=False)
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
-        connect_spec = db_spec.node_templates.get(connect_table, None)
         if connect_port is not None:
             return 'ReqSet'
 
@@ -618,3 +620,15 @@ def draw_square_port(painter, rect, info):
     painter.setBrush(color)
     painter.drawRect(rect)
     painter.restore()
+
+def backlink_port_get(original_table, connect_table):
+    backlink_spec = db_spec.node_templates[original_table]
+    combined_fks = backlink_spec['foreign_keys'].copy()
+    combined_fks.update(backlink_spec.get('extra_fks', {}))
+    fk_ports = [key for key, val in combined_fks.items() if
+                val == connect_table or (isinstance(val, dict) and val.get('ref_table') == connect_table)]
+    if len(fk_ports) > 1:
+        print(f'error multiple ports possible for connect!'
+              f' the connection was: {connect_table} -> {original_table}.'
+              f' defaulting to first option')
+    return fk_ports[0]
