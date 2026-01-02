@@ -1,21 +1,27 @@
-"""
-Marshmallow-SQLAlchemy schema generator for database models.
-Auto-generates schemas for all SQLAlchemy models in db_models.
-"""
-from marshmallow_sqlalchemy import SQLAlchemyAutoSchema, SQLAlchemySchema
-from marshmallow import fields, validate, ValidationError, EXCLUDE
-from sqlalchemy import inspect, create_engine
+
+import os
+import sqlite3
+from collections import defaultdict
+import json
+
+from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
+from marshmallow import EXCLUDE
+from marshmallow import pre_load
+from sqlalchemy import create_engine, insert, Integer, Boolean, inspect
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy.sql.elements import TextClause, ClauseElement
+from sqlalchemy import text as sqla_text
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.dialects import sqlite
 
-import db_models
+from model import query_mod_db, organise_entries, load_files, make_hash
+from graph.db_spec_singleton import db_spec, ages
+from stats import gather_effects
 
-db_path = "resources/antiquity-db.sqlite"       # TODO make this change on age transition
-engine = create_engine(f"sqlite:///{db_path}")
-
-Session = sessionmaker(bind=engine)
-session = Session()
+with open('resources/PreBuiltData.json', 'r') as f:
+    prebuilt = json.load(f)
 
 
 class BaseSchema(SQLAlchemyAutoSchema):
@@ -30,157 +36,10 @@ class BaseSchema(SQLAlchemyAutoSchema):
 _schema_cache = {}
 
 
-def get_schema_for_table(table_name):
-    """
-    Get or create a Marshmallow schema for a given table name.
-
-    Args:
-        table_name: Name of the database table
-
-    Returns:
-        A Marshmallow schema class for the table
-    """
-    if table_name in _schema_cache:
-        return _schema_cache[table_name]
-
-    # Find the model class for this table
-    model_class = None
-
-    # Check all attributes in db_models module
-    for attr_name in dir(db_models):
-        # Skip private attributes
-        if attr_name.startswith('_'):
-            continue
-
-        attr = getattr(db_models, attr_name)
-
-        # Check if it's a SQLAlchemy model class (has __tablename__)
-        if isinstance(attr, type) and hasattr(attr, '__tablename__'):
-            if attr.__tablename__ == table_name:
-                model_class = attr
-                break
-        # Check for Table objects (like t_AdvancedStartArmyUnits)
-        elif hasattr(attr, 'name') and attr.name == table_name:
-            # This is a Table object, we'll need to use ORM classes
-            # Don't break, continue to check ORM classes
-            pass
-
-    if model_class is None:
-        # Try to find it in the ORM classes dict (for Table objects or imperatively mapped classes)
-        try:
-            from ORM import classes
-            if table_name in classes:
-                model_class = classes[table_name]
-        except ImportError:
-            pass
-
-        # Last resort: try to find by matching table name in db_models Table objects
-        if model_class is None:
-            for attr_name in dir(db_models):
-                if attr_name.startswith('t_'):
-                    attr = getattr(db_models, attr_name)
-                    if hasattr(attr, 'name') and attr.name == table_name:
-                        # Use ORM class if available
-                        try:
-                            from ORM import classes
-                            if table_name in classes:
-                                model_class = classes[table_name]
-                                break
-                        except ImportError:
-                            pass
-
-        if model_class is None:
-            raise ValueError(f"No model found for table '{table_name}'")
-
-    # Create schema dynamically
-    schema_class_name = f"{table_name}Schema"
-
-    class TableSchema(BaseSchema):
-        class Meta:
-            model = model_class
-            unknown = EXCLUDE
-            load_instance = True
-            sqla_session = session
-
-    _schema_cache[table_name] = TableSchema
-    return TableSchema
-
-
-def validate_table_data(table_name, data, partial=True):
-    """
-    Validate data against a table's schema.
-
-    Args:
-        table_name: Name of the database table
-        data: Dictionary of field names to values
-        partial: If True, only validate provided fields (default: True)
-
-    Returns:
-        tuple: (is_valid: bool, errors: dict)
-        errors is a dictionary mapping field names to error messages
-    """
-    try:
-        schema = get_schema_for_table(table_name)
-        schema_instance = schema(partial=partial)
-
-        errors = schema_instance.validate(data)
-
-        if errors:
-            return False, errors
-        return True, {}
-    except Exception as e:
-        return False, {'_schema': [str(e)]}
-
-
-def validate_field(table_name, field_name, field_value, all_data=None):
-    """
-    Validate a single field value.
-
-    Args:
-        table_name: Name of the database table
-        field_name: Name of the field to validate
-        field_value: Value to validate
-        all_data: Optional dictionary of all field values (for context-dependent validation)
-
-    Returns:
-        tuple: (is_valid: bool, error_message: str or None)     TODO currently returning error if any val in insert fails
-    """                                                         # not just itself
-    if all_data is None:
-        all_data = {}
-
-    # Skip validation for empty strings (handled by nullable constraints)
-    # Convert empty strings to None for validation
-    if field_value == '' or field_value is None:
-        field_value = None
-
-    # Create a partial data dict with just this field
-    data = {field_name: field_value}
-
-    # Merge with all_data for context
-    data.update(all_data)
-    data[field_name] = field_value  # Ensure our field value takes precedence
-
-    # Remove empty string values from all_data for cleaner validation
-    cleaned_data = {k: (None if v == '' else v) for k, v in data.items() if v is not None or v == ''}
-    # deal with checkbox bools
-    cleaned_data = {k: int(v) if isinstance(v, bool) else v for k, v in cleaned_data.items()}
-    try:
-        is_valid, errors = validate_table_data(table_name, cleaned_data, partial=True)
-
-        if not is_valid:
-            field_errors = errors.get(field_name, [])
-            if field_errors:
-                return False, '; '.join(field_errors) if isinstance(field_errors, list) else str(field_errors)
-            return False, 'Validation failed'
-
-        return True, None
-    except Exception as e:
-        # If schema generation fails, don't block the user to avoid breaking UI
-        return True, None
-
-
 class SchemaInspector:
     """ Class to handle inspect columns and data types """
+    Base = None
+    session = None
     pk_map = {}
     fk_to_tbl_map = {}
     fk_to_pk_map = {}
@@ -190,18 +49,44 @@ class SchemaInspector:
     default_map = {}
     odd_constraint_map = {}
     required_map = {}
+    less_important_map = {}
+    engine_dict = {}
+    mod_setup = {}
+    include_mods = False
 
     def __init__(self):
-        models = {key:val for key, val in db_models.Base.registry._class_registry.items() if hasattr(val, "__table__")}
-        self.pk_map = {model_name:  [i.name for i in model.__table__.primary_key.columns] for model_name, model in models.items()}
-        self.fk_to_tbl_map = {model_name: {i.name: list(i.foreign_keys)[0].column.table.name
-                                    for i in model.__table__.columns if len(i.foreign_keys) > 0} for model_name, model in models.items()}
-        self.fk_to_pk_map = {model_name: {i.name: list(i.foreign_keys)[0].column.name
-                                    for i in model.__table__.columns if len(i.foreign_keys) > 0} for model_name, model in models.items()}
-        internal_fk_map = {model_name: {i.name: {j.column.table.name: j.column.name for j in i.foreign_keys}
-                                    for i in model.__table__.columns if len(i.foreign_keys) > 0} for model_name, model in models.items()}
+        # setup simple entry validation
+        self.Base, self.session, self.empty_engine = self.engine_instantiation('resources/created-db.sqlite')
+
+        tables = self.Base.metadata.tables
+        self.metadata = self.Base.metadata
+
+        self.pk_map = {name: [c.name for c in table.primary_key.columns] for name, table in tables.items()}
+
+        self.fk_to_tbl_map = { name: {c.name: list(c.foreign_keys)[0].column.table.name
+                                       for c in table.columns if c.foreign_keys}
+            for name, table in tables.items()
+        }
+
+        self.fk_to_pk_map = {name: {c.name: list(c.foreign_keys)[0].column.name
+                                    for c in table.columns if c.foreign_keys
+            }
+            for name, table in tables.items()
+        }
+
+        internal_fk_map = {
+            name: {
+                c.name: {
+                    fk.column.table.name: fk.column.name
+                    for fk in c.foreign_keys
+                }
+                for c in table.columns if c.foreign_keys
+            }
+            for name, table in tables.items()
+        }
+
         self.pk_ref_map = {}
-        for model_name, model in models.items():
+        for model_name, model in tables.items():
             for ref_tbl, fk_refs in internal_fk_map.items():
                 for fk_col, pk_info in fk_refs.items():
                     if len(pk_info) > 1:
@@ -221,19 +106,298 @@ class SchemaInspector:
                         else:
                             self.pk_ref_map[model_name]['col_first'][pk_col].append(ref_tbl)
 
-        self.type_map = {model_name:  {col.name: col.type for col in model.__table__.columns} for model_name, model in models.items()}
-        self.nullable_map = {model_name:  {col.name: col.nullable for col in model.__table__.columns} for model_name, model in models.items()}
-        self.default_map = {model_name: {col.name: extract_server_default(col) for col in model.__table__.columns if
-                                         col.server_default is not None} for model_name, model in models.items()}
+        insp = inspect(self.empty_engine)
+        basic_defaults = {tbl: {info['name']: info['default'] for info in insp.get_columns(tbl)} for tbl, val in
+                                 tables.items()}
+        self.type_map = {model_name:  {col.name: col.type.python_type() for col in model.columns}
+                         for model_name, model in tables.items()}
+        self.nullable_map = {model_name:  {col.name: col.nullable for col in model.columns}
+                             for model_name, model in tables.items()}
+        self.default_map = {tbl: {col.name: extract_server_default(col, basic_defaults[tbl][col.name]) for col in model.columns if
+                                         col.server_default is not None} for tbl, model in tables.items()}
         self.odd_constraint_map = {model_name:  [[c.name for c in constraint.columns]
-                             for constraint in model.__table__.constraints if isinstance(constraint, UniqueConstraint)]
-               for model_name, model in models.items()}
+                             for constraint in model.constraints if isinstance(constraint, UniqueConstraint)]
+               for model_name, model in tables.items()}
 
-        self.required_map = {model_name: {col.name: True for col in model.__table__.columns if
-                                         col.server_default is None and not col.nullable} for model_name, model in models.items()}
+        self.required_map = {tbl: {col.name: True for col in model.columns if
+                                         col.server_default is None and not col.nullable and basic_defaults[tbl][col.name] is None}
+                             for tbl, model in tables.items()}
+        self.less_important_map = {tbl: [col.name for col in model.columns
+                           if col.name not in self.required_map[tbl] and col.name not in self.pk_map[tbl]]
+                     for tbl, model in tables.items()}
+
+    def engine_instantiation(self, db_path):
+        empty_engine = self.make_base_db(db_path)
+        Base = automap_base()
+
+        def no_relationships(*args, **kwargs):
+            return None
+
+        Base.prepare(
+            autoload_with=empty_engine,
+            generate_relationship=no_relationships,
+        )
+        Session = sessionmaker(bind=empty_engine)
+        return Base, Session(), empty_engine
+
+    def validate_field(self, table_name, field_name, field_value, all_data=None):
+        """
+        Validate a single field value.
+
+        Args:
+            table_name: Name of the database table
+            field_name: Name of the field to validate
+            field_value: Value to validate
+            all_data: Optional dictionary of all field values (for context-dependent validation)
+
+        Returns:
+            tuple: (is_valid: bool, error_message: str or None)     TODO currently returning error if any val in insert fails
+        """  # not just itself
+        if all_data is None:
+            all_data = {}
+
+        if field_value == '' or field_value is None:  # Convert empty strings to None for validation
+            field_value = None
+
+        data = {field_name: field_value}
+        data.update(all_data)  # Merge with all_data for context
+        data[field_name] = field_value  # Ensure our field value takes precedence
+
+        # Remove empty string values from all_data for cleaner validation
+        cleaned_data = {k: (None if v == '' else v) for k, v in data.items() if v is not None or v == ''}
+        # deal with checkbox bools
+        cleaned_data = {k: int(v) if isinstance(v, bool) else v for k, v in cleaned_data.items()}
+        try:
+            is_valid, errors = self.validate_table_data(table_name, cleaned_data, partial=True)
+
+            if not is_valid:
+                field_errors = errors.get(field_name, [])
+                if field_errors:
+                    return False, '; '.join(field_errors) if isinstance(field_errors, list) else str(field_errors)
+                return False, 'Validation failed'
+
+            return True, None
+        except Exception as e:
+            return True, None  # If schema generation fails, don't block the user to avoid breaking UI
+
+    def validate_table_data(self, table_name, data, partial=True):
+        """
+        Validate data against a table's schema.
+
+        Args:
+            table_name: Name of the database table
+            data: Dictionary of field names to values
+            partial: If True, only validate provided fields (default: True)
+
+        Returns:
+            tuple: (is_valid: bool, errors: dict)
+            errors is a dictionary mapping field names to error messages
+        """
+        try:
+            schema = self.get_schema_for_table(table_name)
+            schema_instance = schema(partial=partial)
+
+            errors = schema_instance.validate(data)
+
+            if errors:
+                return False, errors
+            return True, {}
+        except Exception as e:
+            return False, {'_schema': [str(e)]}
+
+    def get_schema_for_table(self, table_name):
+        """
+        Get or create a Marshmallow schema for a given table name.
+
+        Args:
+            table_name: Name of the database table
+
+        Returns:
+            A Marshmallow schema class for the table
+        """
+        if table_name in _schema_cache:
+            return _schema_cache[table_name]
+
+        model_class = self.Base.classes[table_name]
+
+        class TableSchema(BaseSchema):
+            class Meta:
+                model = model_class
+                unknown = EXCLUDE
+                load_instance = True
+                sqla_session = self.session
+
+            @pre_load
+            def normalize_empty_strings(self, data, **kwargs):
+                table = model_class.__table__
+
+                for name, value in list(data.items()):
+                    if value != "":
+                        continue
+
+                    col = table.columns.get(name)
+                    if col is None:
+                        continue
+
+                    if isinstance(col.type, Integer):
+                        data[name] = None
+
+                    elif isinstance(col.type, Boolean):
+                        data[name] = False
+
+                    else:
+                        data[name] = None
+
+                return data
+
+        _schema_cache[table_name] = TableSchema
+        return TableSchema
+
+    def state_validation_setup(self, age):
+        if age in self.engine_dict:     # setup db state validation
+            return False
+        else:
+            path = f"resources/gameplay-base"
+            if db_spec.patch_change:
+                # we do all 3 ages
+                for age_type in ages:
+                    engine = self.make_base_db(f"{path}_{age_type}.sqlite")
+                    database_entries = query_mod_db(age=age_type)
+                    modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
+                    sql_statements_dlc, missed_dlc = load_files(dlc_files, 'DLC')
+                    dlc_status_info = lint_database(engine, sql_statements_dlc, keep_changes=True)
+                    if self.include_mods:
+                        sql_statements_mods, missed_mods = load_files(modded, 'Mod')
+                        mod_status_info = lint_database(engine, sql_statements_mods, keep_changes=True)
+                    self.engine_dict[age_type] = engine
+                gather_effects(self.engine_dict)
+                # also do the stats checks
+            else:
+                engine = create_engine(f"sqlite:///{path}_{age}.sqlite")     # already built
+                self.engine_dict[age] = engine
+
+    def state_validation_mod_setup(self, age):               # same but for mods
+        database_entries = query_mod_db(age=age)
+        modded_short, modded_files, dlc, dlc_files = organise_entries(database_entries)
+        # if mod setup is different, so should we we need to reset db
+        database_entries = query_mod_db(age=age)
+        modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
+        engine = self.engine_dict[age]
+        sql_statements_mods, missed_mods = load_files(modded, 'Mod')
+        mod_status_info = lint_database(engine, sql_statements_mods, keep_changes=True)
+
+    def filter_columns(self, table_name, data, skip_defaults=False):
+        cols = {c.key: c for c in self.metadata.tables[table_name].columns}
+
+        non_default_entries = {}
+        for k, v in data.items():
+            if k not in cols:
+                continue
+
+            if skip_defaults:
+                col = cols[k]
+                default = None
+                if col.default is not None and col.default.is_scalar:
+                    default = col.default.arg
+                if v == default:
+                    continue
+
+            non_default_entries[k] = v
+        return non_default_entries
+
+    def convert_ui_dict_to_text_sql(self, ui_dict, table_name):
+        filtered = self.filter_columns(table_name, ui_dict, skip_defaults=True)
+        table = self.Base.metadata.tables[table_name]
+        bad = self.find_literal_mismatches(table, filtered, sqlite.dialect())
+
+        if len(bad) > 0:
+            print(f'fails for table {table_name}')
+        for name, coltype, value, err in bad:
+            print(name, coltype, repr(value))
+
+        stmt = insert(self.Base.metadata.tables[table_name]).values(**filtered)
+        sql = stmt.compile(dialect=sqlite.dialect(), compile_kwargs={"literal_binds": True})
+        return str(sql)
+
+    def normalize_node_bools(self, entry, table_name):
+        table = self.metadata.tables.get(table_name)
+        if table is None:
+            return entry
+
+        for name, value in entry.items():
+            if not isinstance(value, str):
+                continue
+
+            col = table.c.get(name)
+            if col is None or not isinstance(col.type, Boolean):
+                continue
+
+            v = value.strip().lower()
+            if v in ("true", "1", "yes", "on"):
+                entry[name] = True
+            elif v in ("false", "0", "no", "off", ""):
+                entry[name] = False
+
+        return entry
 
 
-def extract_server_default(col):
+    @staticmethod
+    def find_literal_mismatches(table, values, dialect):
+        mismatches = []
+
+        for name, value in values.items():
+            col = table.c.get(name)
+            if col is None:
+                continue
+
+            if value is None:
+                continue
+
+            try:
+                col.type.literal_processor(dialect)(value)
+            except Exception as e:
+                mismatches.append((name, col.type, value, e))
+
+        return mismatches
+
+    @staticmethod
+    def make_base_db(db_path):
+        if os.path.exists(db_path):
+            os.remove(db_path)
+        conn = sqlite3.connect(db_path)
+        with open(f"{db_spec.civ_install}/Base/Assets/schema/gameplay/01_GameplaySchema.sql", 'r') as f:
+            query_tables = f.read()
+        cur = conn.cursor()
+        conn.create_function("Make_Hash", 1, make_hash)  # setup hash
+        cur.executescript(query_tables)
+        table_name = 'UnitAbilityModifiers'
+        cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}';")
+        rows = cur.fetchall()
+        # setup prebuilt entries
+        engine = create_engine(f"sqlite:///{db_path}")
+        with engine.begin() as conn_engine:
+            conn_engine.connection.create_function("Make_Hash", 1, make_hash)  # setup hash
+            for table_name, table_entries in prebuilt.items():
+                # I WISH i could use mallow-alchemy for this, but for some reason it clears entries
+                # due to a mismatch where the Type column isnt included in schema because its reserved?
+                # anyways causes problems with GameEffects table since its PK is Type
+                columns = ", ".join(table_entries[0].keys())
+                params = ", ".join(f":{k}" for k in table_entries[0].keys())
+                sql = sqla_text(f"""
+                INSERT INTO {table_name}
+                ({columns})
+                VALUES
+                ({params})
+                """)
+                conn_engine.execute(sql, table_entries)
+
+        conn.close()
+        return engine
+
+
+def extract_server_default(col, engine_default):
+    if engine_default is not None:
+        return engine_default
     sd = col.server_default
     if sd is None:
         return None
@@ -251,8 +415,72 @@ def extract_server_default(col):
 
     if isinstance(arg, ClauseElement):
         return str(arg)
-
     return arg
 
-SchemaInspectorAntiquity = SchemaInspector()
 
+def lint_database(engine, sql_command_dict, keep_changes=False):
+    Session = sessionmaker(bind=engine)
+
+    with engine.connect() as conn:
+        conn.connection.create_function("Make_Hash", 1, make_hash)
+        trans = conn.begin()
+        session = Session(bind=conn)
+        try:
+            results = defaultdict(list)
+            for file_name, sql_command_list in sql_command_dict.items():
+                for sql in sql_command_list:
+                    try:
+                        session.execute(sqla_text(sql))
+                        results[file_name].append((sql, None))
+                    except SQLAlchemyError as e:
+                        results[file_name].append((sql, str(e)))
+
+            session.execute(sqla_text("PRAGMA foreign_keys = ON"))
+
+            fk_errors = session.execute(sqla_text("PRAGMA foreign_key_check")).all()
+
+            integrity = session.execute(sqla_text("PRAGMA integrity_check")).scalar()
+            lint_info = {"results": results, "foreign_key_errors": fk_errors,"integrity": integrity}
+            return lint_info
+
+        finally:
+            session.close()
+            if len(lint_info['foreign_key_errors']) > 0 or lint_info['integrity'] != 'ok':
+                explained_error_dict, bad_rows_dict = explain_errors(lint_info['foreign_key_errors'], session)
+                lint_info['fk_error_explanations'] = {'title_errors': explained_error_dict, 'bad_commands': bad_rows_dict}
+            if keep_changes:
+                trans.commit()
+            else:
+                trans.rollback()
+
+
+def explain_errors(error_info_list, session):
+    error_table_indices = defaultdict(list)
+    for i in error_info_list:
+        info_list = list(i)
+        insertion_table, insertion_index = info_list[0], info_list[1]
+        primary_key_table = info_list[2]
+        fk_column_index = info_list[3]
+        fk_col = db_spec.node_templates[insertion_table]['all_cols'][fk_column_index]
+        error_table_indices[(insertion_table, primary_key_table, fk_col)].append(insertion_index)
+
+    explained_error_dict = {}
+    bad_rows_dict = defaultdict(list)
+    for error_tuple, indices_list in error_table_indices.items():
+        insertion_table, primary_key_table, fk_col = error_tuple[0], error_tuple[1], error_tuple[2]
+        primary_keys = db_spec.node_templates[insertion_table].get("primary_keys")
+        pk_string = ", ".join(primary_keys)
+        indices_string = ", ".join([str(i) for i in indices_list])
+        rows = session.execute(sqla_text(f"SELECT {pk_string} FROM {insertion_table} WHERE rowid IN ({indices_string});")).fetchall()
+        bad_rows_dict[error_tuple].append(rows)
+        explained_error_dict[error_tuple] = f"FOREIGN KEY missing on {insertion_table}.{fk_col}. It needs a corresponding primary key on table {primary_key_table}."
+    return explained_error_dict, bad_rows_dict
+
+
+def check_valid_sql_against_db(age, sql_commands):
+    SQLValidator.state_validation_setup(age)
+    result_info = lint_database(SQLValidator.engine_dict[age], {'main.sql': sql_commands}, keep_changes=False)
+    return result_info
+
+
+SQLValidator = SchemaInspector()

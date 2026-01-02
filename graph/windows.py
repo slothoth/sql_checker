@@ -1,6 +1,8 @@
-from PyQt5 import QtWidgets
+from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QCheckBox, QLabel, QWidget, QApplication)
 from graph.db_node_support import sync_node_options_all, set_nodes_visible_by_type
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QCheckBox)
+from schema_generator import SQLValidator
+
 
 class MetaStore:
     @staticmethod
@@ -44,7 +46,6 @@ class MetadataDialog(QtWidgets.QDialog):
         self.mod_uuid.setText(MetaStore.get(graph, "Mod UUID", ""))
         self.mod_action_id.setText(MetaStore.get(graph, "Mod Action", ""))
         self.mod_age.setCurrentText(MetaStore.get(graph, "Age", "AGE_ANTIQUITY"))
-
         self.hide_types.setChecked(MetaStore.get(graph, "Hide Types", False))
 
         meta_group = QtWidgets.QGroupBox("Metadata")
@@ -60,10 +61,8 @@ class MetadataDialog(QtWidgets.QDialog):
 
         graph_group = QtWidgets.QGroupBox("Graph")
         graph_setting_layout = QtWidgets.QFormLayout(graph_group)
-
         graph_setting_layout.addRow("Hide Types", self.hide_types)
         layout.addWidget(graph_group)
-
 
         buttons = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel
@@ -85,8 +84,10 @@ class MetadataDialog(QtWidgets.QDialog):
         MetaStore.set(self.graph, "Hide Types", self.hide_types.isChecked())
 
         if old_age != self.mod_age.currentText():
+            db_spec.update_age
             sync_node_options_all(self.graph)
-
+            SQLValidator.state_validation_setup(self.mod_age.currentText())
+            # SQLValidator.state_validation_mod_setup(self.mod_age.currentText())
         hide = self.hide_types.isChecked()
         set_nodes_visible_by_type(self.graph, 'db.table.types.TypesNode', not hide)
         super().accept()
@@ -119,10 +120,63 @@ class ComboDialog(QDialog):
             layout.addWidget(mod_tick)
             self.mod_items.append(mod_tick)
 
-
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         self.age = age_combo
+
+
+class Toast(QWidget):
+    def __init__(self, message, parent=None, duration=2000):
+        super().__init__(parent)
+
+        self.setWindowFlags(
+            QtCore.Qt.Tool |
+            QtCore.Qt.FramelessWindowHint |
+            QtCore.Qt.WindowStaysOnTopHint
+        )
+        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
+        self.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
+
+        label = QLabel(message)
+        label.setStyleSheet("""
+            QLabel {
+                color: white;
+                background-color: rgba(40, 40, 40, 220);
+                padding: 10px 14px;
+                border-radius: 6px;
+            }
+        """)
+        label.setFont(QtGui.QFont("Arial", 10))
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(label)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.adjustSize()
+        self.setWindowOpacity(0.0)
+
+        self.anim = QtCore.QPropertyAnimation(self, b"windowOpacity")
+        self.anim.setDuration(250)
+        self.anim.setStartValue(0.0)
+        self.anim.setEndValue(1.0)
+        self.anim.start()
+
+        QtCore.QTimer.singleShot(duration, self.fade_out)
+
+    def fade_out(self):
+        self.anim = QtCore.QPropertyAnimation(self, b"windowOpacity")
+        self.anim.setDuration(300)
+        self.anim.setStartValue(1.0)
+        self.anim.setEndValue(0.0)
+        self.anim.finished.connect(self.close)
+        self.anim.start()
+
+    def show_at_bottom_right(self, margin=20):
+        screen = QApplication.primaryScreen().availableGeometry()
+        x = screen.right() - self.width() - margin
+        y = screen.bottom() - self.height() - margin
+        self.move(x, y)
+        self.show()
 
 
 def get_combo_value(parent, age_list, mod_list):

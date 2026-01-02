@@ -40,3 +40,27 @@
 --- Check that layout is done correctly
 --- Check that connections are made correctly
 '''
+
+import time
+
+from schema_generator import check_valid_sql_against_db
+from graph.transform_json_to_sql import transform_json
+from schema_generator import SQLValidator
+
+
+def test_state_validation_fail_fk():
+    start_time = time.time()
+    sql_commands = transform_json('test/test_data/test_graph.json')
+    result = check_valid_sql_against_db('AGE_ANTIQUITY', sql_commands)
+    assert len(result['foreign_key_errors']) == 2
+    assert (result['fk_error_explanations']['title_errors'][('TraitModifiers', 'Modifiers', 'ModifierId')] ==
+            'FOREIGN KEY missing on TraitModifiers.ModifierId. It needs a corresponding primary key on table Modifiers.')
+    assert (result['fk_error_explanations']['title_errors'][('UnitAbilityModifiers', 'Modifiers', 'ModifierId')] ==
+            'FOREIGN KEY missing on UnitAbilityModifiers.ModifierId. It needs a corresponding primary key on table Modifiers.')
+    end_time = time.time()
+    print(end_time - start_time)        # should be like 0.05 seconds, neglible
+
+
+def test_map_age_databases():
+    SQLValidator.state_validation_setup('testfake')
+

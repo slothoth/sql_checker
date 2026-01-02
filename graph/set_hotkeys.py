@@ -1,14 +1,10 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
 import sys, os, json, shutil
 
-
-from filepath_utils import find_civ_config
 from graph.db_node_support import NodeCreationDialog
-from graph.model_positioning import force_forward_spring_graphs
 from graph.transform_json_to_sql import transform_json, start_analysis_graph, make_modinfo
-from graph.db_spec_singleton import ResourceLoader
-
-db_spec = ResourceLoader()
+from schema_generator import check_valid_sql_against_db
+from graph.db_spec_singleton import db_spec
 
 # This file exists because the convenience method for doing hotkeys dies in packaged executables
 
@@ -118,12 +114,14 @@ def save_session(graph):
     """
     Prompts a file save dialog to serialize a session if required.
     """
+    from graph.windows import Toast
     current = graph.current_session()
     if current:
         graph.save_session(current)
         msg = 'Session layout saved:\n{}'.format(current)
         viewer = graph.viewer()
-        viewer.message_dialog(msg, title='Session Saved')
+        t = Toast("Session Saved")
+        t.show_at_bottom_right()
     else:
         save_session_as(graph)
 
@@ -254,9 +252,11 @@ def expand_group_node(graph):
     """
     Expand selected group node.
     """
+    from graph.windows import Toast
     selected_nodes = graph.selected_nodes()
     if not selected_nodes:
-        graph.message_dialog('Please select a "GroupNode" to expand.')
+        t = Toast('Please select a "GroupNode" to expand.')
+        t.show_at_bottom_right()
         return
     graph.expand_group_node(selected_nodes[0])
 
@@ -421,19 +421,35 @@ def create_dynamic_node_with_search(graph):
     node = graph.create_node(f'db.table.{name.lower()}.{class_name}', pos=[scene_pos.x(), scene_pos.y()])
 
 
+def create_modifier_game_effects(graph):
+    viewer = graph.viewer()
+    pos = viewer.mapToGlobal(QtGui.QCursor.pos())
+    scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
+    node = graph.create_node('db.game_effects.GameEffectNode', pos=[scene_pos.x(), scene_pos.y()])
+
+
+def create_requirement_game_effects(graph):
+    viewer = graph.viewer()
+    pos = viewer.mapToGlobal(QtGui.QCursor.pos())
+    scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
+    node = graph.create_node('db.game_effects.RequirementEffectNode', pos=[scene_pos.x(), scene_pos.y()])
+
+
 def test_session(graph):
     """
     Tests the given graph against the database by converting it to SQL. During this process,
     we save it to serialise to JSON, so we can use that structure to build SQL form.
     """
-    current = graph.current_session()
-    if not current:
-        current = 'resources/graph.json'
-
+    current = graph.current_session() or 'resources/graph.json'
     graph.save_session(current)
-    transform_json(current)
-    start_analysis_graph(graph.main_window)
-    viewer = graph.viewer()
+    sql_lines = transform_json(current)
+    # save SQL, then trigger main run model
+    write_sql(sql_lines)
+    # start_analysis_graph(graph.main_window)           # deprecated, we wanna test with alchemy
+    age = graph.property('meta').get('Age')
+    push_to_log(graph, f'Testing mod for: {age}')
+    data = check_valid_sql_against_db(age, sql_lines)
+    extract_state_test(graph, data)
     graph.main_window.showNormal()
     graph.main_window.raise_()
     graph.main_window.activateWindow()
@@ -444,16 +460,18 @@ def save_session_to_mod(graph, parent=None):
     Saves the session, converts to SQL, and packages into a new folder with a template .modinfo
     with a unique uuid? For this i assume we will need to
     """
+    from graph.windows import Toast
     current = graph.current_session()
     if not current:
         current = 'resources/graph.json'
 
     graph.save_session(current)
-    transform_json(current)
+    sql_lines = transform_json(current)
+    write_sql(sql_lines)
 
     # if local mod dir exists, use that
     base_home = os.path.expanduser("~")
-    civ_mods_path = find_civ_config() + '/Mods'
+    civ_mods_path = db_spec.civ_config + '/Mods'
     if not os.path.exists(civ_mods_path):
         civ_mods_path = QtWidgets.QFileDialog.getExistingDirectory(
             parent,
@@ -472,7 +490,8 @@ def save_session_to_mod(graph, parent=None):
 
     with open(os.path.join(target, f"{mod_name}.modinfo"), "w", encoding="utf-8") as f:
         f.write(template)
-    graph.message_dialog(f'Saved Mod to mods folder {target}', title='Mod Saved')
+    t = Toast(f'Saved Mod to mods folder {target}')
+    t.show_at_bottom_right()
 
 
 def import_mod(graph):
@@ -481,24 +500,29 @@ def import_mod(graph):
     """
     from PyQt5.QtWidgets import QFileDialog
     from PyQt5.QtCore import QUrl
-    from filepath_utils import find_civ_config
     from graph.mod_conversion import parse_mod_folder
+    from graph.windows import Toast
 
     dlg = QFileDialog(graph.viewer(), "Select Folder")
     dlg.setFileMode(QFileDialog.Directory)
     dlg.setOption(QFileDialog.ShowDirsOnly, True)
-    mod_dir = find_civ_config() + '/Mods'
+    mod_dir = db_spec.civ_config + '/Mods'
     dlg.setDirectoryUrl(QUrl.fromLocalFile(mod_dir))
     dlg.exec()
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
     if path is not None:
         mod_info_found = parse_mod_folder(path, graph)
-        if mod_info_found:
+        if mod_info_found is not None:
             layout_graph_down(graph)
+            graph.auto_layout_nodes()           # layout centre
+            graph.select_all()
+            graph.fit_to_selection()
+            graph.clear_selection()
+            t = Toast('Finished loading Mod')
+            t.show_at_bottom_right()
         else:
-            graph.message_dialog(f'No Modinfo found in folder {path}', title='Mod Not Loaded')
-    graph.auto_layout_nodes()
-    graph.message_dialog('Finished loading Mod', title='Mod Loaded')
+            t = Toast(f'No Modinfo found in folder {path}, or age not set.')
+            t.show_at_bottom_right()
 
 
 def open_settings(graph):
@@ -507,3 +531,26 @@ def open_settings(graph):
 
     if dialog.exec_() != QtWidgets.QDialog.Accepted:
         return None
+
+
+def write_sql(sql_lines):
+    # save SQL, then trigger main run model
+    with open('resources/main.sql', 'w') as f:
+        f.writelines(sql_lines)
+
+
+def extract_state_test(graph, data):
+    if data.get('fk_error_explanations') is not None:
+        for tuple_key, val in data['fk_error_explanations']['title_errors'].items():
+            push_to_log(graph, val)
+            for error_list in data['fk_error_explanations']['bad_commands'][tuple_key]:
+                for error in error_list:
+                    push_to_log(graph, error)            # instead we should use red highlight on bad entries and cols
+    else:
+        push_to_log(graph, 'Valid mod setup')
+
+
+def push_to_log(graph, message):
+    graph.main_window.log_display.appendPlainText(str(message))  # ensure plain text insertion so the highlighter can run
+    cursor = graph.main_window.log_display.textCursor()  # keep view scrolled to bottom
+    graph.main_window.log_display.setTextCursor(cursor)

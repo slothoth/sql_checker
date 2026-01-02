@@ -1,32 +1,18 @@
 import sqlite3
 from copy import deepcopy
-
-from graph.db_spec_singleton import ResourceLoader
-
-db_spec = ResourceLoader()
-
-
-class GraphModel:
-    nodes = []
-    edges = []
-
-    def __init__(self, database_path):
-        self.DatabaseModel = BaseDB(database_path)
-        self.DatabaseModel.setup_table_infos(database_path)
-        self.DatabaseModel.fix_firaxis_missing_bools()
-
-        self.DatabaseModel.fix_firaxis_missing_fks(database_path)
-        db_spec.update_node_templates(self.DatabaseModel.table_data)
-        self.DatabaseModel.dump_unique_pks(database_path)
-
-    def to_dict(self):
-        return {"nodes": self.nodes, "edges": self.edges}
-
-    def from_dict(self, data):
-        self.nodes = data.get("nodes", [])
-        self.edges = data.get("edges", [])
+import pandas as pd
+from sqlalchemy import create_engine
+from sqlalchemy.ext.automap import automap_base
+from sqlalchemy.orm import sessionmaker, configure_mappers
+from sqlalchemy import text as SQLA_text
+from sqlalchemy.exc import SQLAlchemyError
 
 
+from model import query_mod_db, organise_entries, load_files, make_hash
+from graph.db_spec_singleton import db_spec
+
+
+# harvests information from a prebuilt database using Civ VII loading.
 class BaseDB:
     def __init__(self, full_path):
         self.table_data = {}
@@ -64,10 +50,8 @@ class BaseDB:
                 if ref_table in self.tables:
                     self.table_data[table]['foreign_keys'][table_col] = ref_table
                     if not self.table_data[ref_table].get('backlink_fk', False):
-                        self.table_data[ref_table]['backlink_fk'] = {}
-                    if og_col not in self.table_data[ref_table]['backlink_fk']:
-                        self.table_data[ref_table]['backlink_fk'][og_col] = []
-                    self.table_data[ref_table]['backlink_fk'][og_col].append(table)         # for backlinks
+                        self.table_data[ref_table]['backlink_fk'] = []
+                    self.table_data[ref_table]['backlink_fk'].append(table)         # for backlinks
 
         conn.close()
 
@@ -89,7 +73,8 @@ class BaseDB:
                     double_keys.append(table)
 
             for table in self.tables:
-                foreign_keys = self.table_data[table]['foreign_keys']
+                foreign_keys = self.table_data[table]['foreign_keys'].copy()
+                foreign_keys.update({key: val['ref_table'] for key, val in self.table_data[table].get('extra_fks', {}).items()})
                 for fk, table_ref in foreign_keys.items():
                     if table_ref == 'Types':        # SKIP Types reference! Makes huge possible vals
                         continue
@@ -122,7 +107,7 @@ class BaseDB:
 
         for table, cols in all_possible_vals.items():       # setify for uniques
             for col_name, unique_vals in cols.items():
-                if isinstance(col_name, dict):
+                if isinstance(unique_vals, dict):
                     all_possible_vals[table][col_name]['vals'] = list(set(all_possible_vals[table][col_name]['vals']))
                 else:
                     all_possible_vals[table][col_name] = list(set(all_possible_vals[table][col_name]))
@@ -154,10 +139,8 @@ class BaseDB:
                     for pk_tbl in pk_tables:
                         if pk_tbl == table:
                             continue
-                        if pk_col in self.table_data[table].get('backlink_fk', {}) and pk_tbl in self.table_data[table]['backlink_fk'][pk_col]:
+                        if pk_tbl in self.table_data[table].get('backlink_fk', []):
                             continue
-                        # if the Adjacency_YieldChanges.ID is a fk of Constructible_WildcardAdjacencies.YieldChangeId
-                        #       table.col                             pk_tbl.pk_col
                         viol = fk_violations(conn, table, col, pk_tbl, pk_col)
                         matches = fk_matches(conn, table, col, pk_tbl, pk_col)
                         uniques = count_unique(conn, table, col)
@@ -190,7 +173,7 @@ class BaseDB:
                         ref_table = fk_info_list[0]['table']
                         if 'extra_fks' not in self.table_data[key]:
                             self.table_data[key]['extra_fks'] = {}
-                        self.table_data[key]['extra_fks'][ref_col] = ref_table
+                        self.table_data[key]['extra_fks'][fk_col] = {'ref_column': ref_col, 'ref_table': ref_table}
 
         for key, val in self.table_data.items():
             if val.get('possible_fks', False):
@@ -199,7 +182,6 @@ class BaseDB:
                     if len(fk_info_list) == 1:
                         continue
                     # for plural ones check if the ref table has a primary key
-                    print('')
                     for fk_info in fk_info_list:
                         if fk_info['table'] == 'Types':     # skip Types table
                             continue
@@ -211,13 +193,29 @@ class BaseDB:
 
                         if len(ref_table_info['primary_keys']) == 1:
                             ref_pk = ref_table_info['primary_keys'][0]
-                            if ref_pk not in ref_table_info['foreign_keys'] and ref_pk not in ref_table_info.get('extra_fks', {}):
+                            not_in_ref = ref_pk not in [v.get("ref_column")
+                                                        for v in ref_table_info.get("extra_fks", [])
+                                                        if "ref_column" in v]
+                            if ref_pk not in ref_table_info['foreign_keys'] and not_in_ref:
                                 if 'extra_fks' not in self.table_data[key]:
                                     self.table_data[key]['extra_fks'] = {}
-                                self.table_data[key]['extra_fks'][col] = table
+
+                                self.table_data[key]['extra_fks'][fk_col] = {'ref_column': ref_pk, 'ref_table': table}
+                                # [fk_col] = {'ref_column': ref_col, 'ref_table': ref_table}
 
 
         conn.close()
+        # now get extra backlinks
+        for original_table, val in self.table_data.items():
+            if 'extra_fks' in val:
+                for col, ref_info in val['extra_fks'].items():
+                    ref_table = ref_info['ref_table']
+                    ref_col = ref_info['ref_column']
+                    if 'extra_backlinks' not in self.table_data[ref_table]:
+                        self.table_data[ref_table]['extra_backlinks'] = {}
+                    self.table_data[ref_table]['extra_backlinks'][original_table] = col
+
+        # now we want to work back to get all origin tables, as it helps update things faster in app
         origin_pks = {key: val['primary_keys'][0] for key, val in self.table_data.items()
          if len(val['primary_keys']) == 1 and val['primary_keys'][0] not in val.get('foreign_keys', {}) and
          val['primary_keys'][0] not in val.get('extra_fks', {})}
@@ -225,7 +223,6 @@ class BaseDB:
             if table_name in origin_pks:
                 self.table_data[table_name]['origin_pk'] = True
 
-        # now we want to work back to get all origin tables, as it helps update things faster in app
 
     def fix_firaxis_missing_bools(self):
         result = {}
@@ -244,68 +241,6 @@ class BaseDB:
                     result.setdefault(table, []).append(col)
         for table_name, bool_col_list in result.items():
             self.table_data[table_name]['mined_bools'] = bool_col_list
-
-
-def name_views_hub(views):
-    named_views = []
-    for i, view in enumerate(views, start=1):
-        node_edge_counts = {}
-        for edge in view["edges"]:
-            node_edge_counts[edge["start_node_id"]] = node_edge_counts.get(edge["start_node_id"], 0) + 1
-            node_edge_counts[edge["end_node_id"]] = node_edge_counts.get(edge["end_node_id"], 0) + 1
-
-        hub_node = None
-        if node_edge_counts:
-            hub_node_id, max_edges = max(node_edge_counts.items(), key=lambda x: x[1])
-            if max_edges > 1:  # ensure it actually has more edges than others
-                for n in view["nodes"]:
-                    if n["id"] == hub_node_id:
-                        hub_node = n["texts"][0]  # first line = table name
-                        break
-
-        node_count = len(view["nodes"])
-        base_name = f"View_{i:02d}"
-        if hub_node:
-            name = f"{hub_node} ({node_count})"
-        elif node_count < 3:
-            name = f"{'->'.join(n['texts'][0] for n in view['nodes'])}({node_count})"
-        else:
-            name = f"{base_name} ({node_count})"
-
-        named_views.append({
-            "name": name,
-            "nodes": view["nodes"],
-            "edges": view["edges"]
-        })
-    sort_views = sorted(named_views, key=lambda val: len(val["nodes"]), reverse=True)
-    return sort_views
-
-
-def name_views(views):
-    named_views = []
-    for i, view in enumerate(views, start=1):
-        node_edge_counts = {}
-        for edge in view["edges"]:
-            node_edge_counts[edge["start_node_id"]] = node_edge_counts.get(edge["start_node_id"], 0) + 1
-            node_edge_counts[edge["end_node_id"]] = node_edge_counts.get(edge["end_node_id"], 0) + 1
-
-        root_node = view['name'].replace('View_', '')
-        node_count = len(view["nodes"])
-        base_name = f"View_{i:02d}"
-        if root_node:
-            name = f"{root_node} ({node_count})"
-        elif node_count < 3:
-            name = f"{'->'.join(n['texts'][0] for n in view['nodes'])}({node_count})"
-        else:
-            name = f"{base_name} ({node_count})"
-
-        named_views.append({
-            "name": name,
-            "nodes": view["nodes"],
-            "edges": view["edges"]
-        })
-    sort_views = sorted(named_views, key=lambda val: len(val["nodes"]), reverse=True)
-    return sort_views
 
 
 def fk_violations(conn, from_table, from_col, to_table, to_col):
@@ -345,3 +280,26 @@ def count_unique(conn, table, col):
 def count_null(conn, table, col):
     cur = conn.execute(f"SELECT COUNT(*) FROM {table} WHERE {col} IS NULL")
     return cur.fetchone()[0]
+
+
+def combine_db_df(df_combined, df_to_add):
+    if df_combined is None:
+        df_combined = df_to_add
+    else:
+        df_combined = pd.concat([df_combined, df_to_add], ignore_index=True)
+    return df_combined
+
+# Builds a database using table CREATE defines, and the prebuilt inserted data not in any values
+# this product can then be acted on to build antiquity, exploration or modern databases
+# along with mods on top
+
+
+
+def make_engine(db_path):
+    def no_relationships(base, direction, return_fn, attrname, local_cls, referred_cls, **kw):
+        return None
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    Base = automap_base()
+    Base.prepare(engine, reflect=True, generate_relationship=no_relationships)
+    configure_mappers()

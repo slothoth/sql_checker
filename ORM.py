@@ -1,23 +1,17 @@
-from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.orm import registry
 import sqlglot
 from sqlglot import exp
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import inspect
 from collections import defaultdict
-
-
-db_path = "resources/antiquity-db.sqlite"
-engine = create_engine(f"sqlite:///{db_path}")
-
-metadata = MetaData()
-metadata.reflect(bind=engine)
+from graph.db_spec_singleton import modifier_system_tables, effect_system_tables, requirement_system_tables
+from schema_generator import SQLValidator
 
 mapper_registry = registry()
 
 classes = {}
 failed_classes = []
-for table in metadata.tables.values():
+for table in SQLValidator.metadata.tables.values():
     clsname = "".join(part.capitalize() for part in table.name.split("_"))
     cls = type(clsname, (), {})
     if not table.primary_key:
@@ -81,12 +75,13 @@ def get_table_and_key_vals(orm_instance):
         getattr(orm_instance, col.name)
         for col in mapper.local_table.primary_key.columns
     )
+    if table_name == 'Types':
+        del col_dicts['Hash']
     return table_name, col_dicts, pk_tuple
 
 
 def build_fk_index(instances):
     fk_index = defaultdict(set)
-
     by_table = defaultdict(list)
     for obj in instances:
         by_table[inspect(obj).mapper.local_table].append(obj)
@@ -94,30 +89,18 @@ def build_fk_index(instances):
     for child in instances:
         sc = inspect(child)
         child_table = sc.mapper.local_table
-        child_pk = tuple(
-            getattr(child, col.name)
-            for col in child_table.primary_key.columns
-        )
-
+        child_pk = tuple(getattr(child, col.name) for col in child_table.primary_key.columns)
         for fk in child_table.foreign_keys:
             parent_table = fk.column.table
             parent_col = fk.column.name
             parent_val = getattr(child, fk.parent.name)
-
             if parent_val is None:
                 continue
-
+            # TODO: We are currently not connecting the DynamicModifiers or tables associated with it
             for parent in by_table.get(parent_table, []):
                 if getattr(parent, parent_col) == parent_val:
-                    parent_pk = tuple(
-                        getattr(parent, col.name)
-                        for col in parent_table.primary_key.columns
-                    )
-
-                    fk_index[
-                        (parent_table.name, parent_col, parent_pk)
-                    ].add(
-                        (child_table.name, child_pk)
-                    )
+                    if parent_table.name not in modifier_system_tables and child_table.name not in modifier_system_tables:
+                        parent_pk = tuple(getattr(parent, col.name) for col in parent_table.primary_key.columns)
+                        fk_index[(parent_table.name, parent_col, parent_pk)].add((child_table.name, child_pk))
 
     return fk_index

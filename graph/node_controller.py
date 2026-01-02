@@ -5,12 +5,9 @@ from PyQt5.QtWidgets import QMainWindow
 from NodeGraphQt import NodeGraph
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
-from graph.dynamic_nodes import generate_tables
-from graph.db_spec_singleton import ResourceLoader
+from graph.db_spec_singleton import db_spec, modifier_system_tables
 from graph.set_hotkeys import set_hotkeys
-from graph.dynamic_nodes import generate_tables
-
-db_spec = ResourceLoader()
+from graph.dynamic_nodes import generate_tables, GameEffectNode, RequirementEffectNode
 # bodge job for blocking recursion
 recently_changed = {}
 
@@ -24,7 +21,6 @@ class NodeEditorWindow(QMainWindow):
         self.graph = NodeGraph()
         self.setCentralWidget(self.graph.widget)
         self.graph.main_window = parent
-
         mod_uuid = 'SQL_GUI_' + str(uuid.uuid4().hex)
         default_meta['Mod UUID'] = mod_uuid
         self.graph.setProperty('meta', default_meta)
@@ -34,8 +30,8 @@ class NodeEditorWindow(QMainWindow):
 
         # custom SQL nodes
         table_nodes_list = generate_tables(self.graph)
-        self.graph.register_nodes(table_nodes_list)
-
+        self.graph.register_nodes(table_nodes_list + [GameEffectNode, RequirementEffectNode])
+        # db.game_effects.modifier
         graph_widget = self.graph.widget             # show the node graph widget.
         graph_widget.resize(1100, 800)
         graph_widget.setWindowTitle("Database Editor")
@@ -85,18 +81,33 @@ class NodeEditorWindow(QMainWindow):
                     src_port_name = source_port_item.name
                     if source_port_item.port_type == 'out':
                         src_port = src_node.get_output(src_port_name)
-                        valid_tables = db_spec.node_templates[src_node.get_property('table_name')]['backlink_fk'][src_port_name]
-                        possible_table_info = {key: val for key, val in db_spec.node_templates.items() if
-                                               key in valid_tables}
+                        if src_node.get_property('table_name') == 'GameEffectCustom':
+                            # TODO we will add back in RequirementSets but currently removed from making those nodes
+                            possible_table_info = {'ReqEffectCustom': True, 'RequirementSets': True}
+                        elif src_node.get_property('table_name') == 'ReqEffectCustom':
+                            valid_tables = db_spec.node_templates['RequirementSets']['backlink_fk']
+                            possible_table_info = {key: 'unused' for key, val in db_spec.node_templates.items() if
+                                                   key in valid_tables and key not in modifier_system_tables}
+                            possible_table_info['ReqEffectCustom'] = 'GameEffect'
+                        else:
+                            valid_tables = db_spec.node_templates[src_node.get_property('table_name')]['backlink_fk']
+                            possible_table_info = {key: 'unused' for key, val
+                                                   in db_spec.node_templates.items() if key in valid_tables}
+                            if 'Modifiers' in possible_table_info:
+                                del possible_table_info['Modifiers']
+                                valid_tables.remove('Modifiers')
+                                possible_table_info['GameEffectCustom'] = 'unused'
+                            if 'RequirementSets' in possible_table_info:
+                                del possible_table_info['RequirementSets']
+                                valid_tables.remove('RequirementSets')
+                                possible_table_info['ReqEffectCustom'] = 'unused'
                         if len(possible_table_info) > 1:        # it could be multiple tables, open dialog
                             dialog = NodeCreationDialog(table_subset_info=possible_table_info)
                             viewer = self.graph.viewer()
                             pos = viewer.mapToGlobal(QtGui.QCursor.pos())
                             dialog.move(pos)
-
                             if dialog.exec_() != QtWidgets.QDialog.Accepted:
                                 return
-
                             name = dialog.selected()
                             if not name:
                                 return
@@ -105,11 +116,22 @@ class NodeEditorWindow(QMainWindow):
 
                     else:
                         src_port = src_node.get_input(src_port_name)   # No Dialog as fk reference can only be one table
-                        name = db_spec.node_templates[src_node.get_property('table_name')]['foreign_keys'][src_port_name]
+                        node_name = src_node.get_property('table_name')
+                        if node_name =='ReqEffectCustom':
+                            name = 'GameEffectCustom'
+                        elif node_name =='GameEffectCustom':
+                            name = 'ReqEffectCustom'
+                        else:
+                            name = db_spec.node_templates[node_name]['foreign_keys'][src_port_name]
+                        # should we cover dealing with attachment tables?
 
-                    class_name = f"{name.title().replace('_', '')}Node"
-                    new_node = self.graph.create_node(f'db.table.{name.lower()}.{class_name}',
-                                                 pos=[scene_pos.x(), scene_pos.y()])
+                    if name == 'GameEffectCustom':
+                        node_name = 'db.game_effects.GameEffectNode'
+                    elif name == 'ReqEffectCustom':
+                        node_name = 'db.game_effects.RequirementEffectNode'
+                    else:
+                        node_name = f"db.table.{name.lower()}.{name.title().replace('_', '')}Node"
+                    new_node = self.graph.create_node(node_name, pos=[scene_pos.x(), scene_pos.y()])
 
                     # Connect nodes
                     if src_port.type_() == 'out':   # Connect to first available input of new node, which should be PK
@@ -119,7 +141,14 @@ class NodeEditorWindow(QMainWindow):
                                 port_index = next((i for i, s in enumerate(new_node.input_ports()) if s.name() == connect_port), 0)
                                 src_port.connect_to(new_node.input_ports()[port_index])
                                 old_pk = source_port_item.node.get_widget(source_port_item.name).get_value()  # get val of connecting entry
-                                new_node.get_widget(connect_port).set_value(old_pk)
+                                display_widget = new_node.get_widget(connect_port)
+                                if display_widget is not None:
+                                    display_widget.set_value(old_pk)
+                                else:
+                                    hidden_property = new_node.get_property(connect_port)
+                                    if hidden_property is not None:
+                                        new_node.set_property(connect_port, old_pk)
+
                             else:
                                 src_port.connect_to(new_node.input_ports()[0])
                     elif src_port.type_() == 'in':
@@ -132,8 +161,11 @@ class NodeEditorWindow(QMainWindow):
 
 
 def on_property_changed(node, property_name, property_value):
-    if 'db.table' not in node.type_:
-        return
+    sync_nodes_check(node, property_name)
+    propogate_port_check(node, property_name)
+
+
+def sync_nodes_check(node, property_name):
     age = node.graph.property('meta').get('Age')
     if age == 'ALWAYS':
         age_specific_db = db_spec.all_possible_vals
@@ -144,22 +176,33 @@ def on_property_changed(node, property_name, property_value):
     if len(pk_list) == 1 and pk_list[0] == property_name:
         sync_node_options(node.graph)
 
-    if recently_changed.get(node.name(),  {}).get(property_name, {}):       # this section handles updating connected port
-        recently_changed[node.name()][property_name] = False
+
+# handles recursion. We want it so if a node changes a field that is linked to another node, backwards OR forwards
+# it updates downstream and upstream, changing fields. This prevents those field change retriggering on the
+# original node, ad infinitum. Couldn't find a cleaner way with blocking signals.
+def propogate_port_check(node, property_name):
+    node_name = node.name()
+    if recently_changed.get(node_name,  {}).get(property_name, {}):
+        recently_changed[node_name][property_name] = False
         return
     else:
-        if node.name() not in recently_changed:
-            recently_changed[node.name()] = {}
-        recently_changed[node.name()][property_name] = True
-        matching_ports = [p for p in list(node.inputs().values()) + list(node.outputs().values()) if p.name() == property_name]
-        for matching_port in matching_ports:
-            is_connected = bool(matching_port.connected_ports())
-            if is_connected:
-                propagate_value_by_port_name(node, property_name, node.graph)
-        recently_changed[node.name()][property_name] = False
+        if node_name not in recently_changed:
+            recently_changed[node_name] = {}
+        recently_changed[node_name][property_name] = True
+        propogate_node_ports(node, property_name)
+        recently_changed[node_name][property_name] = False
 
 
-def propagate_value_by_port_name(source_node, prop_name, graph):
+def propogate_node_ports(node, property_name):
+    matching_ports = [p for p in list(node.inputs().values()) + list(node.outputs().values())
+                      if p.name() == property_name]
+    for matching_port in matching_ports:
+        is_connected = bool(matching_port.connected_ports())
+        if is_connected:
+            propagate_value_by_port_name(node, property_name)
+
+
+def propagate_value_by_port_name(source_node, prop_name):
     prop_value = source_node.get_property(prop_name)
     all_ports = list(source_node.inputs().values()) + list(source_node.outputs().values())
     for port in all_ports:

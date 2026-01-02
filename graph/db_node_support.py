@@ -1,10 +1,8 @@
 from PyQt5 import QtWidgets, QtCore
-from graph.db_spec_singleton import ResourceLoader
+from graph.db_spec_singleton import db_spec
 
-db_spec = ResourceLoader()
 subsets = {}
-# <class 'NodeGraphQt.qgraphics.node_base.NodeItem'>
-# <class 'graph.nodes.dynamic_nodes.ModifiersNode'>
+
 
 # used for searchable node creation
 class NodeCreationDialog(QtWidgets.QDialog):
@@ -54,7 +52,7 @@ class NodeCreationDialog(QtWidgets.QDialog):
         self.search.selectAll()
 
 
-# used for searchable combo box
+# used for searchable combo box. should this and NodeCreationDialog be inheritanced?
 class SearchListDialog(QtWidgets.QDialog):
     def __init__(self, items, parent=None):
         super().__init__(parent)

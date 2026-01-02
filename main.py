@@ -3,13 +3,13 @@ import threading
 import queue
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QFileDialog, QSizePolicy, QPlainTextEdit
+    QFileDialog, QSizePolicy, QPlainTextEdit, QComboBox
 )
 
 from model import model_run
 from graph.node_controller import NodeEditorWindow
 from syntax_highlighter import LogHighlighter
-from filepath_utils import find_workshop, find_civ_install, find_civ_config
+from graph.db_spec_singleton import db_spec, ages
 
 
 class App(QWidget):
@@ -20,6 +20,8 @@ class App(QWidget):
     planner_button = None
     log_display = None
     log_highlighter = None
+    ageComboBox = None
+
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Database Analyzer")
@@ -33,25 +35,30 @@ class App(QWidget):
         main_layout = QVBoxLayout()
 
         # Civ Config
-        self.entry1, btn1, self.folder_path_civ_config = self.create_file_row(
-            "Civ Config Location:", default_value=find_civ_config(), browse_func=self.set_civ_config
+        self.entry1, btn1 = self.create_file_row(
+            "Civ Config Location:", default_value=db_spec.civ_config, browse_func=self.set_civ_config
         )
         main_layout.addLayout(self.entry1)
         main_layout.addWidget(btn1)
 
         # Workshop Folder
-        self.entry2, btn2, self.folder_path_workshop_input = self.create_file_row(
-            "Workshop Folder:", default_value=find_workshop(), browse_func=self.set_workshop
+        self.entry2, btn2 = self.create_file_row(
+            "Workshop Folder:", default_value=db_spec.workshop, browse_func=self.set_workshop
         )
         main_layout.addLayout(self.entry2)
         main_layout.addWidget(btn2)
 
         # Civ Install
-        self.entry3, btn3, self.folder_path_civ_install = self.create_file_row(
-            "Civ Install:", default_value=find_civ_install(), browse_func=self.set_civ_install
+        self.entry3, btn3 = self.create_file_row(
+            "Civ Install:", default_value=db_spec.civ_install, browse_func=self.set_civ_install
         )
         main_layout.addLayout(self.entry3)
         main_layout.addWidget(btn3)
+
+        #
+        self.ageComboBox = QComboBox()
+        self.ageComboBox.addItems(ages)
+        main_layout.addWidget(self.ageComboBox)
 
         # Run Analysis button
         self.run_button = QPushButton("Run Analysis")
@@ -75,7 +82,8 @@ class App(QWidget):
         main_layout.addWidget(self.log_display, stretch=1)
         self.setLayout(main_layout)
 
-    def create_file_row(self, label_text, default_value="", browse_func=None):
+    @staticmethod
+    def create_file_row(label_text, default_value="", browse_func=None):
         layout = QHBoxLayout()
         label = QLabel(label_text)
         line_edit = QLineEdit()
@@ -86,35 +94,32 @@ class App(QWidget):
         layout.addWidget(label)
         layout.addWidget(line_edit)
         layout.addWidget(btn)
-        return layout, btn, default_value
+        return layout, btn
 
     def set_civ_config(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select Civ Config File")
         if path:
-            self.folder_path_civ_config = path
+            db_spec.update_civ_config(path)
             self.layout().itemAt(0).itemAt(1).widget().setText(path)
 
     def set_workshop(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select Workshop Folder")
         if path:
-            self.folder_path_workshop_input = path
+            db_spec.update_steam_workshop(path)
             self.layout().itemAt(2).itemAt(1).widget().setText(path)
 
     def set_civ_install(self):
         path, _ = QFileDialog.getOpenFileName(self, "Select Civ Install File")
         if path:
-            self.folder_path_civ_install = path
+            db_spec.update_civ_install(path)
             self.layout().itemAt(4).itemAt(1).widget().setText(path)
 
     def start_analysis(self, extra_sql=None):
-        civ_install = self.folder_path_civ_install
-        civ_config = self.folder_path_civ_config
-        workshop = self.folder_path_workshop_input
         self.run_button.setEnabled(False)
         if extra_sql is not None:
-            threading.Thread(target=model_run, args=(civ_install, civ_config, workshop, self.log_queue, True), daemon=True).start()
+            threading.Thread(target=model_run, args=(self.log_queue, True, self.ageComboBox.currentText()), daemon=True).start()
         else:
-            threading.Thread(target=model_run, args=(civ_install, civ_config, workshop, self.log_queue), daemon=True).start()
+            threading.Thread(target=model_run, args=(self.log_queue, None, self.ageComboBox.currentText()), daemon=True).start()
 
     def timerEvent(self, event):
         try:
@@ -123,10 +128,8 @@ class App(QWidget):
                 if message is None:
                     self.run_button.setEnabled(True)
                 else:
-                    # ensure plain text insertion so the highlighter can run
-                    self.log_display.appendPlainText(str(message))
-                    # keep view scrolled to bottom
-                    cursor = self.log_display.textCursor()
+                    self.log_display.appendPlainText(str(message))  # ensure plain text insertion so the highlighter can run
+                    cursor = self.log_display.textCursor()      # keep view scrolled to bottom
                     self.log_display.setTextCursor(cursor)
         except queue.Empty:
             pass

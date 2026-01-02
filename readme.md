@@ -13,6 +13,7 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Include some hotkeys in top section, like File [x]
 - Convert existing mod to diagram[x]
 - Toggle Types nodes being added for performance/clarity. [x]
+- Dialogs converted into toasts where possible [x]
 - ModifierArgs/RequirementArgs Value completions using Name   []
 - ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier  []
 - pk fk connects done prior to making the connection or the downstream node get the value  [ ]
@@ -23,14 +24,22 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Types autofills KIND based on connecting module           []
 - PK port connections with just the first PK value if combined PK  []
 - setEditable on ComboxBox to add new values?
-- Big Graphs compress tables of the same type into one node.
 - backlink FK lists have duplicates, but seems covered where it matters, like port connections since it gets Dictionaried
-  Big Features:
+- refactor state validation to be threaded on start up, or at least only when graph planner opened
+- Make it so arg values are highlighted if they are set to the default one.
+- need to improve type system for args using statistical harvesting as some GameEffectsArguments are wrong. like EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE:ResourceClassType is int_2
+# Big Features TODO:
 - Image imports
 - Localisation entries (and displaying them as options in relevant gameplay graph)
 - frontend modelling
 - VI port (ahhh)
 - Tabbed graphs, so you can see content in different criteria.
 - Node connections can only happen between valid connectors (PK-FK), node.add_accept_port_type
+- Big Graphs compress tables of the same type into one node.
+- Auto build Localisation. You put the name/description that you want to show, and the build process converts it and adds values to the localized db based on the PK name. For this we need to do some mining of which columns are used in loc db. Also deal with ModifierString context so no need to think abt it.
 ## Known bugs
 - Some uncommonly used integers are viewed as Bools, like Ages.AgeTechBackgroundTextureOffsetX
+- GameEffects Types appears in two columns? check spec
+- Latency issues on GameEffectsCustom instantiation
+- Can double click when making new node to get two
+- Text Fields dont stretch to max possible width, often meaning text inside is hidden when it doesnt need to be
