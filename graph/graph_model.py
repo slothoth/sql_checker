@@ -135,6 +135,10 @@ class BaseDB:
             existing_fks = self.table_data[table]['foreign_keys']
             potential_fks = {}
             for col in [i for i in self.table_data[table]['all_cols'] if i not in existing_fks]:
+                uniques = count_unique(conn, table, col)
+                nulls = count_null(conn, table, col)  # its okay not matching if null
+                if nulls > 0:
+                    uniques = uniques - 1  # we dont count these
                 for pk_col, pk_tables in unique_pks.items():
                     for pk_tbl in pk_tables:
                         if pk_tbl == table:
@@ -143,10 +147,6 @@ class BaseDB:
                             continue
                         viol = fk_violations(conn, table, col, pk_tbl, pk_col)
                         matches = fk_matches(conn, table, col, pk_tbl, pk_col)
-                        uniques = count_unique(conn, table, col)
-                        nulls = count_null(conn, table, col)                # its okay not matching if null
-                        if nulls > 0:
-                            uniques = uniques - 1                           # we dont count these
                         matches_without_nulls = matches - nulls
                         if len(viol) == 0 and matches > 0 and uniques == matches:
                             if col not in potential_fks:

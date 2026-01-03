@@ -3,6 +3,7 @@ from NodeGraphQt.constants import PortTypeEnum
 from PyQt5 import QtCore, QtGui
 import math
 import time
+from collections import defaultdict
 
 from graph.db_spec_singleton import (db_spec, requirement_argument_info, requirement_system_tables, effect_system_tables,
                                      req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
@@ -16,6 +17,7 @@ class BasicDBNode(BaseNode):
     _extra_visible = False
     _initial_fields = []
     _extra_fields = []
+    output_port_tables = {}
 
     def _toggle_extra(self):
         self._extra_visible = not self._extra_visible
@@ -41,7 +43,7 @@ class BasicDBNode(BaseNode):
         if connect_port is not None:
             return backlink_port_get(original_table, connect_table)
 
-    def set_allowed_ports(self, port, fk_to_tbl_link, fk_to_pk_link):
+    def set_input_port_constraint(self, port, fk_to_tbl_link, fk_to_pk_link):
         table_class = SQLValidator.table_name_class_map.get(fk_to_tbl_link, '')
         self.add_accept_port_type(port, {
             'node_type': table_class,
@@ -63,6 +65,20 @@ class BasicDBNode(BaseNode):
                     'port_type': PortTypeEnum.OUT.value,
                     'port_name': fk_to_pk_link,
                 })
+
+    def set_output_port_constraints(self, table_name, fk_backlink):
+        pk = SQLValidator.pk_map[table_name][0]
+        color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
+        port = self.add_output(pk, color=color)
+        # lets just set a property on each node that handles output port possibilities?
+        # {'port1': [list]}
+        port_outputs = defaultdict(list)
+        for input_port, input_tbl_name_list in fk_backlink['col_first'].items():
+            for input_tbl_name in input_tbl_name_list:
+                table_class = SQLValidator.table_name_class_map.get(input_tbl_name, '')
+                port_outputs[table_class].append(input_port)
+
+        self.output_port_tables = port_outputs
 
     def set_spec(self, col_dict):
         for col_name, value in col_dict.items():
@@ -230,22 +246,6 @@ class DynamicNode(BasicDBNode):
         self.set_property(k, v)
         self._validate_field(k, v)
 
-    def set_port_constraints_custom(self):
-        table_name = self.get_property('table_name')
-        fk_backlink = SQLValidator.pk_ref_map.get(table_name)
-        pk = SQLValidator.pk_map[table_name][0]
-        port = self.add_output(pk)  # what if combined pk? can that even link
-        print(f'acceptable inputs for port {pk}')
-        for input_tbl_name in fk_backlink['col_first'][pk]:
-            table_class = SQLValidator.table_name_class_map.get(input_tbl_name, '')
-            input_port = SQLValidator.pk_map[input_tbl_name][0]
-            self.add_accept_port_type(port, {
-                'node_type': table_class,
-                'port_type': PortTypeEnum.IN.value,
-                'port_name': input_port,
-            })
-            print(f'{input_tbl_name}.{input_port}')
-
 
 # had to auto generate classes rather then generate at node instantition because
 # on save they werent storing their properties in such a way they could be loaded again
@@ -294,7 +294,7 @@ def create_table_node_class(table_name, graph):
                     port = self.add_input(col, color=color)
                 else:
                     port = self.add_input(col, painter_func=draw_square_port, color=color)
-                self.set_allowed_ports(port, fk_to_tbl_link, fk_to_pk_link)
+                self.set_input_port_constraint(port, fk_to_tbl_link, fk_to_pk_link)
 
             col_poss_vals = self._possible_vals.get(col, None)
             col_type = SQLValidator.type_map[table_name][col]
@@ -313,20 +313,9 @@ def create_table_node_class(table_name, graph):
         # Validate all fields after initialization
         self._validate_all_fields()
 
-        fk_backlink = SQLValidator.pk_ref_map.get(table_name)         # pk_ref_map[table_name]['col_first']['Ages'] not ideal
-        if fk_backlink is not None:                         # as we found extra fks
-            pk = SQLValidator.pk_map[table_name][0]
-            color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
-            port = self.add_output(pk, color=color)  # what if combined pk? can that even link
-            print(f'acceptable inputs for port {pk}')
-            for input_tbl_name, input_port in fk_backlink['table_first'].items():
-                table_class = SQLValidator.table_name_class_map.get(input_tbl_name, '')
-                self.add_accept_port_type(port, {
-                    'node_type': table_class,
-                    'port_type': PortTypeEnum.IN.value,
-                    'port_name': input_port,
-                })
-                print(f'{input_tbl_name}.{input_port}')
+        fk_backlink = SQLValidator.pk_ref_map.get(table_name)
+        if fk_backlink is not None:
+            self.set_output_port_constraints(table_name, fk_backlink)
 
         if len(self._extra_fields) == 0:
             btn = self.get_widget('toggle_extra')

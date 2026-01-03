@@ -63,12 +63,9 @@ class NodeEditorWindow(QMainWindow):
         original_mouse_release = self.graph.viewer().mouseReleaseEvent
 
         def custom_mouse_release(event):
-            # Detect if we are dragging a connection using start port on live connection
-            live_pipe = getattr(self.graph.viewer(), '_LIVE_PIPE', None)
-            source_port_item = getattr(self.graph.viewer(), '_start_port')
+            source_port_item = getattr(self.graph.viewer(), '_start_port')      # useful var only present on live conn
 
-            # check for no port item to do node creation
-            items_under_mouse = self.graph.viewer().items(event.pos())
+            items_under_mouse = self.graph.viewer().items(event.pos())          # ensure drag is not to existing port
             released_on_port = any(type(i).__name__ == 'PortItem' for i in items_under_mouse)
 
             original_mouse_release(event)           # release mouse events
@@ -82,71 +79,43 @@ class NodeEditorWindow(QMainWindow):
                     src_port_name = source_port_item.name
                     if source_port_item.port_type == 'out':
                         src_port = src_node.get_output(src_port_name)
-                        if src_node.get_property('table_name') == 'GameEffectCustom':
-                            if src_port.name() == 'ModifierId':
-                                possible_table_info = {k: True for k in attach_tables}
-                            else:
-                                possible_table_info = {'ReqEffectCustom': True, 'RequirementSets': True}
-                        elif src_node.get_property('table_name') == 'ReqEffectCustom':
-                            valid_tables = db_spec.node_templates['RequirementSets']['backlink_fk']
-                            possible_table_info = {key: 'unused' for key, val in db_spec.node_templates.items() if
-                                                   key in valid_tables and key not in modifier_system_tables}
-                            possible_table_info['ReqEffectCustom'] = 'GameEffect'
-                        else:
-                            valid_tables = db_spec.node_templates[src_node.get_property('table_name')]['backlink_fk']
-                            possible_table_info = {key: 'unused' for key, val
-                                                   in db_spec.node_templates.items() if key in valid_tables}
-                            if 'Modifiers' in possible_table_info:
-                                possible_table_info['GameEffectCustom'] = 'unused'
-                            if 'RequirementSets' in possible_table_info:
-                                possible_table_info['ReqEffectCustom'] = 'unused'
-                        if len(possible_table_info) > 1:        # it could be multiple tables, open dialog
-                            name = self.node_dialog_name(possible_table_info)
-                            if not name:
-                                return
-                        else:
-                            name = valid_tables[0]
-
+                        accepted_ports = {i: True for i in src_node.output_port_tables}
                     else:
                         src_port = src_node.get_input(src_port_name)   # Dialog only needed if associated with Effect
                         accepted_ports = src_port.accepted_port_types()
-                        if len(accepted_ports) > 1:
-                            name = self.node_dialog_name({SQLValidator.class_table_name_map.get(i, ''): True
-                                                      for i in accepted_ports})
-                        else:
-                            name = SQLValidator.class_table_name_map.get(next(iter(accepted_ports.keys())), '')
+                    if len(accepted_ports) > 1:
+                        name = self.node_dialog_name([SQLValidator.class_table_name_map.get(i, i)
+                                                      for i in accepted_ports])
+                    else:
+                        name = SQLValidator.class_table_name_map.get(next(iter(accepted_ports.keys())), '')
 
                     node_name = SQLValidator.table_name_class_map.get(name, name)
+                    if node_name is None:
+                        return
                     new_node = self.graph.create_node(node_name, pos=[scene_pos.x(), scene_pos.y()])
 
                     # Connect nodes
                     if src_port.type_() == 'out':   # Connect to first available input of new node, which should be PK
-                        new_node_inputs = new_node.input_ports()
-                        port_index = None
+                        new_node_inputs = new_node.inputs()
                         if new_node_inputs:
                             if len(new_node_inputs) == 1:
-                                port_index = 0
-                                connect_port = new_node_inputs[0]
+                                connect_port = list(new_node_inputs.values())[0]
                             else:
-                                connect_port = new_node.get_link_port(src_node.get_property('table_name'), source_port_item.name)
-                                if connect_port:
-                                    port_index = next((i for i, s in enumerate(new_node_inputs) if s.name() == connect_port), 0)
+                                connect_port_name = src_node.output_port_tables[node_name][0]    # if plural fks accept
+                                connect_port = new_node_inputs[connect_port_name]           # this type, just pick first
 
-                            if port_index is not None:
-                                src_port.connect_to(new_node_inputs[port_index])
-                                old_pk = source_port_item.node.get_widget(source_port_item.name).get_value()  # get val of connecting entry
-                                display_widget = new_node.get_widget(connect_port)
-                                if display_widget is not None:
-                                    display_widget.set_value(old_pk)
-                                else:
-                                    hidden_property = new_node.get_property(connect_port)
-                                    if hidden_property is not None:
-                                        new_node.set_property(connect_port, old_pk)
+                            if connect_port is not None:
+                                src_port.connect_to(connect_port)
+                                old_pk = src_node.get_widget(src_port_name).get_value()  # get val of connecting entry
+                                update_widget_or_prop(node=new_node, widget_name=connect_port, new_val=old_pk)
 
-                    elif src_port.type_() == 'in':
-                        # Connect to first available output of new node, which should be primary key
-                        if new_node.output_ports():
+                    elif src_port.type_() == 'in':                              # Connect to first available output of
+                        if new_node.output_ports():                             # new node, which should be primary key
+                            output_port = new_node.output_ports()[0]
                             new_node.output_ports()[0].connect_to(src_port)
+                            old_fk = src_node.get_widget(src_port_name).get_value()
+                            if old_fk != '':                                    # if not default, update new node pk
+                                update_widget_or_prop(node=new_node, widget_name=output_port.name(), new_val=old_fk)
 
         # Apply the patch
         self.graph.viewer().mouseReleaseEvent = custom_mouse_release
@@ -233,3 +202,13 @@ def on_connection_changed(disconnected_ports, connected_ports):
             changing_widget.set_value(new_value)
             if changing_widget:
                 changing_widget.blockSignals(False)
+
+
+def update_widget_or_prop(node, widget_name, new_val):
+    display_widget = node.get_widget(widget_name)
+    if display_widget is not None:
+        display_widget.set_value(new_val)
+    else:
+        hidden_property = node.get_property(widget_name)
+        if hidden_property is not None:
+            node.set_property(widget_name, new_val)

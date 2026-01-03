@@ -8,7 +8,7 @@ subsets = {}
 class NodeCreationDialog(QtWidgets.QDialog):
     def __init__(self, table_subset_info=None):
         super().__init__()
-        self.templates = db_spec.node_templates if table_subset_info is None else table_subset_info
+        self.templates = db_spec.node_templates.keys() if table_subset_info is None else table_subset_info
 
         self.setWindowFlags(QtCore.Qt.Popup)
         self.setMinimumWidth(300)
@@ -28,7 +28,7 @@ class NodeCreationDialog(QtWidgets.QDialog):
         q = text.lower()
 
         scored = []
-        for name in self.templates.keys():
+        for name in self.templates:
             n = name.lower()
             if q in n:
                 idx = n.index(q)

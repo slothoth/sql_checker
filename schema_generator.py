@@ -44,6 +44,7 @@ class SchemaInspector:
     pk_map = {}
     fk_to_tbl_map = {}
     fk_to_pk_map = {}
+    foreign_pk_to_local_fk_map = {}
     pk_ref_map = {}
     type_map = {}
     nullable_map = {}
@@ -84,6 +85,7 @@ class SchemaInspector:
                         db_spec.node_templates.items() if val.get('extra_fks') is not None}
         [self.fk_to_pk_map[k].update(v) for k, v in extra_fks.items() if k in self.fk_to_pk_map]
 
+        self.foreign_pk_to_local_fk_map = {k: {val: key for key, val in v.items()} for k, v in self.fk_to_pk_map.items()}
         internal_fk_map = {
             name: {
                 c.name: {
@@ -108,21 +110,22 @@ class SchemaInspector:
                             self.pk_ref_map[model_name] = {'table_first': {}, 'col_first': {}}
                         self.pk_ref_map[model_name]['table_first'][ref_tbl] = pk_col
 
-                        if pk_col not in self.pk_ref_map[model_name]['col_first']:
-                            self.pk_ref_map[model_name]['col_first'][pk_col] = [ref_tbl]
+                        if fk_col not in self.pk_ref_map[model_name]['col_first']:
+                            self.pk_ref_map[model_name]['col_first'][fk_col] = [ref_tbl]
                         else:
-                            self.pk_ref_map[model_name]['col_first'][pk_col].append(ref_tbl)
+                            self.pk_ref_map[model_name]['col_first'][fk_col].append(ref_tbl)
 
         extra_backlinks = {key: {k: v for k, v in val['extra_backlinks'].items()} for key, val in
                            db_spec.node_templates.items() if val.get('extra_backlinks') is not None}
         [self.pk_ref_map[k]['table_first'].update(v) for k, v in extra_backlinks.items() if k in self.pk_ref_map]
         for k, v in extra_backlinks.items():
             if k not in self.pk_ref_map:
-                primary_key = self.pk_map[k][0]
-                self.pk_ref_map[k] = {'col_first': {primary_key: []}, 'table_first': {}}
+                self.pk_ref_map[k] = {'col_first': {}, 'table_first': {}}
             for tbl, col in v.items():
-                pk = list(self.pk_ref_map[k]['col_first'].keys())[0]
-                self.pk_ref_map[k]['col_first'][pk].append(tbl)
+                if col not in self.pk_ref_map[k]['col_first']:
+                    self.pk_ref_map[k]['col_first'][col] = [tbl]
+                else:
+                    self.pk_ref_map[k]['col_first'][col].append(tbl)
 
         self.port_coloring()
         insp = inspect(self.empty_engine)
