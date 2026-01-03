@@ -7,10 +7,9 @@ from PyQt5.QtWidgets import (
 
 
 from NodeGraphQt import NodeGraph
-
-from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
-from graph.db_spec_singleton import db_spec
-from graph.set_hotkeys import set_hotkeys
+from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type  # expensive  1.7s
+from graph.db_spec_singleton import db_spec                                                         # but other times
+from graph.set_hotkeys import set_hotkeys       # expensive  1.9s                                   # fast?
 from graph.dynamic_nodes import generate_tables, GameEffectNode, RequirementEffectNode
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
@@ -32,10 +31,10 @@ class NodeEditorWindow(QMainWindow):
 
         menubar = self.menuBar()
         set_hotkeys(self, menubar)
-
         # custom SQL nodes
         table_nodes_list = generate_tables(self.graph)
         self.graph.register_nodes(table_nodes_list + [GameEffectNode, RequirementEffectNode])
+
         # db.game_effects.modifier
         graph_widget = self.graph.widget             # show the node graph widget.
         graph_widget.resize(1100, 800)
@@ -72,6 +71,7 @@ class NodeEditorWindow(QMainWindow):
         self.graph.side_panel = panel
         panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         panel.show()
+
 
     def enable_auto_node_creation(self):
         """

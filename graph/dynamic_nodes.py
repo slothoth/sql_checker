@@ -254,7 +254,8 @@ def create_table_node_class(table_name, graph):
 
     def init_method(self):
         super(type(self), self).__init__()
-        spec = db_spec.node_templates[table_name]
+        start_time = time.time()
+        self.view.setVisible(False)
         primary_keys = SQLValidator.pk_map[table_name]
         prim_texts = [i for i in SQLValidator.required_map[table_name] if i not in primary_keys]
         second_texts = SQLValidator.less_important_map[table_name]
@@ -320,6 +321,9 @@ def create_table_node_class(table_name, graph):
         if len(self._extra_fields) == 0:
             btn = self.get_widget('toggle_extra')
             btn.hide()
+        self.view.setVisible(True)
+        end_time = time.time()
+        print(f'Full Dynamic Node time: {end_time - start_time}')
 
     def set_defaults_method(self):
         self.set_property('table_name', table_name)
@@ -362,7 +366,10 @@ class BaseEffectNode(BasicDBNode):
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
 
     def _apply_mode(self, mode, push_undo=False, old_mode=None):
-        # show/hide arg_params
+        # show/hide arg_params on change in EffectType/RequirementType
+        if old_mode == mode:
+            return
+        self.view.setVisible(False)
         new_params = self.arg_prop_map()[mode]
         if old_mode is not None:
             old_params = self.arg_prop_map()[old_mode]
@@ -371,26 +378,29 @@ class BaseEffectNode(BasicDBNode):
             for prop in turn_off_params:
                 self.hide_prop_widget(prop, mode, push_undo)
             for prop in turn_on_params:
-                self.show_prop_widget(prop, new_params, mode, push_undo)
+                self.show_or_make_prop_widget(prop, new_params, mode, push_undo)
         else:
             for prop in new_params:
-                self.show_prop_widget(prop, new_params, mode, push_undo)
+                self.show_or_make_prop_widget(prop, new_params, mode, push_undo)
+        prop_change_time = time.time()
+        self.view.setVisible(True)
         self.update_unnamed_cols(mode)
         self.old_effect = mode
 
-    def show_prop_widget(self, prop, new_params, mode, push_undo):
+    def show_or_make_prop_widget(self, prop, new_params, mode, push_undo):
         widget = self.get_widget(prop)
-        self.show_widget(prop, push_undo)
+        if widget is None:
+            widget = self.add_param_widget(prop)
+        else:
+            self.show_widget(prop, push_undo)
         widget.set_label(new_params[prop])
-        # get widget current value
-        # if player hasnt edited them, set to new default
-        current_val = widget.get_value()
-        # print(f'Val for prop {prop} is: |{current_val}')
-        if current_val == '' or current_val == 0:
+        current_val = widget.get_value()                     # get widget current value
+
+        if current_val == '' or current_val == 0:           # if player hasnt edited them, set to new default
             arg_name = self.arg_prop_map()[mode][prop]
             arg_info = self.argument_info_map()[mode]['Arguments'][arg_name]
             default_val = arg_info['DefaultValue']
-            if default_val is not None:
+            if default_val is not None:                             # get default val for arg based on type
                 arg_type = arg_info['ArgumentType']
                 if arg_type == 'bool' and not isinstance(default_val, bool):
                     if default_val.lower() in ['false', 'true']:
@@ -413,6 +423,21 @@ class BaseEffectNode(BasicDBNode):
         widget = self.get_widget(prop)
         self.hide_widget(prop, push_undo=push_undo)
 
+    def add_param_widget(self, prop):
+
+        lower_prop = prop.lower()
+        if 'text' in lower_prop or 'database' in lower_prop:
+            self.add_text_input(lower_prop, label=lower_prop, text="")
+        elif 'bool' in lower_prop:
+            self.add_checkbox(lower_prop, label=lower_prop)
+        elif 'int' in lower_prop:
+            self.add_custom_widget(IntSpinNodeWidget(lower_prop, self.view), tab='Node')
+        elif 'float' in lower_prop:
+            self.add_custom_widget(FloatSpinNodeWidget(lower_prop, self.view), tab='Node')
+        else:
+            raise Exception(f'unhandled prop {prop}')
+        return self.get_widget(prop)
+
     def arg_prop_map(self):
         return {}
 
@@ -429,7 +454,7 @@ class GameEffectNode(BaseEffectNode):
     def __init__(self):
         start_time = time.time()
         super().__init__()
-
+        self.view.setVisible(False)
         self.create_property('table_name', value='GameEffectCustom')
         # fixed fields
         mod_spec = db_spec.node_templates['Modifiers']
@@ -450,12 +475,10 @@ class GameEffectNode(BaseEffectNode):
 
         self.add_output('SubjectReq')
         self.add_text_input('SubjectReq', 'SubjectRequirementSetId', tab='fields')
-
         # self.set_search_menu(col='SubjectReq', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['SubjectRequirementSetId']['vals'], validate=False)
 
         self.add_output('OwnerReq')
         self.add_text_input('OwnerReq', 'OwnerRequirementSetId', tab='fields')
-
         #self.set_search_menu(col='OwnerRequirementSetId', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['OwnerRequirementSetId']['vals'], validate=False)
 
         for col in modifier_fields:
@@ -478,26 +501,12 @@ class GameEffectNode(BaseEffectNode):
         self.add_custom_widget(toggle, tab=None)
 
         # new logic
-        prop_start_time = time.time()
-        for prop in all_param_arg_fields:
-            if 'text' in prop or 'database' in prop:
-                self.add_text_input(prop, label=prop, text="")
-            elif 'bool' in prop:
-                self.add_checkbox(prop, label=prop)
-            elif 'int' in prop:
-                self.add_custom_widget(IntSpinNodeWidget(prop, self.view), tab='Node')
-            elif 'float' in prop:
-                self.add_custom_widget(FloatSpinNodeWidget(prop, self.view), tab='Node')
-            else:
-                raise Exception(f'unhandled prop {prop}')
-            self.hide_widget(prop, push_undo=False)
-        apply_start_time = time.time()
+        lazy_arg_params = [prop for prop in all_param_arg_fields]
+        self.create_property('arg_params', lazy_arg_params)
+        self.view.setVisible(True)
         self._apply_mode(self.get_property("EffectType"), push_undo=False)
         finished_time = time.time()
         print(f'Full Node time: {finished_time - start_time}')
-        print(f'normal Param setup time: {prop_start_time - start_time }')
-        print(f'Prop setup time: {apply_start_time - prop_start_time}')
-        print(f'Apply setup time: {finished_time - apply_start_time}')
 
     def get_link_port(self, connect_table, connect_port):    # uses custom ReqCustom and all Modifier attachment tables
         if connect_port is not None:
@@ -564,6 +573,7 @@ class RequirementEffectNode(BaseEffectNode):
 
     def __init__(self):
         super().__init__()
+        self.view.setVisible(False)
         self.create_property('table_name', value='ReqEffectCustom')
 
         self.add_text_input('RequirementId', 'RequirementId', tab='fields')
@@ -574,21 +584,11 @@ class RequirementEffectNode(BaseEffectNode):
         self.add_input('ReqSet')
         self.create_property('ReqSet', '')
 
-        # new logic
-        for prop in req_all_param_arg_fields:
-            lower_prop = prop.lower()
-            if 'text' in lower_prop or 'database' in lower_prop:
-                self.add_text_input(prop, label=prop, text="")
-            elif 'bool' in lower_prop:
-                self.add_checkbox(prop, label=prop)
-            elif 'int' in lower_prop:
-                self.add_custom_widget(IntSpinNodeWidget(prop, self.view), tab='Node')
-            elif 'float' in lower_prop:
-                self.add_custom_widget(FloatSpinNodeWidget(prop, self.view), tab='Node')
-            else:
-                raise Exception(f'unhandled prop {prop}')
-            self.hide_widget(prop, push_undo=False)
+        lazy_arg_params = [prop for prop in req_all_param_arg_fields]
+        self.create_property('arg_params', lazy_arg_params)
+        self.view.setVisible(True)
         self._apply_mode(self.get_property("RequirementType"), push_undo=False)
+
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
         if connect_port is not None:
@@ -660,6 +660,7 @@ def draw_square_port(painter, rect, info):
     painter.setBrush(color)
     painter.drawRect(rect)
     painter.restore()
+
 
 def backlink_port_get(original_table, connect_table):
     backlink_spec = db_spec.node_templates[original_table]
