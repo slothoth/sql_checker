@@ -1,13 +1,15 @@
 from NodeGraphQt import BaseNode
+from NodeGraphQt.constants import PortTypeEnum
 from PyQt5 import QtCore, QtGui
 import math
 import time
 
-from graph.db_spec_singleton import (db_spec, requirement_argument_info, attach_tables,
+from graph.db_spec_singleton import (db_spec, requirement_argument_info, requirement_system_tables, effect_system_tables,
                                      req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
                                      mod_arg_type_list_map, all_param_arg_fields)
 from schema_generator import SQLValidator
 from graph.custom_widgets import NodeSearchMenu, ToggleExtraButton, IntSpinNodeWidget, FloatSpinNodeWidget
+
 
 
 class BasicDBNode(BaseNode):
@@ -39,6 +41,28 @@ class BasicDBNode(BaseNode):
         if connect_port is not None:
             return backlink_port_get(original_table, connect_table)
 
+    def set_allowed_ports(self, port, fk_to_tbl_link, fk_to_pk_link):
+        table_class = SQLValidator.table_name_class_map.get(fk_to_tbl_link, '')
+        self.add_accept_port_type(port, {
+            'node_type': table_class,
+            'port_type': PortTypeEnum.OUT.value,
+            'port_name': fk_to_pk_link,
+        })
+        base_table_name = self.get_property('table_name')
+        if fk_to_tbl_link == 'Modifiers':
+            if base_table_name not in effect_system_tables:
+                self.add_accept_port_type(port, {
+                    'node_type': 'db.game_effects.GameEffectNode',
+                    'port_type': PortTypeEnum.OUT.value,
+                    'port_name': fk_to_pk_link,
+                })
+        if fk_to_tbl_link == 'RequirementSets':
+            if base_table_name not in requirement_system_tables:
+                self.add_accept_port_type(port, {
+                    'node_type': 'db.game_effects.RequirementEffectNode',
+                    'port_type': PortTypeEnum.OUT.value,
+                    'port_name': fk_to_pk_link,
+                })
 
     def set_spec(self, col_dict):
         for col_name, value in col_dict.items():
@@ -104,7 +128,7 @@ class DynamicNode(BasicDBNode):
         if not hasattr(self, 'NODE_NAME'):
             return True
 
-        table_name = self.NODE_NAME
+        table_name = self.get_property('table_name')
 
         # Get all current field values for context
         all_data = {}
@@ -206,6 +230,22 @@ class DynamicNode(BasicDBNode):
         self.set_property(k, v)
         self._validate_field(k, v)
 
+    def set_port_constraints_custom(self):
+        table_name = self.get_property('table_name')
+        fk_backlink = SQLValidator.pk_ref_map.get(table_name)
+        pk = SQLValidator.pk_map[table_name][0]
+        port = self.add_output(pk)  # what if combined pk? can that even link
+        print(f'acceptable inputs for port {pk}')
+        for input_tbl_name in fk_backlink['col_first'][pk]:
+            table_class = SQLValidator.table_name_class_map.get(input_tbl_name, '')
+            input_port = SQLValidator.pk_map[input_tbl_name][0]
+            self.add_accept_port_type(port, {
+                'node_type': table_class,
+                'port_type': PortTypeEnum.IN.value,
+                'port_name': input_port,
+            })
+            print(f'{input_tbl_name}.{input_port}')
+
 
 # had to auto generate classes rather then generate at node instantition because
 # on save they werent storing their properties in such a way they could be loaded again
@@ -232,9 +272,8 @@ def create_table_node_class(table_name, graph):
             self._possible_vals = db_spec.all_possible_vals.get(table_name, {})
         else:
             self._possible_vals = db_spec.possible_vals.get(age, {}).get(table_name, {})
-        # Initialize ports and widgets based on the schema [i for idx, i in enumerate(columns) if notnulls[idx] == 1 and defaults[idx] is None]
 
-        # override for RequirementSet becausse needs output
+        # override for RequirementSet becausse needs output TODO we now know we can change this to have input
         if table_name == 'RequirementSets':
             self.add_input('RequirementSetId')
 
@@ -250,10 +289,12 @@ def create_table_node_class(table_name, graph):
             fk_to_pk_link = fk_to_pk_map.get(col, None)
             is_required = require_map.get(col, None)
             if fk_to_pk_link is not None:
+                color = SQLValidator.port_color_map['input'].get(table_name, {}).get(col)
                 if is_required is not None:
-                    self.add_input(col)
+                    port = self.add_input(col, color=color)
                 else:
-                    self.add_input(col, painter_func=draw_square_port)
+                    port = self.add_input(col, painter_func=draw_square_port, color=color)
+                self.set_allowed_ports(port, fk_to_tbl_link, fk_to_pk_link)
 
             col_poss_vals = self._possible_vals.get(col, None)
             col_type = SQLValidator.type_map[table_name][col]
@@ -272,9 +313,20 @@ def create_table_node_class(table_name, graph):
         # Validate all fields after initialization
         self._validate_all_fields()
 
-        fk_backlink = spec.get("backlink_fk", None)         # pk_ref_map[table_name]['col_first']['Ages'] not ideal
+        fk_backlink = SQLValidator.pk_ref_map.get(table_name)         # pk_ref_map[table_name]['col_first']['Ages'] not ideal
         if fk_backlink is not None:                         # as we found extra fks
-            self.add_output(spec["primary_keys"][0])  # what if combined pk? can that even link
+            pk = SQLValidator.pk_map[table_name][0]
+            color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
+            port = self.add_output(pk, color=color)  # what if combined pk? can that even link
+            print(f'acceptable inputs for port {pk}')
+            for input_tbl_name, input_port in fk_backlink['table_first'].items():
+                table_class = SQLValidator.table_name_class_map.get(input_tbl_name, '')
+                self.add_accept_port_type(port, {
+                    'node_type': table_class,
+                    'port_type': PortTypeEnum.IN.value,
+                    'port_name': input_port,
+                })
+                print(f'{input_tbl_name}.{input_port}')
 
         if len(self._extra_fields) == 0:
             btn = self.get_widget('toggle_extra')
@@ -292,7 +344,6 @@ def create_table_node_class(table_name, graph):
         'set_defaults': set_defaults_method,
         '__init__': init_method,
     })
-
     return NewClass
 
 

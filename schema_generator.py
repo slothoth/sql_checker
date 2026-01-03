@@ -3,6 +3,7 @@ import os
 import sqlite3
 from collections import defaultdict
 import json
+import colorsys
 
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow import EXCLUDE
@@ -50,6 +51,7 @@ class SchemaInspector:
     odd_constraint_map = {}
     required_map = {}
     less_important_map = {}
+    port_color_map = {}
     engine_dict = {}
     mod_setup = {}
     include_mods = False
@@ -93,8 +95,8 @@ class SchemaInspector:
             for name, table in tables.items()
         }
 
-        self.pk_ref_map = {}
-        for model_name, model in tables.items():
+        self.pk_ref_map = {}            # table first is better as lets you get the pk col in the foreign table
+        for model_name, model in tables.items():            # but col first is more handy for fast retrieval and lists
             for ref_tbl, fk_refs in internal_fk_map.items():
                 for fk_col, pk_info in fk_refs.items():
                     if len(pk_info) > 1:
@@ -104,16 +106,25 @@ class SchemaInspector:
                     if pk_tbl == model_name:
                         if model_name not in self.pk_ref_map:
                             self.pk_ref_map[model_name] = {'table_first': {}, 'col_first': {}}
-                        if ref_tbl not in self.pk_ref_map[model_name]['table_first']:
-                            self.pk_ref_map[model_name]['table_first'][ref_tbl] = [pk_col]
-                        else:
-                            self.pk_ref_map[model_name]['table_first'][ref_tbl].append(pk_col)
+                        self.pk_ref_map[model_name]['table_first'][ref_tbl] = pk_col
 
                         if pk_col not in self.pk_ref_map[model_name]['col_first']:
                             self.pk_ref_map[model_name]['col_first'][pk_col] = [ref_tbl]
                         else:
                             self.pk_ref_map[model_name]['col_first'][pk_col].append(ref_tbl)
 
+        extra_backlinks = {key: {k: v for k, v in val['extra_backlinks'].items()} for key, val in
+                           db_spec.node_templates.items() if val.get('extra_backlinks') is not None}
+        [self.pk_ref_map[k]['table_first'].update(v) for k, v in extra_backlinks.items() if k in self.pk_ref_map]
+        for k, v in extra_backlinks.items():
+            if k not in self.pk_ref_map:
+                primary_key = self.pk_map[k][0]
+                self.pk_ref_map[k] = {'col_first': {primary_key: []}, 'table_first': {}}
+            for tbl, col in v.items():
+                pk = list(self.pk_ref_map[k]['col_first'].keys())[0]
+                self.pk_ref_map[k]['col_first'][pk].append(tbl)
+
+        self.port_coloring()
         insp = inspect(self.empty_engine)
         basic_defaults = {tbl: {info['name']: info['default'] for info in insp.get_columns(tbl)} for tbl, val in
                                  tables.items()}
@@ -133,6 +144,14 @@ class SchemaInspector:
         self.less_important_map = {tbl: [col.name for col in model.columns
                            if col.name not in self.required_map[tbl] and col.name not in self.pk_map[tbl]]
                      for tbl, model in tables.items()}
+        self.table_name_class_map = {table_name: f"db.table.{table_name.lower()}.{table_name.title().replace('_', '')}Node"
+                                for table_name in self.Base.metadata.tables}
+
+        self.table_name_class_map.update({'GameEffectCustom': 'db.game_effects.GameEffectNode',
+                                          'ReqEffectCustom': 'db.game_effects.RequirementEffectNode' })
+
+        self.class_table_name_map = {v: k for k, v in self.table_name_class_map.items()}
+
 
     def engine_instantiation(self, db_path):
         empty_engine = self.make_base_db(db_path)
@@ -368,6 +387,31 @@ class SchemaInspector:
 
         return mismatches
 
+    def port_coloring(self):
+        port_constraints = sorted([{'key': k, 'item_len': len(v['table_first']), 'items': v['table_first']}
+                                   for k, v in self.pk_ref_map.items()],key=lambda x: x['item_len'], reverse=True)
+        counts = {}
+        for i in port_constraints:
+            amount = i['item_len']
+            if amount not in counts:
+                counts[amount] = 1
+            else:
+                counts[amount] += 1
+        total_constraints = sum([i for k, i in counts.items() if int(k) > 3])
+        if total_constraints > 50:
+            total_constraints = sum([i for k, i in counts.items() if int(k) > 4])
+        self.port_color_map['input'], self.port_color_map['output'] = defaultdict(dict), defaultdict(dict)
+        for colour_count, i in enumerate(port_constraints):
+            port_inputs = i['items']
+            color = constraint_color(colour_count, total_constraints)
+            for tbl, col in port_inputs.items():
+                self.port_color_map['input'][tbl][col] = color
+            origin_table = i['key']
+            pks = self.pk_map[origin_table]
+            port_output = pks[0]
+            self.port_color_map['output'][origin_table][port_output] = color
+
+
     @staticmethod
     def make_base_db(db_path):
         if os.path.exists(db_path):
@@ -483,6 +527,29 @@ def explain_errors(error_info_list, session):
         bad_rows_dict[error_tuple].append(rows)
         explained_error_dict[error_tuple] = f"FOREIGN KEY missing on {insertion_table}.{fk_col}. It needs a corresponding primary key on table {primary_key_table}."
     return explained_error_dict, bad_rows_dict
+
+
+def constraint_color(index, total,                  # living here as used for init setup so ports dont
+                     sat_min=0.55, sat_max=0.85,    # recalculate it
+                     val_min=0.65, val_max=0.9):
+    """
+    index: unique constraint index [0..total-1]
+    total: number of distinct constraints
+    returns (r, g, b) in 0–255
+    """
+
+    hue = (index / total) % 1.0
+
+    # As total grows, compress saturation slightly
+    sat = sat_max - (sat_max - sat_min) * (total / 80.0)
+    sat = max(sat_min, min(sat, sat_max))
+
+    # Alternate value subtly to improve separation
+    val = val_max if index % 2 == 0 else val_min
+
+    r, g, b = colorsys.hsv_to_rgb(hue, sat, val)
+    return int(r * 255), int(g * 255), int(b * 255)
+
 
 
 def check_valid_sql_against_db(age, sql_commands):

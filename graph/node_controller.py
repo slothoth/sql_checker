@@ -109,23 +109,14 @@ class NodeEditorWindow(QMainWindow):
 
                     else:
                         src_port = src_node.get_input(src_port_name)   # Dialog only needed if associated with Effect
-                        src_node_name = src_node.get_property('table_name')     # System so like TraitModifiers,
-                        if src_node_name =='ReqEffectCustom':                # Modifiers.SubjectRequirementSetId
-                            name = 'GameEffectCustom'
-                        elif src_node_name =='GameEffectCustom':
-                            name = 'ReqEffectCustom'
-                        elif src_node_name in attach_tables:
-                            original_name = SQLValidator.fk_to_tbl_map[src_node_name][src_port_name]
-                            name = self.node_dialog_name({original_name: True, 'GameEffectCustom': True})
+                        accepted_ports = src_port.accepted_port_types()
+                        if len(accepted_ports) > 1:
+                            name = self.node_dialog_name({SQLValidator.class_table_name_map.get(i, ''): True
+                                                      for i in accepted_ports})
                         else:
-                            name = SQLValidator.fk_to_tbl_map[src_node_name][src_port_name]
+                            name = SQLValidator.class_table_name_map.get(next(iter(accepted_ports.keys())), '')
 
-                    if name == 'GameEffectCustom':
-                        node_name = 'db.game_effects.GameEffectNode'
-                    elif name == 'ReqEffectCustom':
-                        node_name = 'db.game_effects.RequirementEffectNode'
-                    else:
-                        node_name = f"db.table.{name.lower()}.{name.title().replace('_', '')}Node"
+                    node_name = SQLValidator.table_name_class_map.get(name, name)
                     new_node = self.graph.create_node(node_name, pos=[scene_pos.x(), scene_pos.y()])
 
                     # Connect nodes
