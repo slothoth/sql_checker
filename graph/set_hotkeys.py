@@ -2,7 +2,7 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 import sys, os, json, shutil
 
 from graph.db_node_support import NodeCreationDialog
-from graph.transform_json_to_sql import transform_json, start_analysis_graph, make_modinfo
+from graph.transform_json_to_sql import transform_json, make_modinfo
 from schema_generator import check_valid_sql_against_db
 from graph.db_spec_singleton import db_spec
 
@@ -445,14 +445,11 @@ def test_session(graph):
     sql_lines = transform_json(current)
     # save SQL, then trigger main run model
     write_sql(sql_lines)
-    # start_analysis_graph(graph.main_window)           # deprecated, we wanna test with alchemy
     age = graph.property('meta').get('Age')
     push_to_log(graph, f'Testing mod for: {age}')
     data = check_valid_sql_against_db(age, sql_lines)
     extract_state_test(graph, data)
-    graph.main_window.showNormal()
-    graph.main_window.raise_()
-    graph.main_window.activateWindow()
+    # make the collapsible panel be shown
 
 
 def save_session_to_mod(graph, parent=None):
@@ -551,6 +548,7 @@ def extract_state_test(graph, data):
 
 
 def push_to_log(graph, message):
-    graph.main_window.log_display.appendPlainText(str(message))  # ensure plain text insertion so the highlighter can run
-    cursor = graph.main_window.log_display.textCursor()  # keep view scrolled to bottom
-    graph.main_window.log_display.setTextCursor(cursor)
+    log_display = graph.side_panel.log_display
+    log_display.appendPlainText(str(message))  # ensure plain text insertion so the highlighter can run
+    cursor = log_display.textCursor()  # keep view scrolled to bottom
+    log_display.setTextCursor(cursor)

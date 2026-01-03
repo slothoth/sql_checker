@@ -170,9 +170,6 @@ def old_transform_to_sql(columns_dict, table_name, error_string):
     return sql, error_string
 
 
-def start_analysis_graph(main_window):
-    main_window.start_analysis(True)
-
 criteria_names = {
     'ALWAYS': 'always',
     'AGE_ANTIQUITY': 'antiquity-age-current',

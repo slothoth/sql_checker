@@ -133,7 +133,6 @@ class SqlChecker:
 
         db_connection.create_function("Make_Hash", 1, make_hash)
 
-        known_errors = []
         unique_fk_errors = set()
         cursor = db_connection.cursor()
         cursor.execute("PRAGMA foreign_keys = ON;")
@@ -141,7 +140,6 @@ class SqlChecker:
         db_connection.execute('BEGIN')
         errors = []
         file_list_tuples = [(filename, sql_scripts) for filename, sql_scripts in file_list.items()]
-        # [i for i in file_list_tuples if any(j for j in i[1] if 'TRAIT_MOD_TOWN_URBAN_CENTER_PROJECT_SUBJECT_REQUIREMENTS_2' in j)]
         for filename, sql_scripts in file_list_tuples:
             commenting = 0
             for idx, sql_script in enumerate(sql_scripts):

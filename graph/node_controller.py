@@ -1,14 +1,19 @@
 import uuid
 import json
 from PyQt5 import QtGui, QtWidgets
-from PyQt5.QtWidgets import QMainWindow
+from PyQt5.QtWidgets import (
+    QMainWindow, QSizePolicy
+)
+
+
 from NodeGraphQt import NodeGraph
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
-from graph.db_spec_singleton import db_spec, modifier_system_tables, attach_tables
+from graph.db_spec_singleton import db_spec
 from graph.set_hotkeys import set_hotkeys
 from graph.dynamic_nodes import generate_tables, GameEffectNode, RequirementEffectNode
 from schema_generator import SQLValidator
+from graph.info_panel import CollapsiblePanel
 # bodge job for blocking recursion
 recently_changed = {}
 
@@ -21,7 +26,6 @@ class NodeEditorWindow(QMainWindow):
         super().__init__(parent)
         self.graph = NodeGraph()
         self.setCentralWidget(self.graph.widget)
-        self.graph.main_window = parent
         mod_uuid = 'SQL_GUI_' + str(uuid.uuid4().hex)
         default_meta['Mod UUID'] = mod_uuid
         self.graph.setProperty('meta', default_meta)
@@ -48,12 +52,26 @@ class NodeEditorWindow(QMainWindow):
         viewer = self.graph.viewer()
         viewer.connection_changed.connect(on_connection_changed)
 
+        old_resize = viewer.resizeEvent
+
+        def reposition_panel():
+            margin = 10
+            panel.resize(panel.width(), viewer.viewport().height() - margin * 2)
+            panel.move(viewer.viewport().width() - panel.width() - margin, margin)
+
+        def resize_event(event):
+            old_resize(event)
+            reposition_panel()
+
+        viewer.resizeEvent = resize_event
+
         hide = self.graph.property("Hide Types") or False
         set_nodes_visible_by_type(self.graph, 'db.table.types.TypesNode', not hide)
 
-    def closeEvent(self, event):
-        self.hide()
-        event.ignore()
+        panel = CollapsiblePanel(viewer)
+        self.graph.side_panel = panel
+        panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        panel.show()
 
     def enable_auto_node_creation(self):
         """
@@ -212,3 +230,4 @@ def update_widget_or_prop(node, widget_name, new_val):
         hidden_property = node.get_property(widget_name)
         if hidden_property is not None:
             node.set_property(widget_name, new_val)
+
