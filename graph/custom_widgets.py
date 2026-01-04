@@ -135,3 +135,41 @@ class FloatSpinNodeWidget(NodeBaseWidget):
         self.spin.blockSignals(True)
         self.spin.setValue(0.0 if value is None else float(value))
         self.spin.blockSignals(False)
+
+
+class ExpandingLineEdit(NodeBaseWidget):
+
+    def __init__(self, parent=None, name='', label='', text='', check_if_edited=False):
+        super(ExpandingLineEdit, self).__init__(parent, name, label)
+        self.set_name(name)
+
+        self.line_edit = QtWidgets.QLineEdit()
+        self.line_edit.setText(text)
+        self.line_edit.textChanged.connect(self._on_text_changed)
+        if check_if_edited:
+            self.line_edit.user_edited = False
+            self.line_edit.textEdited.connect(self.on_user_edit)
+        self.set_custom_widget(self.line_edit)
+
+    @property
+    def type_(self):
+        return 'ExpandingLineEdit'
+
+    def _on_text_changed(self, text):
+        self.set_value(text)
+
+    def set_value(self, value):
+        if self.line_edit.text() != value:
+            self.line_edit.setText(value)
+
+    def get_value(self):
+        return self.line_edit.text()
+
+    def on_user_edit(self):
+        self.line_edit.user_edited = True
+
+    def update_from_state(self, new_value):
+        if not self.line_edit.user_edited:
+            self.line_edit.setText(new_value)
+            return True
+        return False

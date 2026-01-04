@@ -77,8 +77,10 @@ class CollapsiblePanel(QWidget):
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.toggle_btn)
+        layout.setSpacing(0)
+
         layout.addWidget(self.content)
+        layout.addWidget(self.toggle_btn)
 
         self.expanded = True
         self.timer = self.startTimer(100)
@@ -86,7 +88,10 @@ class CollapsiblePanel(QWidget):
     def toggle(self):
         self.expanded = not self.expanded
         self.content.setVisible(self.expanded)
-        self.toggle_btn.setText("◀" if self.expanded else "▶")
+        if self.expanded:
+            self.toggle_btn.setText("▶")
+        else:
+            self.toggle_btn.setText("◀")
 
     @staticmethod
     def create_file_row(label_text, default_value="", browse_func=None):

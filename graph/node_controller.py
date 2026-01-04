@@ -49,7 +49,7 @@ class NodeEditorWindow(QMainWindow):
         self.graph.property_changed.connect(on_property_changed)
 
         viewer = self.graph.viewer()
-        viewer.connection_changed.connect(on_connection_changed)
+        self.graph.port_connected.connect(on_connection_changed)
 
         old_resize = viewer.resizeEvent
 
@@ -71,7 +71,6 @@ class NodeEditorWindow(QMainWindow):
         self.graph.side_panel = panel
         panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         panel.show()
-
 
     def enable_auto_node_creation(self):
         """
@@ -104,8 +103,11 @@ class NodeEditorWindow(QMainWindow):
                     if len(accepted_ports) > 1:
                         name = self.node_dialog_name([SQLValidator.class_table_name_map.get(i, i)
                                                       for i in accepted_ports])
-                    else:
+                    elif len(accepted_ports) == 1:
                         name = SQLValidator.class_table_name_map.get(next(iter(accepted_ports.keys())), '')
+                    else:
+                        print('failed node creation on drop!')
+                        return
 
                     node_name = SQLValidator.table_name_class_map.get(name, name)
                     if node_name is None:
@@ -207,19 +209,41 @@ def propagate_value_by_port_name(source_node, prop_name):
                     target_node.set_property(target_prop_name, prop_value)
 
 
-def on_connection_changed(disconnected_ports, connected_ports):
-    for port1, port2 in connected_ports:
-        prop_name_1, prop_name_2 = port1.name, port2.name
-        node1, node2 = port1.node, port2.node
-        if node1.has_widget(prop_name_1) and node2.has_widget(prop_name_2):
-            winning_widget = node1.get_widget(prop_name_1)
-            new_value = winning_widget.get_value()
-            changing_widget = node2.widgets.get(prop_name_2)
-            if changing_widget:
-                changing_widget.blockSignals(True)
-            changing_widget.set_value(new_value)
-            if changing_widget:
-                changing_widget.blockSignals(False)
+def on_connection_changed(input_port, output_port):
+    input_name, output_name = input_port.name(), output_port.name()
+    input_node, output_node = input_port.node(), output_port.node()
+    input_widget = input_node.get_widget(input_name)
+    current_input_value = input_node.get_property(input_name) if input_widget is None else input_widget.get_value()
+    output_widget = output_node.get_widget(output_name)
+    current_output_value = output_node.get_property(output_name) if output_widget is None else output_widget.get_value()
+    if current_input_value == current_output_value:
+        return
+    else:
+        changing_node, new_value = None, None
+        if current_input_value == '' or current_input_value is None:
+            changing_node = input_node
+            changing_name = input_name
+            new_value = current_output_value
+        elif current_output_value == '' or current_output_value is None:
+            changing_node = output_node
+            changing_name = output_name
+            new_value = current_input_value
+        if changing_node is not None and new_value is not None:
+            update_widget_or_prop(changing_node, changing_name, new_value)
+    if input_name == 'ReqSet':      # update gameEffects property to build requirements Set, with nested req OR AND
+        current_reqset = output_node.get_property('RequirementSetDict')
+        if current_reqset:
+            current_reqset = current_reqset[output_name]
+            # build new req
+            input_node_name = input_node.get_property('table_name')
+            if input_node_name == 'ReqEffectCustom':            # add single req to list
+                req_id = input_node.get_widget('RequirementId').get_value()
+                current_reqset['reqs'].append(req_id)
+            elif input_node_name == 'RequirementSets':          # use existant reqset
+                reqset_id = input_node.get_widget('RequirementSetId').get_value()
+                current_reqset['reqs'].append({'reqset': reqset_id})
+            else:
+                print(f'oh no! wrong input table: {input_node_name}')
 
 
 def update_widget_or_prop(node, widget_name, new_val):

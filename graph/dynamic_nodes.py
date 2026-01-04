@@ -2,15 +2,14 @@ from NodeGraphQt import BaseNode
 from NodeGraphQt.constants import PortTypeEnum
 from PyQt5 import QtCore, QtGui
 import math
-import time
 from collections import defaultdict
 
 from graph.db_spec_singleton import (db_spec, requirement_argument_info, requirement_system_tables, effect_system_tables,
                                      req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
                                      mod_arg_type_list_map, all_param_arg_fields)
 from schema_generator import SQLValidator
-from graph.custom_widgets import NodeSearchMenu, ToggleExtraButton, IntSpinNodeWidget, FloatSpinNodeWidget
-
+from graph.custom_widgets import (NodeSearchMenu, ToggleExtraButton, IntSpinNodeWidget, FloatSpinNodeWidget,
+                                  ExpandingLineEdit)
 
 
 class BasicDBNode(BaseNode):
@@ -70,8 +69,6 @@ class BasicDBNode(BaseNode):
         pk = SQLValidator.pk_map[table_name][0]
         color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
         port = self.add_output(pk, color=color)
-        # lets just set a property on each node that handles output port possibilities?
-        # {'port1': [list]}
         port_outputs = defaultdict(list)
         for input_port, input_tbl_name_list in fk_backlink['col_first'].items():
             for input_tbl_name in input_tbl_name_list:
@@ -104,7 +101,7 @@ class BasicDBNode(BaseNode):
             widget_tooltip=None,
             tab='fields'
         )
-        widget = NodeSearchMenu(self.view, col, pad_label(index_label(idx, col)), col_poss_vals)
+        widget = NodeSearchMenu(self.view, col, index_label(idx, col), col_poss_vals)
         widget.setToolTip('')
 
         self.view.add_widget(widget)
@@ -115,14 +112,13 @@ class BasicDBNode(BaseNode):
 
     def set_bool_checkbox(self, col, idx=0, default_val=None):
         is_default_on = default_val is not None and int(default_val) == 1
-        self.add_checkbox(col, label=pad_label(index_label(idx, col)), state=is_default_on)
-        cb = self.get_widget(col).get_custom_widget()
+        self.add_checkbox(col, label=index_label(idx, col), state=is_default_on)        # TODO convert to custom widget
+        cb = self.get_widget(col).get_custom_widget()                                   # for label resizing
         cb.setMinimumHeight(24)
         cb.setStyleSheet("QCheckBox { padding-top: 2px; }")
 
     def set_text_input(self, col, idx=0, default_val=None):
-        lab = pad_label(index_label(idx, col))
-        self.add_text_input(name=col, label=lab, text=str(default_val or ''), tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=index_label(idx, col), name=col, text=str(default_val or '')), tab='fields')
         text_widget = self.get_widget(col)
         text_widget.get_custom_widget().setMinimumHeight(24)
 
@@ -227,7 +223,7 @@ class DynamicNode(BasicDBNode):
             widget_tooltip=None,
             tab='fields'
         )
-        widget = NodeSearchMenu(self.view, col, pad_label(index_label(idx, col)), col_poss_vals)
+        widget = NodeSearchMenu(self.view, col, index_label(idx, col), col_poss_vals)
         widget.setToolTip('')
 
         # Connect validation to value changes
@@ -254,7 +250,6 @@ def create_table_node_class(table_name, graph):
 
     def init_method(self):
         super(type(self), self).__init__()
-        start_time = time.time()
         self.view.setVisible(False)
         primary_keys = SQLValidator.pk_map[table_name]
         prim_texts = [i for i in SQLValidator.required_map[table_name] if i not in primary_keys]
@@ -322,8 +317,6 @@ def create_table_node_class(table_name, graph):
             btn = self.get_widget('toggle_extra')
             btn.hide()
         self.view.setVisible(True)
-        end_time = time.time()
-        print(f'Full Dynamic Node time: {end_time - start_time}')
 
     def set_defaults_method(self):
         self.set_property('table_name', table_name)
@@ -382,7 +375,6 @@ class BaseEffectNode(BasicDBNode):
         else:
             for prop in new_params:
                 self.show_or_make_prop_widget(prop, new_params, mode, push_undo)
-        prop_change_time = time.time()
         self.view.setVisible(True)
         self.update_unnamed_cols(mode)
         self.old_effect = mode
@@ -427,7 +419,7 @@ class BaseEffectNode(BasicDBNode):
 
         lower_prop = prop.lower()
         if 'text' in lower_prop or 'database' in lower_prop:
-            self.add_text_input(lower_prop, label=lower_prop, text="")
+            self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=lower_prop, name=lower_prop), tab='fields')
         elif 'bool' in lower_prop:
             self.add_checkbox(lower_prop, label=lower_prop)
         elif 'int' in lower_prop:
@@ -437,6 +429,9 @@ class BaseEffectNode(BasicDBNode):
         else:
             raise Exception(f'unhandled prop {prop}')
         return self.get_widget(prop)
+
+    def update_unnamed_cols(self, mode):      # will be overridden
+        return
 
     def arg_prop_map(self):
         return {}
@@ -450,9 +445,9 @@ class GameEffectNode(BaseEffectNode):
     NODE_NAME = 'CustomGameEffect'
     old_effect = None
     arg_setter_prop = 'EffectType'
+    output_port_tables = {'db.game_effects.RequirementEffectNode': ['SubjectReq', 'OwnerReq']}
 
     def __init__(self):
-        start_time = time.time()
         super().__init__()
         self.view.setVisible(False)
         self.create_property('table_name', value='GameEffectCustom')
@@ -466,19 +461,24 @@ class GameEffectNode(BaseEffectNode):
         self._extra_fields = modifier_extra_fields
 
         # dynamicModifiers
-        self.add_text_input('ModifierId', 'ModifierId', tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='ModifierId', name='ModifierId',
+                                                 check_if_edited=True), tab='fields')
         self.add_output('ModifierId')
-        self.add_combo_menu( "EffectType", label="EffectType", items=list(modifier_argument_info.keys()))
+        self.add_combo_menu("EffectType", label="EffectType", items=list(modifier_argument_info.keys()))
         self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
         self.create_property('ModifierType', '')
         # Req Ports
 
         self.add_output('SubjectReq')
-        self.add_text_input('SubjectReq', 'SubjectRequirementSetId', tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='SubjectRequirementSetId', name='SubjectReq',
+                                                 check_if_edited=True), tab='fields')
         # self.set_search_menu(col='SubjectReq', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['SubjectRequirementSetId']['vals'], validate=False)
-
         self.add_output('OwnerReq')
-        self.add_text_input('OwnerReq', 'OwnerRequirementSetId', tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='OwnerRequirementSetId', name='OwnerReq',
+                                                 check_if_edited=True), tab='fields')
+        self.create_property('RequirementSetDict', {'SubjectReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []},
+                                                    'OwnerReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []}})
+
         #self.set_search_menu(col='OwnerRequirementSetId', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['OwnerRequirementSetId']['vals'], validate=False)
 
         for col in modifier_fields:
@@ -491,9 +491,8 @@ class GameEffectNode(BaseEffectNode):
                 self.hide_widget(col, push_undo=False)
 
         # ModifierStrings
-        self.add_text_input('Text', 'Text', tab='fields')
-        self.add_text_input('Context', 'Context', tab='fields')
-
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='Text', name='Text'), tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='Context', name='Context'), tab='fields')
         # ModifierMetadata. Only used for resource modifiers.
 
         toggle = ToggleExtraButton(self.view)
@@ -505,8 +504,6 @@ class GameEffectNode(BaseEffectNode):
         self.create_property('arg_params', lazy_arg_params)
         self.view.setVisible(True)
         self._apply_mode(self.get_property("EffectType"), push_undo=False)
-        finished_time = time.time()
-        print(f'Full Node time: {finished_time - start_time}')
 
     def get_link_port(self, connect_table, connect_port):    # uses custom ReqCustom and all Modifier attachment tables
         if connect_port is not None:
@@ -520,42 +517,24 @@ class GameEffectNode(BaseEffectNode):
                               f' defaulting to first option')
                     return fk_ports[0]
 
-    def update_unnamed_cols(self, mode):
-        # change default names if not already named
-        # ModifierId, ModifierType, SubjectReqSetId, OwnerReqSetId
+    def update_unnamed_cols(self, mode):        # change default names if not already named
         collection_type = self.get_property('CollectionType')
-        current_modifier_id = self.get_property('ModifierId')
-
         short_collection = collection_type.replace('COLLECTION_', '')
-        # needs to have numbers to deal with plurality of types
-        old_modifier_id_default, old_modifier_type_default, old_subject_default, old_owner_default = '', '', '', ''
-        if self.old_effect is not None:
-            # if has old effect, could have old default. only change if is that default
-            old_modifier_id_default = f"{self.old_effect.replace('EFFECT_', '')}_ON_{short_collection}"
-            old_modifier_type_default = f"{old_modifier_id_default}_TYPE"
-            old_subject_default = f"{old_modifier_id_default}_SUBJECT_REQUIREMENTS"
-            old_owner_default = f"{old_modifier_id_default}_OWNER_REQUIREMENTS"
+
+        modifier_id_widget = self.get_widget('ModifierId')
+        modifier_type_prop = self.get_property('ModifierType')
+        subject_req_widget = self.get_widget('SubjectReq')
+        owner_req_widget = self.get_widget('OwnerReq')
 
         new_modifier_id = f"{mode.replace('EFFECT_', '')}_ON_{short_collection}"
-        new_modifier_type = f"{new_modifier_id}_TYPE"
-        new_subject = f"{new_modifier_id}_SUBJECT_REQUIREMENTS"
-        new_owner = f"{new_modifier_id}_OWNER_REQUIREMENTS"
-
-        current_modifier_type = self.get_property('ModifierType')
-        subject_widget = self.get_widget('SubjectReq')
-        owner_widget = self.get_widget('OwnerReq')
-
-        if old_modifier_type_default in [current_modifier_type, '']:
+        modifier_id_updates = modifier_id_widget.update_from_state(new_modifier_id)
+        if modifier_id_updates:
+            new_modifier_type = f"{new_modifier_id}_TYPE"
+            new_subject = f"{new_modifier_id}_SUBJECT_REQUIREMENTS"
+            new_owner = f"{new_modifier_id}_OWNER_REQUIREMENTS"
             self.set_property('ModifierType', new_modifier_type)
-
-        if current_modifier_id in [old_modifier_id_default, '']:
-            self.get_widget('ModifierId').set_value(new_modifier_id)
-
-        if subject_widget.get_value() in [old_subject_default, '']:
-            subject_widget.set_value(new_subject)
-
-        if owner_widget.get_value() in [old_owner_default, '']:
-            owner_widget.set_value(new_owner)
+            subject_req_widget.update_from_state(new_subject)
+            owner_req_widget.update_from_state(new_owner)
 
     def arg_prop_map(self):
         return mod_arg_type_list_map
@@ -570,13 +549,14 @@ class RequirementEffectNode(BaseEffectNode):
     old_effect = None
 
     arg_setter_prop = 'RequirementType'
+    output_port_tables = {'db.game_effects.GameEffectNode': ['SubjectReq', 'OwnerReq']}
 
     def __init__(self):
         super().__init__()
         self.view.setVisible(False)
         self.create_property('table_name', value='ReqEffectCustom')
 
-        self.add_text_input('RequirementId', 'RequirementId', tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='RequirementId', name='RequirementId'), tab='fields')
         self.set_search_menu(col='RequirementType', idx=0,
                         col_poss_vals= list(requirement_argument_info.keys()),
                         validate=False)
@@ -588,7 +568,6 @@ class RequirementEffectNode(BaseEffectNode):
         self.create_property('arg_params', lazy_arg_params)
         self.view.setVisible(True)
         self._apply_mode(self.get_property("RequirementType"), push_undo=False)
-
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
         if connect_port is not None:
@@ -614,10 +593,6 @@ class RequirementEffectNode(BaseEffectNode):
 
 
 # helper functions
-
-def pad_label(text, width=20):
-    return text.ljust(width)
-
 
 def index_label(order, text):
     PREFIX = '\u200B\u200B'   # Toxic Zero White Space character to order labels with numbers without those showing

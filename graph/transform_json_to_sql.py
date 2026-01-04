@@ -10,14 +10,13 @@ def transform_json(json_filepath):
     error_string = ''
     with open(json_filepath) as f:
         data = json.load(f)
-    sql_code, table_entries = [], {'RequirementSets': []}
+    sql_code = []
     for node_id, val in data['nodes'].items():
         custom_properties = val['custom']
         table_name = val.get('table_name', custom_properties['table_name'])
         custom_properties = SQLValidator.normalize_node_bools(custom_properties, table_name)
         if table_name == 'ReqEffectCustom':
-            table_entries, sql_code, error_string = req_custom_transform(data, custom_properties, node_id,
-                                                                          table_entries, sql_code, error_string)
+            sql_code, error_string = req_custom_transform(data, custom_properties, node_id, sql_code, error_string)
 
         elif table_name == 'GameEffectCustom':
             sql_code, error_string = effect_custom_transform(custom_properties, sql_code, error_string)
@@ -32,7 +31,7 @@ def transform_json(json_filepath):
     return [i + '\n' for i in sql_code]
 
 
-def req_custom_transform(data, custom_properties, node_id, table_entries, sql_code, error_string):
+def req_custom_transform(data, custom_properties, node_id, sql_code, error_string):
     req_id = custom_properties['RequirementId']
     req_type = custom_properties['RequirementType']  # need to change on data level as used in cols dict.
     columns_dict = {k: v for k, v in custom_properties.items() if 'param_' not in k and k not in excludes
@@ -74,17 +73,11 @@ def req_custom_transform(data, custom_properties, node_id, table_entries, sql_co
             reqset = data['nodes'][out_table_key]['custom'][out_port]
 
     if reqset != '':
-        if reqset not in table_entries['RequirementSets']:  # make sure we dont redefine reqset
-            sql, error_string = transform_to_sql(
-                {'RequirementSetId': reqset, 'RequirementSetType': 'REQUIREMENTSET_TEST_ALL'},
-                'RequirementSets', error_string)
-            sql_code.append(sql)
-            table_entries['RequirementSets'] = [reqset]
-
         sql, error_string = transform_to_sql({'RequirementSetId': reqset, 'RequirementId': req_id},
                                              'RequirementSetRequirements', error_string)
         sql_code.append(sql)
-    return table_entries, sql_code, error_string
+    return sql_code, error_string
+
 
 def effect_custom_transform(custom_properties, sql_code, error_string):
     no_arg_params = {k: v for k, v in custom_properties.items() if 'param_' not in k and k not in excludes}
@@ -98,9 +91,43 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
                                          'Types', error_string)
     sql_code.append(sql)
 
-    mod_cols = db_spec.node_templates['Modifiers']['all_cols']  # Modifiers
+    # do requirementSets, to handle nesting and multiple connections to different requirementSets and ReqCustom
     rename_mapper = {'SubjectReq': 'SubjectRequirementSetId', 'OwnerReq': 'OwnerRequirementSetId'}
-    columns_dict = {rename_mapper.get(k, k): v for k, v in no_arg_params.items() if k in mod_cols}
+    reqset_used = {}
+    reqset_info = no_arg_params['RequirementSetDict']
+    for req_object_type, reqset_object_info in reqset_info.items():
+        if len(reqset_object_info['reqs']) > 0:
+            reqset_used[req_object_type] = rename_mapper[req_object_type]
+            reqset_name = no_arg_params[req_object_type]  # make reqset
+            reqset_type = reqset_object_info['type']
+            sql, error_string = transform_to_sql({'RequirementSetId': reqset_name,
+                                                  'RequirementSetType': reqset_type},
+                                                 'RequirementSets', error_string)
+            sql_code.append(sql)
+            for req in reqset_object_info['reqs']:
+                req_id = req
+                if isinstance(req, dict):
+                    print('nesting req')
+                    nested_reqset = req['reqset']
+                    req_name = f'REQ_IS_MET_{nested_reqset}'
+
+                    sql, error_string = transform_to_sql({'RequirementId': req_name,
+                                                          'RequirementType': 'REQUIREMENT_REQUIREMENTSET_IS_MET'},
+                                                         'Requirements', error_string)
+
+                    sql, error_string = transform_to_sql({'RequirementId': req_name,
+                                                          'Name': 'REQUIREMENT_REQUIREMENTSET_IS_MET',
+                                                          'Value': nested_reqset},
+                                                         'RequirementArguments', error_string)
+
+                    req_id = req_name
+
+                sql, error_string = transform_to_sql({'RequirementSetId': reqset_name,
+                                                      'RequirementId': req_id},
+                                                     'RequirementSetRequirements', error_string)
+
+    mod_cols = db_spec.node_templates['Modifiers']['all_cols']  # Modifiers
+    columns_dict = {reqset_used.get(k, k): v for k, v in no_arg_params.items() if reqset_used.get(k, k) in mod_cols}
     sql, error_string = transform_to_sql(columns_dict, 'Modifiers', error_string)
     sql_code.append(sql)
 
@@ -116,6 +143,7 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
     if not any([v == '' for k, v in columns_dict.items() if k in template['primary_texts']]):
         sql, error_string = transform_to_sql(columns_dict, 'ModifierStrings', error_string)
         sql_code.append(sql)
+
     return sql_code, error_string
 
 
