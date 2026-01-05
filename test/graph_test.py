@@ -148,9 +148,7 @@ def test_req_effect_value_change(qtbot):
     print(missed)
 
 
-def test_write_effect_and_req_graph_to_mod(qtbot):
-    window = NodeEditorWindow()
-    qtbot.addWidget(window)
+def setup_effect_req(window):
     effect_1, effect_2 = 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE'
     req_1, req_2 = 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS'
     effect_1_param_map = {v: k for k, v in mod_arg_type_list_map[effect_1].items()}
@@ -167,52 +165,63 @@ def test_write_effect_and_req_graph_to_mod(qtbot):
 
     effect_node.set_property('EffectType', effect_2)
     effect_node.set_property(effect_2_param_map['Amount'], 6)
-    effect_node.set_property(effect_2_param_map['ResourceClassType'], 3)   # will need to change from int once better
+    effect_node.set_property(effect_2_param_map['ResourceClassType'], 3)  # will need to change from int once better
 
     req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')
     req_node.set_property('RequirementType', req_1)
-    req_node.set_property(req_1_param_map['Amount'], '4')         # string for some reason
+    req_node.set_property(req_1_param_map['Amount'], '4')  # string for some reason
     req_node.set_property(req_1_param_map['UnitType'], 'UNIT_TEST')
 
     req_node.set_property('RequirementType', req_2)
-    req_node.set_property(req_2_param_map['BuildingType'], 'BUILDING_TEST')     # 'BuildingType' 'BUILDING_TEST'
+    req_node.set_property(req_2_param_map['BuildingType'], 'BUILDING_TEST')  # 'BuildingType' 'BUILDING_TEST'
+    return effect_node, req_node
+
+
+def test_write_effect_and_req_graph_after_change_to_mod(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    setup_effect_req(window)
     mod_output_check(window, 'test_effects_not_connected_reqs.sql')
 
 
-def test_write_effect_and_req_connected_graph_to_mod(qtbot):     # this version has a reqset as connected
+def test_write_effect_and_req_connected_graph_after_change_to_mod(qtbot):     # this version has a reqset as connected
     window = NodeEditorWindow()
     qtbot.addWidget(window)
-    effect_1, effect_2 = 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE'
-    req_1, req_2 = 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS'
-    effect_1_param_map = {v: k for k, v in mod_arg_type_list_map[effect_1].items()}
-    effect_2_param_map = {v: k for k, v in mod_arg_type_list_map[effect_2].items()}
-    req_1_param_map = {v: k for k, v in req_arg_type_list_map[req_1].items()}
-    req_2_param_map = {v: k for k, v in req_arg_type_list_map[req_2].items()}
-
-    effect_node = window.graph.create_node('db.game_effects.GameEffectNode')        # effect changes
-    effect_node.set_property('EffectType', effect_1)
-    effect_node.set_property('CollectionType', 'COLLECTION_ALL_PLAYERS')
-    effect_node.set_property(effect_1_param_map['Amount'], '2')
-    effect_node.set_property(effect_1_param_map['YieldType'], 'YIELD_FOOD')
-
-    effect_node.set_property('EffectType', effect_2)
-    effect_node.set_property(effect_2_param_map['Amount'], 6)
-    effect_node.set_property(effect_2_param_map['ResourceClassType'], 3)   # will need to change from int once better
-
-    req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')        # req changes
-    req_node.set_property('RequirementType', req_1)
-    req_node.set_property(req_1_param_map['Amount'], '4')                   # string for some reason
-    req_node.set_property(req_1_param_map['UnitType'], 'UNIT_TEST')
-
-    req_node.set_property('RequirementType', req_2)
-    req_node.set_property(req_2_param_map['BuildingType'], 'BUILDING_TEST')     # 'BuildingType' 'BUILDING_TEST'
-
-    # connect req and effect
-    req_input_port = req_node.inputs()['ReqSet']              # ReqSet
-    req_output_port = effect_node.outputs()['SubjectReq']        # should be SubjectReq
+    effect_node, req_node = setup_effect_req(window)
+    req_input_port = req_node.inputs()['ReqSet']              # connect req and effect
+    req_output_port = effect_node.outputs()['SubjectReq']
     req_output_port.connect_to(req_input_port)
     mod_output_check(window, 'test_effects_and_reqs.sql')
 
+
+def test_write_effect_and_req_nested(qtbot):     # this version has a reqset as connected
+    window = NodeEditorWindow()                  #   effect_node -> Reqset -> req1, req2
+    qtbot.addWidget(window)                      #              \-> req_node
+    effect_node, req_node = setup_effect_req(window)
+    req1 = window.graph.create_node('db.table.requirements.RequirementsNode')
+    req1.set_property('RequirementId', 'TEST_REQ_1')
+    req1.set_property('RequirementType', 'REQUIREMENT_OPPONENT_IS_DISTRICT')
+
+    reqset = window.graph.create_node('db.table.requirementsets.RequirementsetsNode')
+    reqset.set_property('RequirementSetId', 'TEST_REQSET_1')
+
+    reqset_reqs = window.graph.create_node('db.table.requirementsetrequirements.RequirementsetrequirementsNode')
+
+    req_input_port = req_node.inputs()['ReqSet']              # connect req and effect
+    req_output_port = effect_node.outputs()['SubjectReq']
+    req_output_port.connect_to(req_input_port)
+
+    reqset_port_reqset = reqset.outputs()['RequirementSetId']            # connect reqset to rsr
+    reqset_req_port_reqset = reqset_reqs.inputs()['RequirementSetId']
+    reqset_port_reqset.connect_to(reqset_req_port_reqset)
+
+    reqset_req_port_req = reqset_reqs.inputs()['RequirementId']          # connect reqset to req
+    req_port_req = req1.outputs()['RequirementId']
+    reqset_req_port_req.connect_to(req_port_req)
+
+    other_reqset_port = reqset.inputs()['RequirementSetId']             # connect req custom to reqset
+    req_output_port.connect_to(other_reqset_port)
+    mod_output_check(window, 'nested_reqs.sql')
 
 def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up
     return

@@ -65,18 +65,6 @@ class BasicDBNode(BaseNode):
                     'port_name': fk_to_pk_link,
                 })
 
-    def set_output_port_constraints(self, table_name, fk_backlink):
-        pk = SQLValidator.pk_map[table_name][0]
-        color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
-        port = self.add_output(pk, color=color)
-        port_outputs = defaultdict(list)
-        for input_port, input_tbl_name_list in fk_backlink['col_first'].items():
-            for input_tbl_name in input_tbl_name_list:
-                table_class = SQLValidator.table_name_class_map.get(input_tbl_name, '')
-                port_outputs[table_class].append(input_port)
-
-        self.output_port_tables = port_outputs
-
     def set_spec(self, col_dict):
         for col_name, value in col_dict.items():
             if value is not None and value != 'NULL':
@@ -311,7 +299,8 @@ def create_table_node_class(table_name, graph):
 
         fk_backlink = SQLValidator.pk_ref_map.get(table_name)
         if fk_backlink is not None:
-            self.set_output_port_constraints(table_name, fk_backlink)
+            self.output_port_tables[SQLValidator.pk_map[table_name][0]] = set_output_port_constraints(self, table_name,
+                                                                                                      fk_backlink)
 
         if len(self._extra_fields) == 0:
             btn = self.get_widget('toggle_extra')
@@ -445,8 +434,7 @@ class GameEffectNode(BaseEffectNode):
     NODE_NAME = 'CustomGameEffect'
     old_effect = None
     arg_setter_prop = 'EffectType'
-    output_port_tables = {'db.game_effects.RequirementEffectNode': ['SubjectReq', 'OwnerReq']}
-
+    output_port_tables = {}
     def __init__(self):
         super().__init__()
         self.view.setVisible(False)
@@ -463,10 +451,18 @@ class GameEffectNode(BaseEffectNode):
         # dynamicModifiers
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='ModifierId', name='ModifierId',
                                                  check_if_edited=True), tab='fields')
-        self.add_output('ModifierId')
         self.add_combo_menu("EffectType", label="EffectType", items=list(modifier_argument_info.keys()))
         self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
         self.create_property('ModifierType', '')
+        self.output_port_tables['ModifierId'] = set_output_port_constraints(self, 'Modifiers',
+                                                              SQLValidator.pk_ref_map.get('Modifiers'))
+        self.output_port_tables['ModifierId'] = {k: v for k, v in self.output_port_tables['ModifierId'].items()
+                                   if SQLValidator.class_table_name_map.get(k, k) not in effect_system_tables}
+        reqset_connection_info = {'db.game_effects.RequirementEffectNode': ['ReqSet'],
+                                  'db.table.requirementsets.RequirementsetsNode': ['ReqSet']}
+        self.output_port_tables['SubjectReq'] = reqset_connection_info
+        self.output_port_tables['OwnerReq'] = reqset_connection_info
+
         # Req Ports
 
         self.add_output('SubjectReq')
@@ -478,7 +474,6 @@ class GameEffectNode(BaseEffectNode):
                                                  check_if_edited=True), tab='fields')
         self.create_property('RequirementSetDict', {'SubjectReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []},
                                                     'OwnerReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []}})
-
         #self.set_search_menu(col='OwnerRequirementSetId', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['OwnerRequirementSetId']['vals'], validate=False)
 
         for col in modifier_fields:
@@ -549,7 +544,7 @@ class RequirementEffectNode(BaseEffectNode):
     old_effect = None
 
     arg_setter_prop = 'RequirementType'
-    output_port_tables = {'db.game_effects.GameEffectNode': ['SubjectReq', 'OwnerReq']}
+    output_port_tables = {}
 
     def __init__(self):
         super().__init__()
@@ -648,3 +643,15 @@ def backlink_port_get(original_table, connect_table):
               f' the connection was: {connect_table} -> {original_table}.'
               f' defaulting to first option')
     return fk_ports[0]
+
+
+def set_output_port_constraints(node, table_name, fk_backlink):
+    pk = SQLValidator.pk_map[table_name][0]
+    color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
+    port = node.add_output(pk, color=color)
+    port_outputs = defaultdict(list)
+    for input_port, input_tbl_name_list in fk_backlink['col_first'].items():
+        for input_tbl_name in input_tbl_name_list:
+            table_class = SQLValidator.table_name_class_map.get(input_tbl_name, '')
+            port_outputs[table_class].append(input_port)
+    return port_outputs

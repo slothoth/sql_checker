@@ -63,19 +63,6 @@ def req_custom_transform(data, custom_properties, node_id, sql_code, error_strin
                                                       'Value': arg_value}, 'RequirementArguments', error_string)
                 sql_code.append(sql)
 
-    reqset = custom_properties['ReqSet']  # reqset stuff here as reqsets used outside of modifiers too
-    if reqset == '' or reqset is None:
-        reqset_connections = [i for i in data.get('connections', {}) if node_id in i.get('in', {})]
-        for req_conn in reqset_connections:  # for now its one, because input nodes can only accept one input
-            # get out connection, thats owning
-            out_table_key = req_conn['out'][0]
-            out_port = req_conn['out'][1]
-            reqset = data['nodes'][out_table_key]['custom'][out_port]
-
-    if reqset != '':
-        sql, error_string = transform_to_sql({'RequirementSetId': reqset, 'RequirementId': req_id},
-                                             'RequirementSetRequirements', error_string)
-        sql_code.append(sql)
     return sql_code, error_string
 
 
@@ -114,17 +101,20 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
                     sql, error_string = transform_to_sql({'RequirementId': req_name,
                                                           'RequirementType': 'REQUIREMENT_REQUIREMENTSET_IS_MET'},
                                                          'Requirements', error_string)
+                    sql_code.append(sql)
 
                     sql, error_string = transform_to_sql({'RequirementId': req_name,
                                                           'Name': 'REQUIREMENT_REQUIREMENTSET_IS_MET',
                                                           'Value': nested_reqset},
                                                          'RequirementArguments', error_string)
+                    sql_code.append(sql)
 
                     req_id = req_name
 
                 sql, error_string = transform_to_sql({'RequirementSetId': reqset_name,
                                                       'RequirementId': req_id},
                                                      'RequirementSetRequirements', error_string)
+                sql_code.append(sql)
 
     mod_cols = db_spec.node_templates['Modifiers']['all_cols']  # Modifiers
     columns_dict = {reqset_used.get(k, k): v for k, v in no_arg_params.items() if reqset_used.get(k, k) in mod_cols}

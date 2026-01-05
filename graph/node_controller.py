@@ -96,7 +96,7 @@ class NodeEditorWindow(QMainWindow):
                     src_port_name = source_port_item.name
                     if source_port_item.port_type == 'out':
                         src_port = src_node.get_output(src_port_name)
-                        accepted_ports = {i: True for i in src_node.output_port_tables}
+                        accepted_ports = {k: True for k, v in src_node.output_port_tables.get(src_port_name, {}).items()}
                     else:
                         src_port = src_node.get_input(src_port_name)   # Dialog only needed if associated with Effect
                         accepted_ports = src_port.accepted_port_types()
@@ -121,8 +121,11 @@ class NodeEditorWindow(QMainWindow):
                             if len(new_node_inputs) == 1:
                                 connect_port = list(new_node_inputs.values())[0]
                             else:
-                                connect_port_name = src_node.output_port_tables[node_name][0]    # if plural fks accept
-                                connect_port = new_node_inputs[connect_port_name]           # this type, just pick first
+                                connect_ports_possible = src_node.output_port_tables.get(src_port_name, {}).get(
+                                    node_name, [])
+                                if len(connect_ports_possible) == 0:
+                                    return                                      # error state but dont wanna crash
+                                connect_port = new_node_inputs[connect_ports_possible[0]]   # this type, just pick first
 
                             if connect_port is not None:
                                 src_port.connect_to(connect_port)
@@ -230,7 +233,8 @@ def on_connection_changed(input_port, output_port):
             new_value = current_input_value
         if changing_node is not None and new_value is not None:
             update_widget_or_prop(changing_node, changing_name, new_value)
-    if input_name == 'ReqSet':      # update gameEffects property to build requirements Set, with nested req OR AND
+    # update gameEffects property to build requirements Set, with nested req OR AND
+    if output_node.name() == 'CustomGameEffect' and input_name in ['ReqSet', 'RequirementSetId']:
         current_reqset = output_node.get_property('RequirementSetDict')
         if current_reqset:
             current_reqset = current_reqset[output_name]

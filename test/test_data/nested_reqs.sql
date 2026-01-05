@@ -1,0 +1,16 @@
+INSERT INTO "DynamicModifiers" ("ModifierType", "CollectionType", "EffectType") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_TYPE', 'COLLECTION_ALL_PLAYERS', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE');
+INSERT INTO "Types" ("Type", "Kind") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_TYPE', 'KIND_MODIFIER');
+INSERT INTO "RequirementSets" ("RequirementSetId", "RequirementSetType") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_SUBJECT_REQUIREMENTS', 'REQUIREMENTSET_TEST_ALL');
+INSERT INTO "RequirementSetRequirements" ("RequirementId", "RequirementSetId") VALUES ('REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_SUBJECT_REQUIREMENTS');
+INSERT INTO "Requirements" ("RequirementId", "RequirementType") VALUES ('REQ_IS_MET_TEST_REQSET_1', 'REQUIREMENT_REQUIREMENTSET_IS_MET');
+INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('REQUIREMENT_REQUIREMENTSET_IS_MET', 'REQ_IS_MET_TEST_REQSET_1', 'TEST_REQSET_1');
+INSERT INTO "RequirementSetRequirements" ("RequirementId", "RequirementSetId") VALUES ('REQ_IS_MET_TEST_REQSET_1', 'ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_SUBJECT_REQUIREMENTS');
+INSERT INTO "Modifiers" ("ModifierId", "ModifierType", "NewOnly", "OwnerStackLimit", "Permanent", "RunOnce", "SubjectRequirementSetId", "SubjectStackLimit") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_TYPE', 0, 0, 0, 0, 'ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_SUBJECT_REQUIREMENTS', 0);
+INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'Amount', '6');
+INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'ResourceClassType', '3');
+INSERT INTO "Requirements" ("RequirementId", "RequirementType") VALUES ('REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS');
+INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingTag', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', '4');
+INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingType', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'BUILDING_TEST');
+INSERT INTO "Requirements" ("RequirementId", "AiWeighting", "BehaviorTree", "Impact", "Inverse", "Likeliness", "Persistent", "ProgressWeight", "RequirementType", "Reverse", "Triggered") VALUES ('TEST_REQ_1', 0, '', 0, 0, 0, 0, 0, 'REQUIREMENT_OPPONENT_IS_DISTRICT', 0, 0);
+INSERT INTO "RequirementSets" ("RequirementSetId", "RequirementSetType") VALUES ('TEST_REQSET_1', '"REQUIREMENTSET_TEST_ALL"');
+INSERT INTO "RequirementSetRequirements" ("RequirementId", "RequirementSetId") VALUES ('TEST_REQ_1', 'TEST_REQSET_1');
