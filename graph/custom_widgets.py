@@ -14,7 +14,7 @@ class ArgReportNodeBaseWidget(NodeBaseWidget):
 
 
 class IntSpinNodeWidget(ArgReportNodeBaseWidget):
-    def __init__(self, prop, parent=None, minimum=0, maximum=100):          # TODO need harvest all examples per arg to see if negative allowed
+    def __init__(self, prop, parent=None, minimum=0, maximum=100):
         super().__init__(parent)
 
         self.set_name(prop)
@@ -23,6 +23,53 @@ class IntSpinNodeWidget(ArgReportNodeBaseWidget):
         self.spin = QtWidgets.QSpinBox()
         self.spin.setRange(minimum, maximum)
         self.spin.valueChanged.connect(self._on_changed)
+
+        self.spin.setStyleSheet("""
+                    QSpinBox {
+                        background-color: #353535;
+                        border: 1px solid #1a1a1a;
+                        color: #eeeeee;
+                        border-radius: 2px;
+                        padding-right: 15px; /* make room for buttons */
+                    }
+                    QSpinBox::up-button {
+                        subcontrol-origin: border;
+                        subcontrol-position: top right;
+                        width: 16px;
+                        border-left: 1px solid #1a1a1a;
+                        border-bottom: 1px solid #1a1a1a;
+                        background-color: #444444;
+                    }
+                    QSpinBox::down-button {
+                        subcontrol-origin: border;
+                        subcontrol-position: bottom right;
+                        width: 16px;
+                        border-left: 1px solid #1a1a1a;
+                        background-color: #444444;
+                    }
+                    QSpinBox::up-arrow {
+                        image: none;
+                        border-left: 4px solid none;
+                        border-right: 4px solid none;
+                        border-bottom: 5px solid #bbb; /* This creates a triangle */
+                        width: 0;
+                        height: 0;
+                    }
+                    QSpinBox::down-arrow {
+                        image: none;
+                        border-left: 4px solid none;
+                        border-right: 4px solid none;
+                        border-top: 5px solid #bbb; /* This creates a triangle */
+                        width: 0;
+                        height: 0;
+                    }
+                    /* Hover effects */
+                    QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+                        background-color: #555555;
+                    }
+                    QSpinBox::up-arrow:hover { border-bottom-color: #ffffff; }
+                    QSpinBox::down-arrow:hover { border-top-color: #ffffff; }
+                """)
 
         self.set_custom_widget(self.spin)
 
@@ -140,7 +187,6 @@ class DropDownLineEdit(ArgReportNodeBaseWidget):
             self.line_edit.textEdited.connect(self.on_user_edit)
 
         self.set_custom_widget(self.line_edit)
-        self.widget().setMaximumWidth(140)
 
 
     @property

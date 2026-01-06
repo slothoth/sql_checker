@@ -50,6 +50,7 @@ def parse_modinfo(modinfo_path, mod_folder_path):
     mod_id = xml_['@id']
     criterias = xml_['{ModInfo}ActionCriteria']['{ModInfo}Criteria']
     criteria_dict = {}
+    criterias = xml_ensure_list_of_dicts(criterias)
     for criteria_info in criterias:
         criteria_dict[criteria_info['@id']] = {}
         specific_criteria = criteria_dict[criteria_info['@id']]
@@ -83,6 +84,7 @@ def parse_modinfo(modinfo_path, mod_folder_path):
     # do we handle dependencies?
     action_groups_dict = {}
     action_groups = xml_['{ModInfo}ActionGroups']['{ModInfo}ActionGroup']
+    action_groups = xml_ensure_list_of_dicts(action_groups)
     for action_group in action_groups:
         scope = action_group.get('@scope', None)
         if scope is not None:
@@ -153,7 +155,8 @@ def mod_info_into_orm(sql_info_dict, file_path_list):
         for sql_text in sql_commands:
             try:
                 instance_list = create_instances_from_sql(sql_text)
-                orm_list.extend(instance_list)
+                if instance_list is not None:
+                    orm_list.extend(instance_list)
             except ParseError as e:
                 print(f'could not parse file {short_path}: {e}')
 
@@ -426,3 +429,8 @@ def build_graph_from_orm(graph, orm_list):
     graph.blockSignals(False)
     graph.viewer().blockSignals(False)
     return orm_list
+
+def xml_ensure_list_of_dicts(data):
+    if not isinstance(data, list):
+        return [data]
+    return data

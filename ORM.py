@@ -26,7 +26,8 @@ def create_instances_from_sql(sql_text):
     parsed = sqlglot.parse_one(cleaned_sql, dialect="sqlite")
 
     if not isinstance(parsed, exp.Insert):
-        raise ValueError("SQL must be an INSERT statement")
+        print("SQL must be an INSERT statement")
+        return
 
     table_nodes = list(parsed.find_all(exp.Table))
     if len(table_nodes) != 1:

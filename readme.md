@@ -40,8 +40,9 @@ It also includes a graph GUI where you can package and plan your own mod.
 ## Known bugs
 - Some uncommonly used integers are viewed as Bools, like Ages.AgeTechBackgroundTextureOffsetX, mined_bools issue.
 - Can double click when making new node to get two
-- Text Fields dont stretch to max possible width, often meaning text inside is hidden when it doesnt need to be
-- broken port connect updates
-- broken gameffects custom nodes ports
 - importing shows hidden widgets in ugly way by default before click
 - custom requirements doesnt change params correctly on switch requirementtyp
+- Requirements sqwitching is going really weird not showing anything
+- Effects and Requirement Types should use fuzzy finder.
+- Effects and Requirements should not include text like EFFECT or REQUIREMENT at start for visibility and clarity
+- when importing, just skip anything that isnt an UPDATE or DELETE
