@@ -99,7 +99,7 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
             for req in reqset_object_info['reqs']:
                 req_id = req
                 if isinstance(req, dict):
-                    print('nesting req')
+                    # print('nesting req')
                     nested_reqset = req['reqset']
                     req_name = f'REQ_IS_MET_{nested_reqset}'
 

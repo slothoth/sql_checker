@@ -329,7 +329,20 @@ class SchemaInspector:
                 default = None
                 if col.default is not None and col.default.is_scalar:
                     default = col.default.arg
+                elif col.server_default is not None:
+                    expr = col.server_default.arg
+                    if isinstance(expr, TextClause):
+                        default = expr.text.strip('"')
+                        if col.type.python_type is bool:
+                            if default in ['0', '1']:
+                                default = bool(int(default))
+                        if col.type.python_type is int:
+                            default = int(default)
+                    else:
+                        raise NotImplementedError('Other type of default ahhh! not handled')
                 if v == default:
+                    continue
+                if col.type.python_type is str and v == '':          # unsure if this is the best case
                     continue
 
             non_default_entries[k] = v

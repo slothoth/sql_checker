@@ -188,8 +188,8 @@ def test_write_effect_and_req_connected_graph_after_change_to_mod(qtbot):     # 
 def test_write_effect_and_req_nested(qtbot):            # this version has a reqset as connected
     window = NodeEditorWindow()                         # -  effect_node -> Reqset -> req1, req2
     qtbot.addWidget(window)                             # -            \-> req_node
-    effect_node, req_node = setup_effect_req(window)
-    req1 = window.graph.create_node('db.table.requirements.RequirementsNode')
+    effect_node, req_node = setup_effect_req(window)    # technically wrong as SubjectStackLimit and OwnerStackLimit
+    req1 = window.graph.create_node('db.table.requirements.RequirementsNode')   # are included
     req1.set_property('RequirementId', 'TEST_REQ_1')
     req1.set_property('RequirementType', 'REQUIREMENT_OPPONENT_IS_DISTRICT')
 

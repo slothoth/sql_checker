@@ -285,8 +285,7 @@ def create_table_node_class(table_name, graph):
                     lazy_params[col] = default_val
                     self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
                     continue
-                self.set_search_menu(col=col, idx=idx, col_poss_vals=[''] + col_poss_vals['vals'],
-                                     widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
+                self.set_search_menu(col=col, idx=idx, col_poss_vals=[''] + col_poss_vals['vals'],)
             else:
                 if col in self._extra_fields:
                     default_val = default_val if default_val is not None else ''

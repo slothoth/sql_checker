@@ -38,12 +38,10 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Big Graphs compress tables of the same type into one node.
 - Auto build Localisation. You put the name/description that you want to show, and the build process converts it and adds values to the localized db based on the PK name. For this we need to do some mining of which columns are used in loc db. Also deal with ModifierString context so no need to think abt it.
 ## Known bugs
-- Some uncommonly used integers are viewed as Bools, like Ages.AgeTechBackgroundTextureOffsetX
+- Some uncommonly used integers are viewed as Bools, like Ages.AgeTechBackgroundTextureOffsetX, mined_bools issue.
 - Can double click when making new node to get two
 - Text Fields dont stretch to max possible width, often meaning text inside is hidden when it doesnt need to be
 - broken port connect updates
 - broken gameffects custom nodes ports
 - importing shows hidden widgets in ugly way by default before click
 - custom requirements doesnt change params correctly on switch requirementtyp
-- cant import export graph with custom nodes as hidden params
-- new 

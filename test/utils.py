@@ -3,6 +3,9 @@ def check_test_against_expected_sql(test_sql_path):
     with open('resources/main.sql', 'r') as f:
         test_sql = f.readlines()
 
+    with open('resources/main.sql', 'r') as f:
+        ref_sql = f.read()
+
     with open(f'test/test_data/{test_sql_path}', 'r') as f:
         expected_sql = f.readlines()
 

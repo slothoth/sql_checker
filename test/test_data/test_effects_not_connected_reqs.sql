@@ -1,6 +1,6 @@
 INSERT INTO "DynamicModifiers" ("ModifierType", "CollectionType", "EffectType") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_TYPE', 'COLLECTION_ALL_PLAYERS', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE');
 INSERT INTO "Types" ("Type", "Kind") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_TYPE', 'KIND_MODIFIER');
-INSERT INTO "Modifiers" ("ModifierId", "ModifierType", "NewOnly", "OwnerStackLimit", "Permanent", "RunOnce", "SubjectStackLimit") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_TYPE', 0, 0, 0, 0, 0);
+INSERT INTO "Modifiers" ("ModifierId", "ModifierType", "OwnerStackLimit", "SubjectStackLimit") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS_TYPE', 0, 0);
 INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'Amount', '6');
 INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'ResourceClassType', '3');
 INSERT INTO "Requirements" ("RequirementId", "RequirementType") VALUES ('REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS');
