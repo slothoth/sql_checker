@@ -173,6 +173,32 @@ class DropDownLineEdit(ArgReportNodeBaseWidget):
         self._completer_model.setStringList(suggestions)
 
 
+class BoolCheckNodeWidget(ArgReportNodeBaseWidget):
+    def __init__(self, prop, parent=None):
+        super().__init__(parent)
+
+        self.set_name(prop)
+        self.set_label(prop)
+
+        self.check = QtWidgets.QCheckBox()
+        self.check.stateChanged.connect(self._on_changed)
+
+        self.set_custom_widget(self.check)
+
+    def _on_changed(self, state):
+        self.value_changed.emit(self.get_name(), bool(state))
+
+    def get_value(self):
+        return bool(self.check.isChecked())
+
+    def set_value(self, value):
+        self.check.blockSignals(True)
+        self.check.setChecked(False if value is None else bool(value))
+        self.check.blockSignals(False)
+        self.on_value_changed()
+        self.update_args(value)
+
+
 def text_input_style(widget):
     bg_color = ViewerEnum.BACKGROUND_COLOR.value
     text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),

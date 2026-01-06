@@ -185,9 +185,9 @@ def test_write_effect_and_req_connected_graph_after_change_to_mod(qtbot):     # 
     mod_output_check(window, 'test_effects_and_reqs.sql')
 
 
-def test_write_effect_and_req_nested(qtbot):     # this version has a reqset as connected
-    window = NodeEditorWindow()                  #   effect_node -> Reqset -> req1, req2
-    qtbot.addWidget(window)                      #              \-> req_node
+def test_write_effect_and_req_nested(qtbot):            # this version has a reqset as connected
+    window = NodeEditorWindow()                         # -  effect_node -> Reqset -> req1, req2
+    qtbot.addWidget(window)                             # -            \-> req_node
     effect_node, req_node = setup_effect_req(window)
     req1 = window.graph.create_node('db.table.requirements.RequirementsNode')
     req1.set_property('RequirementId', 'TEST_REQ_1')

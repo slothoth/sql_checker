@@ -10,7 +10,7 @@ from graph.db_spec_singleton import (db_spec, requirement_argument_info, require
                                      req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
                                      mod_arg_type_list_map, all_param_arg_fields)
 from schema_generator import SQLValidator
-from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
+from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit, BoolCheckNodeWidget
 
 
 class BasicDBNode(BaseNode):
@@ -88,12 +88,15 @@ class BasicDBNode(BaseNode):
             tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         return
 
-    def set_bool_checkbox(self, col, idx=0, default_val=None):
+    def set_bool_checkbox(self, col, idx=0, default_val=None, display_in_prop_bin=True):
         is_default_on = default_val is not None and int(default_val) == 1
-        self.add_checkbox(col, label=index_label(idx, col), state=is_default_on)        # TODO convert to custom widget
-        cb = self.get_widget(col).get_custom_widget()                                   # for label resizing
-        cb.setMinimumHeight(24)
-        cb.setStyleSheet("QCheckBox { padding-top: 2px; }")
+        if is_default_on:
+            print(f'default True for {col}')
+        self.add_custom_widget(BoolCheckNodeWidget(parent=self.view, prop=col), tab='fields',
+                               widget_type=NodePropWidgetEnum.QCHECK_BOX.value if display_in_prop_bin else None)
+        #cb = self.get_widget(col).get_custom_widget()                                   # for label resizing
+        #cb.setMinimumHeight(24)
+        #cb.setStyleSheet("QCheckBox { padding-top: 2px; }")
 
     def set_text_input(self, col, idx=0, default_val=None):
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=index_label(idx, col), name=col,
@@ -262,28 +265,33 @@ def create_table_node_class(table_name, graph):
             col_type = SQLValidator.type_map[table_name][col]
             if isinstance(col_type, bool):
                 if col in self._extra_fields:
-                    default_val = bool(eval(default_val))
+                    default_val = bool(int(default_val))if default_val is not None else False
                     lazy_params[col] = default_val
                     self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
                     continue
                 self.set_bool_checkbox(col, idx, default_val)
             elif isinstance(col_type, int):
                 if col in self._extra_fields:
-                    default_val = int(default_val)
+                    default_val = int(default_val) if default_val is not None else 0
                     lazy_params[col] = default_val
                     self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QSPIN_BOX.value)
                     continue
-                self.add_custom_widget(IntSpinNodeWidget(col, self.view), tab='fields')
+                custom_widget = IntSpinNodeWidget(col, self.view)
+                self.add_custom_widget(custom_widget,
+                                       widget_type=NodePropWidgetEnum.QSPIN_BOX.value, tab='fields')
             elif col_poss_vals is not None:
                 if col in self._extra_fields:
+                    default_val = int(default_val) if default_val is not None else 0.0
                     lazy_params[col] = default_val
-                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
                     continue
-                self.set_search_menu(col=col, idx=idx, col_poss_vals=[''] + col_poss_vals['vals'])
+                self.set_search_menu(col=col, idx=idx, col_poss_vals=[''] + col_poss_vals['vals'],
+                                     widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
             else:
                 if col in self._extra_fields:
+                    default_val = default_val if default_val is not None else ''
                     lazy_params[col] = default_val
-                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
                     continue
                 self.set_text_input(col, idx, default_val)
 
@@ -407,7 +415,7 @@ class BaseEffectNode(BasicDBNode):
         if 'text' in lower_prop or 'database' in lower_prop:
             self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=lower_prop, name=lower_prop), tab='fields')
         elif 'bool' in lower_prop:
-            self.add_checkbox(lower_prop, label=lower_prop, tab='fields')
+            self.set_bool_checkbox(lower_prop, default_val=None, display_in_prop_bin=False)
         elif 'int' in lower_prop:
             self.add_custom_widget(IntSpinNodeWidget(lower_prop, self.view), tab='fields')
         elif 'float' in lower_prop:
@@ -464,7 +472,8 @@ class GameEffectNode(BaseEffectNode):
 
         # dynamicModifiers
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='ModifierId', name='ModifierId',
-                                                 check_if_edited=True), tab='fields')
+                                                 check_if_edited=True), tab='fields',
+                               widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         modifier_arguments = list(modifier_argument_info.keys())
         self.add_custom_widget(
             DropDownLineEdit(parent=self.view, label="EffectType",
@@ -500,7 +509,6 @@ class GameEffectNode(BaseEffectNode):
         for col in show_even_with_defaults:
             default_val = bool(int(mod_spec['default_values'].get(col, '0')))
             self.set_bool_checkbox(col, default_val=default_val)
-            #self.create_property(col, value=default_val, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
         for col in modifier_hidden_cols:
             if col in mod_spec.get('mined_bools', {}):
                 self.create_property(col, value=False, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
@@ -508,8 +516,8 @@ class GameEffectNode(BaseEffectNode):
                 self.create_property(col, value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
 
         # ModifierStrings
-        self.create_property('Text', value='', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
-        self.create_property('Context', value='', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+        self.create_property('Text', value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
+        self.create_property('Context', value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         # ModifierMetadata. Only used for resource modifiers.
 
         # new logic
@@ -569,7 +577,8 @@ class RequirementEffectNode(BaseEffectNode):
         self.view.setVisible(False)
         self.create_property('table_name', value='ReqEffectCustom')
 
-        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='RequirementId', name='RequirementId'), tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='RequirementId', name='RequirementId'),
+                               tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.set_search_menu(col='RequirementType', idx=0,
                         col_poss_vals= list(requirement_argument_info.keys()),
                         validate=False)

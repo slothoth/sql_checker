@@ -1,6 +1,5 @@
 import uuid
 import json
-from collections import defaultdict
 
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import (
@@ -9,8 +8,7 @@ from PyQt5.QtWidgets import (
 
 
 from NodeGraphQt import NodeGraph, NodesPaletteWidget, NodesTreeWidget, PropertiesBinWidget
-from NodeGraphQt.custom_widgets.properties_bin.node_property_factory import NodePropertyWidgetFactory
-from NodeGraphQt.custom_widgets.properties_bin.node_property_widgets import NodePropEditorWidget
+from NodeGraphQt.widgets.node_widgets import _NodeGroupBox
 
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type  # expensive  1.7s
@@ -291,3 +289,22 @@ def update_widget_or_prop(node, widget_name, new_val):
         hidden_property = node.get_property(widget_name)
         if hidden_property is not None:
             node.set_property(widget_name, new_val)
+
+# patching NodeGraphBox
+
+def _patched_size_hint(self, *args):
+    base = QtWidgets.QGroupBox.sizeHint(self)
+
+    title = self.title()
+    if not title:
+        return base
+
+    fm = self.fontMetrics()
+    title_width = fm.horizontalAdvance(title)
+
+    margins = self.layout().contentsMargins()
+    width = max(base.width(), title_width + margins.left() + margins.right() + 8)
+
+    return QtCore.QSize(width, base.height())
+
+_NodeGroupBox.sizeHint = _patched_size_hint
