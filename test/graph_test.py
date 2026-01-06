@@ -1,15 +1,16 @@
 import pytest
 import json
-from collections import defaultdict
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtTest import QTest
 
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json, make_modinfo
-from graph.set_hotkeys import write_sql
+from graph.set_hotkeys import write_sql, save_session
 from graph.db_spec_singleton import (modifier_argument_info, requirement_argument_info, req_arg_type_list_map,
                                      mod_arg_type_list_map, db_spec)
+
+from utils import check_test_against_expected_sql
 
 
 def setup_types_node(qtbot):
@@ -23,31 +24,21 @@ def setup_types_node(qtbot):
     return node, window
 
 
-def mod_output_check(window, test_sql_path):
+def save(window):
     current = window.graph.current_session()
     if not current:
         current = 'resources/graph.json'
+    window.graph._model.session = current
+    save_session(window.graph)
+    return current
 
-    window.graph.save_session(current)
+
+def mod_output_check(window, test_sql_path):
+    current = save(window)
     sql_lines = transform_json(current)
     write_sql(sql_lines)
     check_test_against_expected_sql(test_sql_path)
 
-
-def check_test_against_expected_sql(test_sql_path):
-    with open('resources/main.sql', 'r') as f:
-        test_sql = f.readlines()
-
-    with open(f'test/test_data/{test_sql_path}', 'r') as f:
-        expected_sql = f.readlines()
-
-    test_set = set(test_sql)
-    expected_set = set(expected_sql)
-    if test_set != expected_set:
-        missing_sql = expected_set - test_set
-        extra_sql = test_set - expected_set
-        assert len(missing_sql) == 0, f'Missed lines {missing_sql}'
-        assert len(extra_sql) == 0, f'extra lines {extra_sql}'
 # UI tests
 
 
@@ -223,73 +214,33 @@ def test_write_effect_and_req_nested(qtbot):     # this version has a reqset as 
     req_output_port.connect_to(other_reqset_port)
     mod_output_check(window, 'nested_reqs.sql')
 
-def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up
-    return
-    from schema_generator import SQLValidator
+
+def test_save_and_load_on_hidden_params(qtbot):
     window = NodeEditorWindow()
     qtbot.addWidget(window)
-    existing_nodes, expected_connections = {}, defaultdict(dict)
-    print('starting')
-    for tbl, class_name in SQLValidator.table_name_class_map.items():
-        print(f'table {tbl}')
-        if class_name not in existing_nodes:
-            node = window.graph.create_node(class_name)
-            existing_nodes[class_name] = node
-        else:
-            node = existing_nodes[class_name]
-        pk = SQLValidator.pk_map[tbl][0]
-        output_port = node.outputs().get(pk)
-        for input_info in node.output_port_tables:      # we changed from list of dicts to dict of key:val, this borked
-            input_class_node_name = input_info['class']
-            input_port_name = input_info['foreign_port']
-            accepting_node = existing_nodes.get(input_class_node_name)
-            if accepting_node is None:
-                accepting_node = window.graph.create_node(input_class_node_name)
-                existing_nodes[input_class_node_name] = accepting_node
-            input_port = accepting_node.inputs()[input_port_name]
-            if input_class_node_name not in expected_connections.get(class_name, {}):
-                expected_connections[class_name][input_class_node_name] = []
-            output_port.connect_to(input_port)
-            expected_connections[class_name][input_class_node_name].append(input_port_name)
-            print(f'connected {tbl} to {input_class_node_name} on {input_port_name}')
-        print('-----------------------------------------')
-        print(f'finished adding connections for {tbl}')
-        print('-----------------------------------------')
+    effect_node, req_node = setup_effect_req(window)
+    old_effect_args = {key: effect_node.get_property(key) for key in effect_node.get_property('arg_params')
+                       if effect_node.get_property(key) is not None and effect_node.get_property(key) in [6, 3]}
+    old_req_args = {key: req_node.get_property(key) for key in req_node.get_property('arg_params')
+                    if req_node.get_property(key) is not None and req_node.get_property(key) in [6, 3]}
+    current = save(window)
+    window.graph.clear_session()
+    window.graph.import_session(current)
+    # assert that req args are kept
+    game_effects = [i for i in window.graph.all_nodes() if i.get_property('table_name') == 'GameEffectCustom']
+    reqs = [i for i in window.graph.all_nodes() if i.get_property('table_name') == 'ReqEffectCustom']
+    game_effect = game_effects[0]
+    req = reqs[0]
 
-    # test connections exist
-    bad_connections = {}
-    for class_name, outputs in expected_connections.items():
-        output_node = existing_nodes[class_name]
-        output_port = list(output_node.outputs().values())[0]
-        connections = output_port.connected_ports()
-        actual_outputs = defaultdict(list)
-        for k in connections:
-            actual_outputs[k.model.node.type_].append(k.name())
-        actual_outputs = dict(actual_outputs)
-        actual_tuple_outputs = [(k, tuple(v)) for k, v in actual_outputs.items()]
-        actual_set = set(actual_tuple_outputs)
-        tuple_outputs = [(k, tuple(v)) for k, v in outputs.items()]
-        expected_set = set(tuple_outputs)
-        missing = expected_set - actual_set
-        extra = actual_set - expected_set
-        if len(missing) > 0 or len(extra) > 0:
-            for input_table_class, input_list in outputs.items():
-                actual_connection = actual_outputs.get(input_table_class)
-                if actual_connection is None:
-                    print(f'missed connection {input_table_class}')
-                else:
-                    if not actual_connection == input_list:
-                        print('expected')
+    for key, widget in {i: v for i, v in game_effect.widgets().items() if 'param' in i}.items():
+        val = widget.get_value()
+        assert game_effect.get_property(key) == val
 
-        if actual_outputs != outputs:
-            bad_connections[class_name] = {'missing': missing, 'extra': extra}
+    for key, widget in {i: v for i, v in req.widgets().items() if 'param' in i}.items():
+        val = widget.get_value()
+        assert req.get_property(key) == val
 
-    assert len(bad_connections) == 0
-
-
-def test_all_table_nodes(qtbot):
-    window = NodeEditorWindow()  # this version has a reqset as connected
-    qtbot.addWidget(window)
-    sql_commands = transform_json('test/test_data/perf_test_fin.json')
-    write_sql(sql_commands)
-    check_test_against_expected_sql('all_table_nodes.sql')
+    assert game_effect.get_property('param_int_1') == 6
+    assert game_effect.get_property('param_int_2') == 3
+    assert req.get_property('param_text_1') == '4'
+    assert req.get_property('param_database_1') == 'BUILDING_TEST'

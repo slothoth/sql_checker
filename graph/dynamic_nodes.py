@@ -1,15 +1,17 @@
 from NodeGraphQt import BaseNode
 from NodeGraphQt.constants import PortTypeEnum
+from NodeGraphQt.errors import NodePropertyError
 from PyQt5 import QtCore, QtGui
 import math
+import types
 from collections import defaultdict
 
 from graph.db_spec_singleton import (db_spec, requirement_argument_info, requirement_system_tables, effect_system_tables,
                                      req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
                                      mod_arg_type_list_map, all_param_arg_fields)
 from schema_generator import SQLValidator
-from graph.custom_widgets import (NodeSearchMenu, ToggleExtraButton, IntSpinNodeWidget, FloatSpinNodeWidget,
-                                  ExpandingLineEdit)
+from graph.custom_widgets import (ToggleExtraButton, IntSpinNodeWidget, FloatSpinNodeWidget,
+                                  ExpandingLineEdit, DropDownLineEdit)
 
 
 class BasicDBNode(BaseNode):
@@ -81,22 +83,11 @@ class BasicDBNode(BaseNode):
                     widget.set_value(value)
 
     def set_search_menu(self, col, idx, col_poss_vals, validate=False):
-        self.create_property(
-            col,
-            value=col_poss_vals[0] if col_poss_vals else None,
-            items=col_poss_vals or [],
-            widget_type='SEARCH_MENU',
-            widget_tooltip=None,
-            tab='fields'
-        )
-        widget = NodeSearchMenu(self.view, col, index_label(idx, col), col_poss_vals)
-        widget.setToolTip('')
-
-        self.view.add_widget(widget)
-        self.view.draw_node()
-
-    def search_menu_on_value_changed(self, k, v):
-        self.set_property(k, v)
+        self.add_custom_widget(
+            DropDownLineEdit(parent=self.view, label=index_label(idx, col),
+                             name=col, text=col_poss_vals[0] if col_poss_vals else None, suggestions=col_poss_vals or []),
+            tab='fields')
+        return
 
     def set_bool_checkbox(self, col, idx=0, default_val=None):
         is_default_on = default_val is not None and int(default_val) == 1
@@ -109,6 +100,28 @@ class BasicDBNode(BaseNode):
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=index_label(idx, col), name=col, text=str(default_val or '')), tab='fields')
         text_widget = self.get_widget(col)
         text_widget.get_custom_widget().setMinimumHeight(24)
+
+    def migrate_extra_params(self):
+        return
+    def restore_extra_params(self, migrated_properties):
+        return
+
+    def update_model(self):
+        """
+        Update the node model from view. Ensure we dont update hidden properties
+        """
+        for name, val in self.view.properties.items():
+            if name in ['inputs', 'outputs']:
+                continue
+            self.model.set_property(name, val)
+
+        arg_params = self.model.get_property('arg_params') or {}
+        for name, widget in self.view.widgets.items():
+            if self.model.get_property(name) is not None:
+                self.model.set_property(name, widget.get_value())
+            else:
+                if name in arg_params:
+                    arg_params[name] = widget.get_value()
 
 
 class DynamicNode(BasicDBNode):
@@ -171,9 +184,6 @@ class DynamicNode(BasicDBNode):
         elif hasattr(widget, 'widget'):
             qt_widget = widget.widget
 
-        # For NodeSearchMenu, we need to style the button
-        if 'SearchMenu' in type(widget).__name__:
-            qt_widget = widget.get_custom_widget() if hasattr(widget, 'get_custom_widget') else None
 
         if qt_widget is None:
             return
@@ -200,35 +210,6 @@ class DynamicNode(BasicDBNode):
                     self._validate_field(col, value)
                 except:
                     pass
-
-    def set_search_menu(self, col, idx, col_poss_vals, validate=False):
-
-        self.create_property(
-            col,
-            value=col_poss_vals[0] if col_poss_vals else None,
-            items=col_poss_vals or [],
-            widget_type='SEARCH_MENU',
-            widget_tooltip=None,
-            tab='fields'
-        )
-        widget = NodeSearchMenu(self.view, col, index_label(idx, col), col_poss_vals)
-        widget.setToolTip('')
-
-        # Connect validation to value changes
-
-        if validate:
-            widget.value_changed.connect(self.search_menu_on_value_changed)
-        self.view.add_widget(widget)
-        self.view.draw_node()
-
-        search_menu_widget = self.get_widget(col)
-        if search_menu_widget:
-            if validate:
-                self.setup_validate(search_menu_widget, col)
-
-    def search_menu_on_value_changed(self, k, v):
-        self.set_property(k, v)
-        self._validate_field(k, v)
 
 
 # had to auto generate classes rather then generate at node instantition because
@@ -285,7 +266,7 @@ def create_table_node_class(table_name, graph):
             if isinstance(col_type, bool):
                 self.set_bool_checkbox(col, idx, default_val)
             elif isinstance(col_type, int):
-                self.add_custom_widget(IntSpinNodeWidget(col, self.view), tab='Node')
+                self.add_custom_widget(IntSpinNodeWidget(col, self.view), tab='fields')
             elif col_poss_vals is not None:
                 self.set_search_menu(col=col, idx=idx, col_poss_vals=[''] + col_poss_vals['vals'])
             else:
@@ -336,7 +317,7 @@ class BaseEffectNode(BasicDBNode):
     def set_property(self, name, value, push_undo=True):
         if name == self.arg_setter_prop and self.get_property(self.arg_setter_prop) != value and self.graph:
             self.graph.begin_undo("change mode")
-            super().set_property(name, value, push_undo=True)
+            super().set_property(name=name, value=value, push_undo=True)
             self._apply_mode(value, push_undo=True, old_mode=self.old_effect)
             self.graph.end_undo()
             return
@@ -351,8 +332,11 @@ class BaseEffectNode(BasicDBNode):
         # show/hide arg_params on change in EffectType/RequirementType
         if old_mode == mode:
             return
+        new_params = self.arg_prop_map().get(mode)
+        if new_params is None:
+            return
         self.view.setVisible(False)
-        new_params = self.arg_prop_map()[mode]
+
         if old_mode is not None:
             old_params = self.arg_prop_map()[old_mode]
             turn_off_params = list(set(old_params) - set(new_params))
@@ -377,9 +361,13 @@ class BaseEffectNode(BasicDBNode):
         widget.set_label(new_params[prop])
         current_val = widget.get_value()                     # get widget current value
 
-        if current_val == '' or current_val == 0:           # if player hasnt edited them, set to new default
+        if current_val in ['', 0]:
             arg_name = self.arg_prop_map()[mode][prop]
             arg_info = self.argument_info_map()[mode]['Arguments'][arg_name]
+            preset_val = self.get_property('arg_params')[prop]       # if player hasnt edited them, set to new default
+            if preset_val is not None and preset_val not in ['', 0]:
+                widget.set_value(preset_val)
+                return
             default_val = arg_info['DefaultValue']
             if default_val is not None:                             # get default val for arg based on type
                 arg_type = arg_info['ArgumentType']
@@ -405,16 +393,15 @@ class BaseEffectNode(BasicDBNode):
         self.hide_widget(prop, push_undo=push_undo)
 
     def add_param_widget(self, prop):
-
         lower_prop = prop.lower()
         if 'text' in lower_prop or 'database' in lower_prop:
             self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=lower_prop, name=lower_prop), tab='fields')
         elif 'bool' in lower_prop:
-            self.add_checkbox(lower_prop, label=lower_prop)
+            self.add_checkbox(lower_prop, label=lower_prop, tab='fields')
         elif 'int' in lower_prop:
-            self.add_custom_widget(IntSpinNodeWidget(lower_prop, self.view), tab='Node')
+            self.add_custom_widget(IntSpinNodeWidget(lower_prop, self.view), tab='fields')
         elif 'float' in lower_prop:
-            self.add_custom_widget(FloatSpinNodeWidget(lower_prop, self.view), tab='Node')
+            self.add_custom_widget(FloatSpinNodeWidget(lower_prop, self.view), tab='fields')
         else:
             raise Exception(f'unhandled prop {prop}')
         return self.get_widget(prop)
@@ -428,6 +415,22 @@ class BaseEffectNode(BasicDBNode):
     def argument_info_map(self):
         return {}
 
+    def migrate_extra_params(self):
+        lazy_params = self.get_property('arg_params')
+        custom_properties = self.model._custom_prop
+        migrated_properties = {}
+        for param, val in lazy_params.items():
+            if param in custom_properties:
+                lazy_params[param] = custom_properties[param]
+                migrated_properties[param] = custom_properties[param]
+                del custom_properties[param]
+        return migrated_properties
+
+    def restore_extra_params(self, migrated_properties):
+        lazy_params = self.get_property('arg_params')
+        for param, val in migrated_properties.items():
+            self.create_property(param, val)
+
 
 class GameEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
@@ -435,6 +438,7 @@ class GameEffectNode(BaseEffectNode):
     old_effect = None
     arg_setter_prop = 'EffectType'
     output_port_tables = {}
+
     def __init__(self):
         super().__init__()
         self.view.setVisible(False)
@@ -451,7 +455,12 @@ class GameEffectNode(BaseEffectNode):
         # dynamicModifiers
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='ModifierId', name='ModifierId',
                                                  check_if_edited=True), tab='fields')
-        self.add_combo_menu("EffectType", label="EffectType", items=list(modifier_argument_info.keys()))
+        modifier_arguments = list(modifier_argument_info.keys())
+        self.add_custom_widget(
+            DropDownLineEdit(parent=self.view, label="EffectType",
+                             name="EffectType", text=modifier_arguments[0],
+                             suggestions=modifier_arguments),
+            tab='fields')
         self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
         self.create_property('ModifierType', '')
         self.output_port_tables['ModifierId'] = set_output_port_constraints(self, 'Modifiers',
@@ -495,7 +504,7 @@ class GameEffectNode(BaseEffectNode):
         self.add_custom_widget(toggle, tab=None)
 
         # new logic
-        lazy_arg_params = [prop for prop in all_param_arg_fields]
+        lazy_arg_params = {prop: '' for prop in all_param_arg_fields}
         self.create_property('arg_params', lazy_arg_params)
         self.view.setVisible(True)
         self._apply_mode(self.get_property("EffectType"), push_undo=False)
@@ -559,7 +568,7 @@ class RequirementEffectNode(BaseEffectNode):
         self.add_input('ReqSet')
         self.create_property('ReqSet', '')
 
-        lazy_arg_params = [prop for prop in req_all_param_arg_fields]
+        lazy_arg_params = {prop: '' for prop in req_all_param_arg_fields}
         self.create_property('arg_params', lazy_arg_params)
         self.view.setVisible(True)
         self._apply_mode(self.get_property("RequirementType"), push_undo=False)

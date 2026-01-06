@@ -44,3 +44,6 @@ It also includes a graph GUI where you can package and plan your own mod.
 - broken port connect updates
 - broken gameffects custom nodes ports
 - importing shows hidden widgets in ugly way by default before click
+- custom requirements doesnt change params correctly on switch requirementtyp
+- cant import export graph with custom nodes as hidden params
+- new 

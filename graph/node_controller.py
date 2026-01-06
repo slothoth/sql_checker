@@ -1,12 +1,12 @@
 import uuid
 import json
-from PyQt5 import QtGui, QtWidgets
+from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import (
     QMainWindow, QSizePolicy
 )
 
 
-from NodeGraphQt import NodeGraph
+from NodeGraphQt import NodeGraph, NodesPaletteWidget, NodesTreeWidget, PropertiesBinWidget
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type  # expensive  1.7s
 from graph.db_spec_singleton import db_spec                                                         # but other times
 from graph.set_hotkeys import set_hotkeys       # expensive  1.9s                                   # fast?
@@ -37,7 +37,7 @@ class NodeEditorWindow(QMainWindow):
 
         # db.game_effects.modifier
         graph_widget = self.graph.widget             # show the node graph widget.
-        graph_widget.resize(1100, 800)
+        # graph_widget.resize(1100, 800)
         graph_widget.setWindowTitle("Database Editor")
         graph_widget.show()
 
@@ -53,6 +53,11 @@ class NodeEditorWindow(QMainWindow):
 
         old_resize = viewer.resizeEvent
 
+        panel = CollapsiblePanel(viewer)
+        self.graph.side_panel = panel
+        panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        panel.show()
+
         def reposition_panel():
             margin = 10
             panel.resize(panel.width(), viewer.viewport().height() - margin * 2)
@@ -67,10 +72,32 @@ class NodeEditorWindow(QMainWindow):
         hide = self.graph.property("Hide Types") or False
         set_nodes_visible_by_type(self.graph, 'db.table.types.TypesNode', not hide)
 
-        panel = CollapsiblePanel(viewer)
-        self.graph.side_panel = panel
-        panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        panel.show()
+
+
+        # create a node properties bin widget.
+        properties_bin = PropertiesBinWidget(node_graph=self.graph, parent=graph_widget)
+        properties_bin.setWindowFlags(QtCore.Qt.Tool)
+
+        # example show the node properties bin widget when a node is double-clicked.
+        def display_properties_bin(node):
+            if not properties_bin.isVisible():
+                properties_bin.show()
+
+        # wire function to "node_double_clicked" signal.
+        self.graph.node_double_clicked.connect(display_properties_bin)
+
+        # create a nodes tree widget.
+        nodes_tree = NodesTreeWidget(node_graph=self.graph)
+        nodes_tree.set_category_label('db.table', 'Database Nodes')
+        nodes_tree.set_category_label('db.game_effects', 'GameEffect Nodes')
+        nodes_tree.show()
+
+        # create a node palette widget.
+        nodes_palette = NodesPaletteWidget(node_graph=self.graph)
+        nodes_palette.set_category_label('db.table', 'Database Nodes')
+        nodes_palette.set_category_label('db.game_effects', 'GameEffect Nodes')
+        nodes_palette.show()
+
 
     def enable_auto_node_creation(self):
         """

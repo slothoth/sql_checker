@@ -38,8 +38,13 @@ def req_custom_transform(data, custom_properties, node_id, sql_code, error_strin
                     and k != 'ReqSet'}
     sql, error_string = transform_to_sql(columns_dict, 'Requirements', error_string)
     sql_code.append(sql)
+    arg_params = custom_properties.get('arg_params', {})
     for param, arg_name in req_arg_type_list_map[req_type].items():
         arg_value = custom_properties.get(param)
+        if arg_value is None:
+            arg_value = arg_params.get(param) if arg_params.get(param) != '' else None
+            if arg_value is None:
+                continue
         widget_default = req_arg_defaults[req_type][param]  # default checks
         arg_info = requirement_argument_info[req_type]['Arguments'][arg_name]
         arg_default = arg_info['DefaultValue']
@@ -121,8 +126,13 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
     sql, error_string = transform_to_sql(columns_dict, 'Modifiers', error_string)
     sql_code.append(sql)
 
+    arg_params = custom_properties.get('arg_params', {})
     for param, arg_name in mod_arg_type_list_map[effect_type].items():  # ModifierArguments
         arg_value = custom_properties.get(param)
+        if arg_value is None:
+            arg_value = arg_params.get(param) if arg_params.get(param) != '' else None
+            if arg_value is None:
+                continue
         columns_dict = {'ModifierId': no_arg_params['ModifierId'], 'Name': arg_name, 'Value': arg_value}
         sql, error_string = transform_to_sql(columns_dict, 'ModifierArguments', error_string)
         sql_code.append(sql)  # TODO not covering Extra and Extra2, but then we arent in node either

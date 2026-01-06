@@ -117,10 +117,10 @@ def save_session(graph):
     from graph.windows import Toast
     current = graph.current_session()
     if current:
-        graph.save_session(current)
+        # we should format any custom nodes extra params
+        custom_save(graph, current)
         msg = 'Session layout saved:\n{}'.format(current)
-        viewer = graph.viewer()
-        t = Toast("Session Saved")
+        t = Toast(msg)
         t.show_at_bottom_right()
     else:
         save_session_as(graph)
@@ -133,7 +133,17 @@ def save_session_as(graph):
     current = graph.current_session()
     file_path = graph.save_dialog(current)
     if file_path:
-        graph.save_session(file_path)
+        custom_save(graph, file_path)
+
+def custom_save(graph, file_path):
+    graph_migrated_params = {}
+    graph_nodes = graph.all_nodes()
+    for idx, node in enumerate(graph_nodes):
+        migrated_params = node.migrate_extra_params()
+        graph_migrated_params[idx] = migrated_params
+    graph.save_session(file_path)
+    for idx, params in graph_migrated_params.items():
+        graph_nodes[idx].restore_extra_params(params)
 
 
 def clear_session(graph):

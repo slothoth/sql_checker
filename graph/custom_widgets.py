@@ -1,62 +1,16 @@
 from NodeGraphQt import NodeBaseWidget
-from NodeGraphQt.constants import Z_VAL_NODE_WIDGET
+from NodeGraphQt.constants import Z_VAL_NODE_WIDGET, ViewerEnum
+
 from PyQt5 import QtWidgets, QtCore, QtGui
 
 
-from graph.db_node_support import SearchListDialog
+class ArgReportNodeBaseWidget(NodeBaseWidget):
 
-
-# support for searchable combo box
-class NodeSearchMenu(NodeBaseWidget):
-    def __init__(self, parent=None, name='', label='', items=None):
-        super().__init__(parent, name, label)
-        self.setZValue(Z_VAL_NODE_WIDGET + 1)
-
-        self._items = items or []
-
-        self._button = QtWidgets.QToolButton()
-        self._button.setMinimumHeight(24)
-        self._button.setMinimumWidth(120)
-        self._button.setSizePolicy(
-            QtWidgets.QSizePolicy.Expanding,
-            QtWidgets.QSizePolicy.Fixed
-        )
-        self._button.setToolButtonStyle(QtCore.Qt.ToolButtonTextOnly)
-        self._button.clicked.connect(self._open_dialog)
-        self.set_custom_widget(self._button)
-
-    @property
-    def type_(self):
-        return 'SearchMenuNodeWidget'
-
-    def _open_dialog(self):
-        dialog = SearchListDialog(self._items, self.parent())
-        pos = QtGui.QCursor.pos()
-        dialog.move(pos)
-
-        if dialog.exec_() != QtWidgets.QDialog.Accepted:
-            return
-
-        value = dialog.selected()
-        if value:
-            self.set_value(value)
-            self.on_value_changed()
-
-    def get_value(self):
-        return self.get_custom_widget().text()
-
-    def set_value(self, value):
-        self.get_custom_widget().setText(str(value))
-
-    def add_items(self, items):
-        self._items.extend(items)
-
-    def clear(self):
-        self._items.clear()
-        self.set_value('')
-
-
-color_hex_swapper = {'#ffcc00': '#00ccff', '#00ccff': '#ffcc00'}
+    def update_args(self, text):
+        arg_params = self.node.get_property('arg_params') or {}
+        prop_name = self.get_name()
+        if prop_name in arg_params:
+            arg_params[prop_name] = text
 
 
 class ToggleExtraButton(NodeBaseWidget):
@@ -86,7 +40,7 @@ class ToggleExtraButton(NodeBaseWidget):
         return self._btn.text()
 
 
-class IntSpinNodeWidget(NodeBaseWidget):
+class IntSpinNodeWidget(ArgReportNodeBaseWidget):
     def __init__(self, prop, parent=None, minimum=0, maximum=100):          # TODO need harvest all examples per arg to see if negative allowed
         super().__init__(parent)
 
@@ -106,12 +60,14 @@ class IntSpinNodeWidget(NodeBaseWidget):
         self.spin.blockSignals(True)
         self.spin.setValue(0 if value is None else int(value))
         self.spin.blockSignals(False)
+        self.on_value_changed()
+        self.update_args(value)
 
     def _on_changed(self, v):
         self.value_changed.emit(self.get_name(), int(v))
 
 
-class FloatSpinNodeWidget(NodeBaseWidget):
+class FloatSpinNodeWidget(ArgReportNodeBaseWidget):
     def __init__(self, prop, parent=None):
         super().__init__(parent)
 
@@ -135,9 +91,11 @@ class FloatSpinNodeWidget(NodeBaseWidget):
         self.spin.blockSignals(True)
         self.spin.setValue(0.0 if value is None else float(value))
         self.spin.blockSignals(False)
+        self.on_value_changed()
+        self.update_args(value)
 
 
-class ExpandingLineEdit(NodeBaseWidget):
+class ExpandingLineEdit(ArgReportNodeBaseWidget):
 
     def __init__(self, parent=None, name='', label='', text='', check_if_edited=False):
         super(ExpandingLineEdit, self).__init__(parent, name, label)
@@ -146,6 +104,7 @@ class ExpandingLineEdit(NodeBaseWidget):
         self.line_edit = QtWidgets.QLineEdit()
         self.line_edit.setText(text)
         self.line_edit.textChanged.connect(self._on_text_changed)
+        text_input_style(self.line_edit)
         if check_if_edited:
             self.line_edit.user_edited = False
             self.line_edit.textEdited.connect(self.on_user_edit)
@@ -158,9 +117,12 @@ class ExpandingLineEdit(NodeBaseWidget):
     def _on_text_changed(self, text):
         self.set_value(text)
 
-    def set_value(self, value):
-        if self.line_edit.text() != value:
-            self.line_edit.setText(value)
+    def set_value(self, text):
+        if text != self.get_value():
+            self.get_custom_widget().setText(text)
+            self.on_value_changed()
+            self.update_args(text)
+
 
     def get_value(self):
         return self.line_edit.text()
@@ -173,3 +135,93 @@ class ExpandingLineEdit(NodeBaseWidget):
             self.line_edit.setText(new_value)
             return True
         return False
+
+
+class DropDownLineEdit(ArgReportNodeBaseWidget):
+
+    def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False):
+        super().__init__(parent, name, label)
+        self.set_name(name)
+
+        self.line_edit = QtWidgets.QLineEdit()
+        self.line_edit.setText(text)
+
+        self._completer_model = QtCore.QStringListModel()
+        self._completer = QtWidgets.QCompleter(self._completer_model)
+        self._completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self._completer.setFilterMode(QtCore.Qt.MatchContains)
+        self._completer.setCompletionMode(
+            QtWidgets.QCompleter.PopupCompletion
+        )
+        self.line_edit.setCompleter(self._completer)
+
+        if suggestions:
+            self.set_suggestions(suggestions)
+
+        text_input_style(self.line_edit)
+        self.line_edit.editingFinished.connect(self.on_value_changed)
+        # self.line_edit.clearFocus()
+
+        if check_if_edited:
+            self.line_edit.user_edited = False
+            self.line_edit.textEdited.connect(self.on_user_edit)
+
+        self.set_custom_widget(self.line_edit)
+        self.widget().setMaximumWidth(140)
+
+
+    @property
+    def type_(self):
+        return 'DropDownLineEdit'
+
+    def _on_text_changed(self, text):
+        self.set_value(text)
+
+    def set_value(self, text):
+        if text != self.get_value():
+            self.get_custom_widget().setText(text)
+            self.on_value_changed()
+            self.update_args(text)
+
+
+    def get_value(self):
+        return str(self.get_custom_widget().text())
+
+    def on_user_edit(self):
+        self.line_edit.user_edited = True
+
+    def update_from_state(self, new_value):
+        if not self.line_edit.user_edited:
+            self.line_edit.setText(new_value)
+            return True
+        return False
+
+    def set_suggestions(self, suggestions):
+        self._completer_model.setStringList(suggestions)
+
+
+def text_input_style(widget):
+    bg_color = ViewerEnum.BACKGROUND_COLOR.value
+    text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
+                           bg_color))
+    text_sel_color = text_color
+    style_dict = {
+        'QLineEdit': {
+            'background': 'rgba({0},{1},{2},20)'.format(*bg_color),
+            'border': '1px solid rgb({0},{1},{2})'
+            .format(*ViewerEnum.GRID_COLOR.value),
+            'border-radius': '3px',
+            'color': 'rgba({0},{1},{2},150)'.format(*text_color),
+            'selection-background-color': 'rgba({0},{1},{2},100)'
+            .format(*text_sel_color),
+        }
+    }
+    stylesheet = ''
+    for css_class, css in style_dict.items():
+        style = '{} {{\n'.format(css_class)
+        for elm_name, elm_val in css.items():
+            style += '  {}:{};\n'.format(elm_name, elm_val)
+        style += '}\n'
+        stylesheet += style
+    widget.setStyleSheet(stylesheet)
+    #widget.setAlignment(QtCore.Qt.AlignCenter)
