@@ -1,17 +1,16 @@
 from NodeGraphQt import BaseNode
 from NodeGraphQt.constants import PortTypeEnum
 from NodeGraphQt.errors import NodePropertyError
+from NodeGraphQt.constants import NodePropWidgetEnum
 from PyQt5 import QtCore, QtGui
 import math
-import types
 from collections import defaultdict
 
 from graph.db_spec_singleton import (db_spec, requirement_argument_info, requirement_system_tables, effect_system_tables,
                                      req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
                                      mod_arg_type_list_map, all_param_arg_fields)
 from schema_generator import SQLValidator
-from graph.custom_widgets import (ToggleExtraButton, IntSpinNodeWidget, FloatSpinNodeWidget,
-                                  ExpandingLineEdit, DropDownLineEdit)
+from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 
 
 class BasicDBNode(BaseNode):
@@ -86,7 +85,7 @@ class BasicDBNode(BaseNode):
         self.add_custom_widget(
             DropDownLineEdit(parent=self.view, label=index_label(idx, col),
                              name=col, text=col_poss_vals[0] if col_poss_vals else None, suggestions=col_poss_vals or []),
-            tab='fields')
+            tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         return
 
     def set_bool_checkbox(self, col, idx=0, default_val=None):
@@ -97,7 +96,9 @@ class BasicDBNode(BaseNode):
         cb.setStyleSheet("QCheckBox { padding-top: 2px; }")
 
     def set_text_input(self, col, idx=0, default_val=None):
-        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=index_label(idx, col), name=col, text=str(default_val or '')), tab='fields')
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=index_label(idx, col), name=col,
+                                                 text=str(default_val or '')), tab='fields',
+                               widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         text_widget = self.get_widget(col)
         text_widget.get_custom_widget().setMinimumHeight(24)
 
@@ -228,10 +229,6 @@ def create_table_node_class(table_name, graph):
         self._extra_fields = second_texts
         self.create_property('table_name', value=table_name)
 
-        toggle = ToggleExtraButton(self.view)
-        toggle._btn.clicked.connect(self._toggle_extra)
-        self.add_custom_widget(toggle, tab=None)
-
         age = graph.property('meta').get('Age')
         if age == 'ALWAYS':
             self._possible_vals = db_spec.all_possible_vals.get(table_name, {})
@@ -247,7 +244,7 @@ def create_table_node_class(table_name, graph):
         fk_to_tbl_map = SQLValidator.fk_to_tbl_map.get(table_name, {})
         fk_to_pk_map = SQLValidator.fk_to_pk_map.get(table_name, {})
         require_map = SQLValidator.required_map.get(table_name, {})
-
+        lazy_params = {}
         for idx, col in enumerate(cols_ordered):
             default_val = default_map.get(col, None)
             fk_to_tbl_link = fk_to_tbl_map.get(col, None)
@@ -264,17 +261,33 @@ def create_table_node_class(table_name, graph):
             col_poss_vals = self._possible_vals.get(col, None)
             col_type = SQLValidator.type_map[table_name][col]
             if isinstance(col_type, bool):
+                if col in self._extra_fields:
+                    default_val = bool(eval(default_val))
+                    lazy_params[col] = default_val
+                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
+                    continue
                 self.set_bool_checkbox(col, idx, default_val)
             elif isinstance(col_type, int):
+                if col in self._extra_fields:
+                    default_val = int(default_val)
+                    lazy_params[col] = default_val
+                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QSPIN_BOX.value)
+                    continue
                 self.add_custom_widget(IntSpinNodeWidget(col, self.view), tab='fields')
             elif col_poss_vals is not None:
+                if col in self._extra_fields:
+                    lazy_params[col] = default_val
+                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+                    continue
                 self.set_search_menu(col=col, idx=idx, col_poss_vals=[''] + col_poss_vals['vals'])
             else:
+                if col in self._extra_fields:
+                    lazy_params[col] = default_val
+                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+                    continue
                 self.set_text_input(col, idx, default_val)
 
-            if col in self._extra_fields:
-                self.hide_widget(col, push_undo=False)
-
+        self.create_property('arg_params', lazy_params)
         # Validate all fields after initialization
         self._validate_all_fields()
 
@@ -283,9 +296,6 @@ def create_table_node_class(table_name, graph):
             self.output_port_tables[SQLValidator.pk_map[table_name][0]] = set_output_port_constraints(self, table_name,
                                                                                                       fk_backlink)
 
-        if len(self._extra_fields) == 0:
-            btn = self.get_widget('toggle_extra')
-            btn.hide()
         self.view.setVisible(True)
 
     def set_defaults_method(self):
@@ -446,11 +456,11 @@ class GameEffectNode(BaseEffectNode):
         # fixed fields
         mod_spec = db_spec.node_templates['Modifiers']
         skipped_modifier_fields = ['SubjectRequirementSetId', 'OwnerRequirementSetId', 'ModifierType', 'ModifierId']
-        modifier_fields = [i for i in mod_spec.get('primary_texts', []) if i not in skipped_modifier_fields]
-        modifier_extra_fields = [i for i in mod_spec.get('secondary_texts', []) if i not in skipped_modifier_fields]
-        modifier_fields = modifier_fields + modifier_extra_fields
+        show_even_with_defaults = ['Permanent', 'RunOnce']
+        modifier_hidden_cols = [i for i in mod_spec.get('secondary_texts', [])
+                                 if i not in skipped_modifier_fields and i not in show_even_with_defaults]
 
-        self._extra_fields = modifier_extra_fields
+        self._extra_fields = modifier_hidden_cols
 
         # dynamicModifiers
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='ModifierId', name='ModifierId',
@@ -460,9 +470,9 @@ class GameEffectNode(BaseEffectNode):
             DropDownLineEdit(parent=self.view, label="EffectType",
                              name="EffectType", text=modifier_arguments[0],
                              suggestions=modifier_arguments),
-            tab='fields')
-        self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
-        self.create_property('ModifierType', '')
+            tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
+        self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'],)
+        self.create_property('ModifierType', '', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.output_port_tables['ModifierId'] = set_output_port_constraints(self, 'Modifiers',
                                                               SQLValidator.pk_ref_map.get('Modifiers'))
         self.output_port_tables['ModifierId'] = {k: v for k, v in self.output_port_tables['ModifierId'].items()
@@ -476,32 +486,31 @@ class GameEffectNode(BaseEffectNode):
 
         self.add_output('SubjectReq')
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='SubjectRequirementSetId', name='SubjectReq',
-                                                 check_if_edited=True), tab='fields')
+                                                 check_if_edited=True), tab='fields',
+                               widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         # self.set_search_menu(col='SubjectReq', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['SubjectRequirementSetId']['vals'], validate=False)
         self.add_output('OwnerReq')
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='OwnerRequirementSetId', name='OwnerReq',
-                                                 check_if_edited=True), tab='fields')
+                                                 check_if_edited=True), tab='fields',
+                               widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.create_property('RequirementSetDict', {'SubjectReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []},
                                                     'OwnerReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []}})
         #self.set_search_menu(col='OwnerRequirementSetId', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['OwnerRequirementSetId']['vals'], validate=False)
 
-        for col in modifier_fields:
+        for col in show_even_with_defaults:
+            default_val = bool(int(mod_spec['default_values'].get(col, '0')))
+            self.set_bool_checkbox(col, default_val=default_val)
+            #self.create_property(col, value=default_val, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
+        for col in modifier_hidden_cols:
             if col in mod_spec.get('mined_bools', {}):
-                self.set_bool_checkbox(col)
+                self.create_property(col, value=False, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
             else:
-                self.set_text_input(col)
-
-            if col in modifier_extra_fields:
-                self.hide_widget(col, push_undo=False)
+                self.create_property(col, value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
 
         # ModifierStrings
-        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='Text', name='Text'), tab='fields')
-        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='Context', name='Context'), tab='fields')
+        self.create_property('Text', value='', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+        self.create_property('Context', value='', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         # ModifierMetadata. Only used for resource modifiers.
-
-        toggle = ToggleExtraButton(self.view)
-        toggle._btn.clicked.connect(self._toggle_extra)
-        self.add_custom_widget(toggle, tab=None)
 
         # new logic
         lazy_arg_params = {prop: '' for prop in all_param_arg_fields}

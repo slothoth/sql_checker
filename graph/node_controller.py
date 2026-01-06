@@ -1,5 +1,7 @@
 import uuid
 import json
+from collections import defaultdict
+
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import (
     QMainWindow, QSizePolicy
@@ -7,6 +9,10 @@ from PyQt5.QtWidgets import (
 
 
 from NodeGraphQt import NodeGraph, NodesPaletteWidget, NodesTreeWidget, PropertiesBinWidget
+from NodeGraphQt.custom_widgets.properties_bin.node_property_factory import NodePropertyWidgetFactory
+from NodeGraphQt.custom_widgets.properties_bin.node_property_widgets import NodePropEditorWidget
+
+
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type  # expensive  1.7s
 from graph.db_spec_singleton import db_spec                                                         # but other times
 from graph.set_hotkeys import set_hotkeys       # expensive  1.9s                                   # fast?
@@ -285,4 +291,3 @@ def update_widget_or_prop(node, widget_name, new_val):
         hidden_property = node.get_property(widget_name)
         if hidden_property is not None:
             node.set_property(widget_name, new_val)
-

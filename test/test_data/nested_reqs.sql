@@ -11,6 +11,6 @@ INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_
 INSERT INTO "Requirements" ("RequirementId", "RequirementType") VALUES ('REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS');
 INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingTag', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', '4');
 INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingType', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'BUILDING_TEST');
-INSERT INTO "Requirements" ("RequirementId", "AiWeighting", "BehaviorTree", "Impact", "Inverse", "Likeliness", "Persistent", "ProgressWeight", "RequirementType", "Reverse", "Triggered") VALUES ('TEST_REQ_1', 0, '', 0, 0, 0, 0, 0, 'REQUIREMENT_OPPONENT_IS_DISTRICT', 0, 0);
+INSERT INTO "Requirements" ("RequirementId", "AiWeighting", "Impact", "Inverse", "Likeliness", "Persistent", "ProgressWeight", "RequirementType", "Reverse", "Triggered") VALUES ('TEST_REQ_1', 0, 0, 0, 0, 0, 1, 'REQUIREMENT_OPPONENT_IS_DISTRICT', 0, 0);
 INSERT INTO "RequirementSets" ("RequirementSetId", "RequirementSetType") VALUES ('TEST_REQSET_1', '"REQUIREMENTSET_TEST_ALL"');
 INSERT INTO "RequirementSetRequirements" ("RequirementId", "RequirementSetId") VALUES ('TEST_REQ_1', 'TEST_REQSET_1');

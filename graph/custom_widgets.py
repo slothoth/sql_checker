@@ -13,33 +13,6 @@ class ArgReportNodeBaseWidget(NodeBaseWidget):
             arg_params[prop_name] = text
 
 
-class ToggleExtraButton(NodeBaseWidget):
-    def __init__(self, parent=None, name='toggle_extra', label=''):
-        super().__init__(parent, name, label)
-        self.set_name('toggle_extra')
-        self.set_label('')
-        btn = QtWidgets.QToolButton()
-        btn.setCheckable(True)
-        btn.setFixedSize(10, 10)
-        btn.setStyleSheet("""
-        QToolButton {
-            background-color: #333;
-        }
-        QToolButton:checked {
-            background-color: #2e7d32;
-        }
-        """)
-
-        self._btn = btn
-        self.set_custom_widget(btn)
-
-    def set_value(self, value):
-        self._btn.setText(value)
-
-    def get_value(self):
-        return self._btn.text()
-
-
 class IntSpinNodeWidget(ArgReportNodeBaseWidget):
     def __init__(self, prop, parent=None, minimum=0, maximum=100):          # TODO need harvest all examples per arg to see if negative allowed
         super().__init__(parent)
