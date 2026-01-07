@@ -283,7 +283,46 @@
       "ScienceCost",
       "WildcardCost"
     ],
-    "possible_fks": {},
+    "possible_fks": {
+      "UniqueLeader": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "TypeQuotes",
+          "col": "Type"
+        },
+        {
+          "table": "Leaders",
+          "col": "LeaderType"
+        },
+        {
+          "table": "LoadingInfo_Leaders",
+          "col": "LeaderType"
+        }
+      ],
+      "Unlock": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "Unlocks",
+          "col": "UnlockType"
+        }
+      ]
+    },
+    "extra_fks": {
+      "UniqueLeader": {
+        "ref_column": "LeaderType",
+        "ref_table": "Leaders"
+      },
+      "Unlock": {
+        "ref_column": "UnlockType",
+        "ref_table": "Unlocks"
+      }
+    },
     "origin_pk": true
   },
   "AdvancedStartAIModifiers": {
@@ -569,6 +608,9 @@
       "AdvisorSubjects"
     ],
     "possible_fks": {},
+    "extra_backlinks": {
+      "AdvisorWarnings": "AdvisorType"
+    },
     "origin_pk": true
   },
   "AdvisorSubjects": {
@@ -651,12 +693,36 @@
           "table": "Types",
           "col": "Type"
         }
+      ],
+      "AdvisorType": [
+        {
+          "table": "Advisors",
+          "col": "AdvisorType"
+        }
+      ],
+      "NotificationType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "Notifications",
+          "col": "NotificationType"
+        }
       ]
     },
     "extra_fks": {
       "AdvisorWarningType": {
         "ref_column": "Type",
         "ref_table": "Types"
+      },
+      "AdvisorType": {
+        "ref_column": "AdvisorType",
+        "ref_table": "Advisors"
+      },
+      "NotificationType": {
+        "ref_column": "NotificationType",
+        "ref_table": "Notifications"
       }
     }
   },
@@ -842,7 +908,10 @@
       "HumanPlayersPrimaryHemisphere",
       "NoVictoriesSecondaryHemisphere"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "Resource_Distribution": "AgeType"
+    }
   },
   "AgeConstructibleDefaultMaintenances": {
     "primary_keys": [
@@ -941,6 +1010,12 @@
           "col": "NarrativeStoryType"
         }
       ]
+    },
+    "extra_fks": {
+      "NarrativeStoryType": {
+        "ref_column": "NarrativeStoryType",
+        "ref_table": "NarrativeStories"
+      }
     },
     "origin_pk": true
   },
@@ -1807,6 +1882,9 @@
       "TargetParameter"
     ],
     "possible_fks": {},
+    "extra_backlinks": {
+      "IndependentTribeTypes": "RaidOperation"
+    },
     "origin_pk": true
   },
   "AiOperationLimits": {
@@ -3234,8 +3312,8 @@
     },
     "extra_fks": {
       "FavoredWonderType": {
-        "ref_column": "ConstructibleType",
-        "ref_table": "Constructibles"
+        "ref_column": "Type",
+        "ref_table": "TypeQuotes"
       }
     }
   },
@@ -3361,7 +3439,20 @@
     "foreign_keys": {
       "PageLayoutID": "CivilopediaPageLayouts"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "SectionID": [
+        {
+          "table": "CivilopediaSections",
+          "col": "SectionID"
+        }
+      ]
+    },
+    "extra_fks": {
+      "SectionID": {
+        "ref_column": "SectionID",
+        "ref_table": "CivilopediaSections"
+      }
+    }
   },
   "CivilopediaPageChapterHeaders": {
     "primary_keys": [
@@ -3446,7 +3537,20 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {
+      "SectionID": [
+        {
+          "table": "CivilopediaSections",
+          "col": "SectionID"
+        }
+      ]
+    },
+    "extra_fks": {
+      "SectionID": {
+        "ref_column": "SectionID",
+        "ref_table": "CivilopediaSections"
+      }
+    }
   },
   "CivilopediaPageGroups": {
     "primary_keys": [
@@ -3477,7 +3581,20 @@
     "mined_bools": [
       "VisibleIfEmpty"
     ],
-    "possible_fks": {}
+    "possible_fks": {
+      "SectionID": [
+        {
+          "table": "CivilopediaSections",
+          "col": "SectionID"
+        }
+      ]
+    },
+    "extra_fks": {
+      "SectionID": {
+        "ref_column": "SectionID",
+        "ref_table": "CivilopediaSections"
+      }
+    }
   },
   "CivilopediaPageGroupExcludes": {
     "primary_keys": [
@@ -3555,6 +3672,9 @@
       "UseSidebar"
     ],
     "possible_fks": {},
+    "extra_backlinks": {
+      "CivilopediaPageLayoutChapterContentQueries": "PageLayoutID"
+    },
     "origin_pk": true
   },
   "CivilopediaPageLayoutChapters": {
@@ -3602,7 +3722,20 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {
+      "PageLayoutID": [
+        {
+          "table": "CivilopediaPageLayouts",
+          "col": "PageLayoutID"
+        }
+      ]
+    },
+    "extra_fks": {
+      "PageLayoutID": {
+        "ref_column": "PageLayoutID",
+        "ref_table": "CivilopediaPageLayouts"
+      }
+    }
   },
   "CivilopediaPageQueries": {
     "primary_keys": [],
@@ -3617,7 +3750,20 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {
+      "SectionID": [
+        {
+          "table": "CivilopediaSections",
+          "col": "SectionID"
+        }
+      ]
+    },
+    "extra_fks": {
+      "SectionID": {
+        "ref_column": "SectionID",
+        "ref_table": "CivilopediaSections"
+      }
+    }
   },
   "CivilopediaPageSearchTerms": {
     "primary_keys": [
@@ -3699,7 +3845,11 @@
     "foreign_keys": {},
     "possible_fks": {},
     "extra_backlinks": {
-      "CivilopediaPageChapterParagraphs": "SectionID"
+      "CivilopediaPages": "SectionID",
+      "CivilopediaPageChapterParagraphs": "SectionID",
+      "CivilopediaPageExcludes": "SectionID",
+      "CivilopediaPageGroups": "SectionID",
+      "CivilopediaPageQueries": "SectionID"
     },
     "origin_pk": true
   },
@@ -3923,16 +4073,27 @@
           "table": "Types",
           "col": "Type"
         }
+      ],
+      "ConstructibleClass": [
+        {
+          "table": "ConstructibleClasses",
+          "col": "ConstructibleClassType"
+        }
       ]
     },
     "extra_fks": {
       "ConstructibleType": {
         "ref_column": "Type",
         "ref_table": "Types"
+      },
+      "ConstructibleClass": {
+        "ref_column": "ConstructibleClassType",
+        "ref_table": "ConstructibleClasses"
       }
     },
     "extra_backlinks": {
-      "CivilizationFavoredWonders": "FavoredWonderType"
+      "ConstructibleModifiers": "ConstructibleType",
+      "DiscoverySiftingImprovements": "ConstructibleType"
     }
   },
   "Constructible_Adjacencies": {
@@ -4620,6 +4781,9 @@
     "default_values": {},
     "foreign_keys": {},
     "possible_fks": {},
+    "extra_backlinks": {
+      "Constructibles": "ConstructibleClass"
+    },
     "origin_pk": true
   },
   "ConstructibleModifiers": {
@@ -4639,6 +4803,16 @@
     "default_values": {},
     "foreign_keys": {},
     "possible_fks": {
+      "ConstructibleType": [
+        {
+          "table": "Constructibles",
+          "col": "ConstructibleType"
+        },
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ],
       "ModifierId": [
         {
           "table": "Modifiers",
@@ -4650,6 +4824,10 @@
       "ModifierId": {
         "ref_column": "ModifierId",
         "ref_table": "Modifiers"
+      },
+      "ConstructibleType": {
+        "ref_column": "ConstructibleType",
+        "ref_table": "Constructibles"
       }
     }
   },
@@ -5377,6 +5555,9 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
+    },
+    "extra_backlinks": {
+      "DiplomaticActionResponseModifiers": "ModifierTarget"
     }
   },
   "DiplomacyPlayerRelationships": {
@@ -5437,6 +5618,7 @@
     "foreign_keys": {},
     "possible_fks": {},
     "extra_backlinks": {
+      "DiplomacyStatementFrames": "Type",
       "TypeToDiplomacyStatements": "DiplomacyStatementType"
     },
     "origin_pk": true
@@ -5465,7 +5647,20 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {
+      "Type": [
+        {
+          "table": "DiplomacyStatements",
+          "col": "DiplomacyStatementType"
+        }
+      ]
+    },
+    "extra_fks": {
+      "Type": {
+        "ref_column": "DiplomacyStatementType",
+        "ref_table": "DiplomacyStatements"
+      }
+    }
   },
   "DiplomacyStatementSelections": {
     "primary_keys": [
@@ -5605,7 +5800,44 @@
       "DiplomaticResponseType": "Types",
       "DiplomacyActionType": "DiplomacyActions"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "ModifierId": [
+        {
+          "table": "Modifiers",
+          "col": "ModifierId"
+        }
+      ],
+      "ModifierTarget": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "DiplomacyModifierTargetTypes",
+          "col": "DiplomacyModifierTargetType"
+        }
+      ],
+      "ModifierType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "ModifierId": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      },
+      "ModifierType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      },
+      "ModifierTarget": {
+        "ref_column": "DiplomacyModifierTargetType",
+        "ref_table": "DiplomacyModifierTargetTypes"
+      }
+    }
   },
   "DiplomaticActionStages": {
     "primary_keys": [
@@ -5814,7 +6046,20 @@
       "UIShowActiveProject",
       "UIStartProject"
     ],
-    "possible_fks": {}
+    "possible_fks": {
+      "Target2Type": [
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "Target2Type": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    }
   },
   "DiplomaticResponses": {
     "primary_keys": [
@@ -5860,12 +6105,30 @@
           "table": "NarrativeStory_Queues",
           "col": "QueueType"
         }
+      ],
+      "ConstructibleType": [
+        {
+          "table": "Constructibles",
+          "col": "ConstructibleType"
+        },
+        {
+          "table": "Improvements",
+          "col": "ConstructibleType"
+        },
+        {
+          "table": "Types",
+          "col": "Type"
+        }
       ]
     },
     "extra_fks": {
       "QueueType": {
         "ref_column": "QueueType",
         "ref_table": "NarrativeStory_Queues"
+      },
+      "ConstructibleType": {
+        "ref_column": "ConstructibleType",
+        "ref_table": "Constructibles"
       }
     }
   },
@@ -6151,7 +6414,10 @@
       "ModifierType": "Types",
       "CollectionType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "Modifiers": "ModifierType"
+    }
   },
   "EmbarkationValidTerrains": {
     "primary_keys": [
@@ -6766,9 +7032,6 @@
       "BiomeType": "Biomes",
       "FeatureType": "Features"
     },
-    "mined_bools": [
-      "ReplaceRange"
-    ],
     "possible_fks": {}
   },
   "Feature_ValidTerrains": {
@@ -6926,7 +7189,10 @@
     "backlink_fk": [
       "GameEffectArguments"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "RequirementSets": "RequirementSetType"
+    }
   },
   "GameEffectArguments": {
     "primary_keys": [
@@ -7092,7 +7358,20 @@
     "foreign_keys": {
       "GameSpeedType": "GameSpeeds"
     },
-    "possible_fks": {},
+    "possible_fks": {
+      "ScalingType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "ScalingType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    },
     "origin_pk": true
   },
   "GameSpeed_Turns": {
@@ -7764,7 +8043,20 @@
     "foreign_keys": {
       "GreatPersonIndividualType": "GreatPersonIndividuals"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "ModifierId": [
+        {
+          "table": "Modifiers",
+          "col": "ModifierId"
+        }
+      ]
+    },
+    "extra_fks": {
+      "ModifierId": {
+        "ref_column": "ModifierId",
+        "ref_table": "Modifiers"
+      }
+    }
   },
   "GreatPersonIndividualBirthModifiers": {
     "primary_keys": [
@@ -8404,7 +8696,30 @@
       "IgnoreSpacing",
       "NumNormalRaids"
     ],
-    "possible_fks": {},
+    "possible_fks": {
+      "AssaultOperation": [
+        {
+          "table": "AiOperationDefs",
+          "col": "OperationName"
+        }
+      ],
+      "RaidOperation": [
+        {
+          "table": "AiOperationDefs",
+          "col": "OperationName"
+        }
+      ]
+    },
+    "extra_fks": {
+      "AssaultOperation": {
+        "ref_column": "OperationName",
+        "ref_table": "AiOperationDefs"
+      },
+      "RaidOperation": {
+        "ref_column": "OperationName",
+        "ref_table": "AiOperationDefs"
+      }
+    },
     "origin_pk": true
   },
   "InterfaceModes": {
@@ -8566,7 +8881,10 @@
       "IsIndependentLeader",
       "IsMajorLeader"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "AdvancedStartCards": "UniqueLeader"
+    }
   },
   "LeaderCivPriorities": {
     "primary_keys": [
@@ -8726,7 +9044,11 @@
     "backlink_fk": [
       "LegacyCivilizationTraits"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "NamedRiverCivilizations": "CivilizationType",
+      "NamedVolcanoCivilizations": "CivilizationType"
+    }
   },
   "LegacyCivilizationTraits": {
     "primary_keys": [
@@ -8776,12 +9098,46 @@
           "table": "Independents",
           "col": "IndependentType"
         }
+      ],
+      "Age": [
+        {
+          "table": "AdvancedStartAges",
+          "col": "AgeType"
+        },
+        {
+          "table": "Ages",
+          "col": "AgeType"
+        },
+        {
+          "table": "LoadingInfo_Ages",
+          "col": "AgeType"
+        },
+        {
+          "table": "Resource_Distribution",
+          "col": "AgeType"
+        },
+        {
+          "table": "AdvancedStartParameters",
+          "col": "Age"
+        },
+        {
+          "table": "AgeGrowthBalances",
+          "col": "Age"
+        },
+        {
+          "table": "Types",
+          "col": "Type"
+        }
       ]
     },
     "extra_fks": {
       "IndependentType": {
         "ref_column": "IndependentType",
         "ref_table": "Independents"
+      },
+      "Age": {
+        "ref_column": "AgeType",
+        "ref_table": "Resource_Distribution"
       }
     },
     "extra_backlinks": {
@@ -9106,6 +9462,9 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
+    },
+    "extra_backlinks": {
+      "MapResourceMinimumAmountModifier": "MapSizeType"
     }
   },
   "Map_GreatPersonClasses": {
@@ -9242,7 +9601,24 @@
       "Amount": "0"
     },
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {
+      "MapSizeType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "Maps",
+          "col": "MapSizeType"
+        }
+      ]
+    },
+    "extra_fks": {
+      "MapSizeType": {
+        "ref_column": "MapSizeType",
+        "ref_table": "Maps"
+      }
+    }
   },
   "MapSeaLevels": {
     "primary_keys": [
@@ -9495,19 +9871,36 @@
     },
     "mined_bools": [
       "NewOnly",
-      "OwnerStackLimit",
       "Permanent",
-      "RunOnce",
-      "SubjectStackLimit"
+      "RunOnce"
     ],
-    "possible_fks": {},
+    "possible_fks": {
+      "ModifierType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "DynamicModifiers",
+          "col": "ModifierType"
+        }
+      ]
+    },
+    "extra_fks": {
+      "ModifierType": {
+        "ref_column": "ModifierType",
+        "ref_table": "DynamicModifiers"
+      }
+    },
     "extra_backlinks": {
       "BeliefModifiers": "ModifierID",
       "CityStateBonusModifiers": "ModifierID",
       "ConstructibleModifiers": "ModifierId",
+      "DiplomaticActionResponseModifiers": "ModifierId",
       "GameModifiers": "ModifierId",
       "GoldenAgeModifiers": "ModifierID",
       "GoodyHutSubTypes": "ModifierID",
+      "GreatPersonIndividualActionModifiers": "ModifierId",
       "MetaprogressionModifiers": "ModifierId",
       "ModifierMetadatas": "ModifierID",
       "NarrativeRewards": "ModifierID",
@@ -9594,12 +9987,26 @@
           "table": "Modifiers",
           "col": "ModifierId"
         }
+      ],
+      "String": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "Resources",
+          "col": "ResourceType"
+        }
       ]
     },
     "extra_fks": {
       "ModifierID": {
         "ref_column": "ModifierId",
         "ref_table": "Modifiers"
+      },
+      "String": {
+        "ref_column": "ResourceType",
+        "ref_table": "Resources"
       }
     }
   },
@@ -9761,7 +10168,24 @@
     "foreign_keys": {
       "NamedRiverType": "NamedRivers"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "CivilizationType": [
+        {
+          "table": "LegacyCivilizations",
+          "col": "CivilizationType"
+        },
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "CivilizationType": {
+        "ref_column": "CivilizationType",
+        "ref_table": "LegacyCivilizations"
+      }
+    }
   },
   "NamedVolcanoes": {
     "primary_keys": [
@@ -9802,7 +10226,24 @@
     "foreign_keys": {
       "NamedVolcanoType": "NamedVolcanoes"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "CivilizationType": [
+        {
+          "table": "LegacyCivilizations",
+          "col": "CivilizationType"
+        },
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "CivilizationType": {
+        "ref_column": "CivilizationType",
+        "ref_table": "LegacyCivilizations"
+      }
+    }
   },
   "NarrativeDisplay_Civilizations": {
     "primary_keys": [
@@ -9905,7 +10346,20 @@
     "mined_bools": [
       "Negative"
     ],
-    "possible_fks": {}
+    "possible_fks": {
+      "RewardIconType": [
+        {
+          "table": "NarrativeStory_RewardIcons",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "RewardIconType": {
+        "ref_column": "Type",
+        "ref_table": "NarrativeStory_RewardIcons"
+      }
+    }
   },
   "NarrativeStories": {
     "primary_keys": [
@@ -10007,17 +10461,20 @@
     "mined_bools": [
       "AllowDuplicates",
       "Crisis",
-      "FirstOnly",
       "ForceChoice",
       "ForeignOnly",
       "Hidden",
       "IsQuest",
-      "Multiplayer",
       "ReducedScaling",
       "ShowProgress",
       "StartEveryone"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "AgeCrisisEvents": "NarrativeStoryType",
+      "NarrativeStory_Links": "ToNarrativeStoryType",
+      "NarrativeVariations": "VariationStoryType"
+    }
   },
   "NarrativeStory_Activations": {
     "primary_keys": [
@@ -10067,7 +10524,24 @@
     "foreign_keys": {
       "FromNarrativeStoryType": "NarrativeStories"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "ToNarrativeStoryType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "NarrativeStories",
+          "col": "NarrativeStoryType"
+        }
+      ]
+    },
+    "extra_fks": {
+      "ToNarrativeStoryType": {
+        "ref_column": "NarrativeStoryType",
+        "ref_table": "NarrativeStories"
+      }
+    }
   },
   "NarrativeStory_Queues": {
     "primary_keys": [
@@ -10171,6 +10645,7 @@
     "possible_fks": {},
     "extra_backlinks": {
       "Attributes": "AttributeType",
+      "NarrativeRewardIcons": "RewardIconType",
       "Yields": "YieldType"
     },
     "origin_pk": true
@@ -10201,7 +10676,30 @@
     "foreign_keys": {
       "NarrativeStoryType": "NarrativeStories"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "NarrativeStoryTextType": [
+        {
+          "table": "NarrativeStory_TextTypes",
+          "col": "Type"
+        }
+      ],
+      "NarrativeTextReplacementType": [
+        {
+          "table": "NarrativeStory_TextReplacementTypes",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "NarrativeStoryTextType": {
+        "ref_column": "Type",
+        "ref_table": "NarrativeStory_TextTypes"
+      },
+      "NarrativeTextReplacementType": {
+        "ref_column": "Type",
+        "ref_table": "NarrativeStory_TextReplacementTypes"
+      }
+    }
   },
   "NarrativeStory_TextReplacementTypes": {
     "primary_keys": [
@@ -10217,6 +10715,9 @@
     "default_values": {},
     "foreign_keys": {},
     "possible_fks": {},
+    "extra_backlinks": {
+      "NarrativeStory_TextReplacements": "NarrativeTextReplacementType"
+    },
     "origin_pk": true
   },
   "NarrativeStory_TextTypes": {
@@ -10233,6 +10734,9 @@
     "default_values": {},
     "foreign_keys": {},
     "possible_fks": {},
+    "extra_backlinks": {
+      "NarrativeStory_TextReplacements": "NarrativeStoryTextType"
+    },
     "origin_pk": true
   },
   "NarrativeStory_UIActivations": {
@@ -10338,6 +10842,12 @@
           "col": "NarrativeStoryType"
         }
       ]
+    },
+    "extra_fks": {
+      "VariationStoryType": {
+        "ref_column": "NarrativeStoryType",
+        "ref_table": "NarrativeStories"
+      }
     }
   },
   "NodeDataDefinitions": {
@@ -10491,6 +11001,9 @@
       "VisibleInUI"
     ],
     "possible_fks": {},
+    "extra_backlinks": {
+      "AdvisorWarnings": "NotificationType"
+    },
     "origin_pk": true
   },
   "NotificationSounds": {
@@ -10666,6 +11179,9 @@
       "UnoccupiedDecay"
     ],
     "possible_fks": {},
+    "extra_backlinks": {
+      "RandomEventPlotEffects": "PlotEffectType"
+    },
     "origin_pk": true
   },
   "PlotEvalConditions": {
@@ -10947,8 +11463,7 @@
       "ProgressionTreeNodeType": "ProgressionTreeNodes"
     },
     "mined_bools": [
-      "AIIgnoreUnlockValue",
-      "Hidden"
+      "AIIgnoreUnlockValue"
     ],
     "possible_fks": {}
   },
@@ -11427,7 +11942,24 @@
     "foreign_keys": {
       "RandomEventType": "RandomEvents"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "PlotEffectType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "PlotEffects",
+          "col": "PlotEffectType"
+        }
+      ]
+    },
+    "extra_fks": {
+      "PlotEffectType": {
+        "ref_column": "PlotEffectType",
+        "ref_table": "PlotEffects"
+      }
+    }
   },
   "RandomEventUI": {
     "primary_keys": [
@@ -11713,7 +12245,24 @@
       "Victories"
     ],
     "foreign_keys": {},
-    "possible_fks": {},
+    "possible_fks": {
+      "RequirementSetType": [
+        {
+          "table": "GameEffects",
+          "col": "Type"
+        },
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "RequirementSetType": {
+        "ref_column": "Type",
+        "ref_table": "GameEffects"
+      }
+    },
     "origin_pk": true
   },
   "RequirementSetStrings": {
@@ -11858,7 +12407,10 @@
       "Tradeable",
       "UnlocksCiv"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "ModifierMetadatas": "String"
+    }
   },
   "Resource_Distribution": {
     "primary_keys": [
@@ -11895,10 +12447,16 @@
         }
       ]
     },
-    "extra_backlinks": {
-      "AgeProgressions": "AgeType"
+    "extra_fks": {
+      "AgeType": {
+        "ref_column": "AgeType",
+        "ref_table": "Ages"
+      }
     },
-    "origin_pk": true
+    "extra_backlinks": {
+      "AgeProgressions": "AgeType",
+      "LegacyIndependents": "Age"
+    }
   },
   "Resource_Harvests": {
     "primary_keys": [
@@ -12809,7 +13367,11 @@
     "possible_fks": {},
     "extra_backlinks": {
       "CivilopediaPageGroupQueries": "SectionID",
-      "Unit_TransitionShadows": "Tag"
+      "TribeCombatTags": "CombatTag",
+      "TribeForbiddenCombatTags": "CombatTag",
+      "TribeRequiredCombatTags": "CombatTag",
+      "Unit_TransitionShadows": "Tag",
+      "UnitClass_Abilities": "UnitClassType"
     },
     "origin_pk": true
   },
@@ -13261,7 +13823,20 @@
     "foreign_keys": {
       "TribeTagSet": "TribeTagSets"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "CombatTag": [
+        {
+          "table": "Tags",
+          "col": "Tag"
+        }
+      ]
+    },
+    "extra_fks": {
+      "CombatTag": {
+        "ref_column": "Tag",
+        "ref_table": "Tags"
+      }
+    }
   },
   "TribeCombatTagSets": {
     "primary_keys": [
@@ -13323,7 +13898,20 @@
     "foreign_keys": {
       "TribeTagSet": "TribeTagSets"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "CombatTag": [
+        {
+          "table": "Tags",
+          "col": "Tag"
+        }
+      ]
+    },
+    "extra_fks": {
+      "CombatTag": {
+        "ref_column": "Tag",
+        "ref_table": "Tags"
+      }
+    }
   },
   "TribeRequiredCombatTags": {
     "primary_keys": [
@@ -13343,7 +13931,20 @@
     "foreign_keys": {
       "TribeTagSet": "TribeTagSets"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "CombatTag": [
+        {
+          "table": "Tags",
+          "col": "Tag"
+        }
+      ]
+    },
+    "extra_fks": {
+      "CombatTag": {
+        "ref_column": "Tag",
+        "ref_table": "Tags"
+      }
+    }
   },
   "TribeScoutTagSets": {
     "primary_keys": [
@@ -13462,7 +14063,30 @@
     "mined_bools": [
       "PhaseOrder"
     ],
-    "possible_fks": {},
+    "possible_fks": {
+      "TurnMode": [
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ],
+      "TurnPhaseType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        }
+      ]
+    },
+    "extra_fks": {
+      "TurnMode": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      },
+      "TurnPhaseType": {
+        "ref_column": "Type",
+        "ref_table": "Types"
+      }
+    },
     "origin_pk": true
   },
   "TurnSegments": {
@@ -13644,8 +14268,11 @@
       "DiplomacyBasicModifierValueTypes": "Name",
       "DiplomacyModifierTargetTypes": "Name",
       "DiplomacyPlayerRelationships": "DiplomacyPlayerRelationshipType",
+      "DiplomaticActionResponseModifiers": "ModifierType",
+      "DiplomaticProjects_UI_Data": "Target2Type",
       "Fertilities": "FertilityType",
       "GameSpeeds": "GameSpeedType",
+      "GameSpeed_Scalings": "ScalingType",
       "GoldenAges": "GoldenAgeType",
       "GoodyHuts": "GoodyHutType",
       "Governments": "GovernmentType",
@@ -13662,6 +14289,7 @@
       "Seasons": "SeasonType",
       "Terrains": "TerrainType",
       "TradeSystemParameterSets": "Type",
+      "TurnPhases": "TurnPhaseType",
       "TurnSegments": "TurnSegmentType",
       "UnitCommands": "CommandType",
       "UnitEmbarkationTypes": "EmbarkationType",
@@ -13739,7 +14367,10 @@
     "foreign_keys": {
       "Type": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "CivilizationFavoredWonders": "FavoredWonderType"
+    }
   },
   "TypeTags": {
     "primary_keys": [
@@ -14521,7 +15152,6 @@
       "KeywordAbilityType": "KeywordAbilities"
     },
     "mined_bools": [
-      "AbilityValue",
       "Inactive",
       "Permanent",
       "ShareWithChildren",
@@ -14660,7 +15290,20 @@
     "foreign_keys": {
       "UnitAbilityType": "UnitAbilities"
     },
-    "possible_fks": {}
+    "possible_fks": {
+      "UnitClassType": [
+        {
+          "table": "Tags",
+          "col": "Tag"
+        }
+      ]
+    },
+    "extra_fks": {
+      "UnitClassType": {
+        "ref_column": "Tag",
+        "ref_table": "Tags"
+      }
+    }
   },
   "UnitCommands": {
     "primary_keys": [
@@ -15208,7 +15851,11 @@
       "UnlockConfigurationValues",
       "UnlockRequirements"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "extra_backlinks": {
+      "AdvancedStartCards": "Unlock",
+      "UnlockRewards": "UnlockType"
+    }
   },
   "UnlockConfigurationValues": {
     "primary_keys": [
@@ -15282,7 +15929,24 @@
     ],
     "default_values": {},
     "foreign_keys": {},
-    "possible_fks": {}
+    "possible_fks": {
+      "UnlockType": [
+        {
+          "table": "Types",
+          "col": "Type"
+        },
+        {
+          "table": "Unlocks",
+          "col": "UnlockType"
+        }
+      ]
+    },
+    "extra_fks": {
+      "UnlockType": {
+        "ref_column": "UnlockType",
+        "ref_table": "Unlocks"
+      }
+    }
   },
   "Victories": {
     "primary_keys": [

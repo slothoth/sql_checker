@@ -117,17 +117,20 @@ class BaseDB:
 
     def fix_firaxis_missing_fks(self, db_path):
         # find all primary key columns where theres only one PK.
+        # get the example database of antiquity
+        conn = sqlite3.connect("resources/antiquity-db.sqlite")
         unique_pks = {}
         for table in self.tables:
             pk_list = self.table_data[table]['primary_keys']
             if len(pk_list) == 1:           # single key
                 pk = pk_list[0]
-                if pk not in unique_pks:
-                    unique_pks[pk] = []
-                unique_pks[pk].append(table)
+                if ensure_text_column(conn, table, pk):                # filter unique pks to remove number vals
+                    if pk not in unique_pks:
+                        unique_pks[pk] = []
+                    unique_pks[pk].append(table)
 
-        # get the example database of antiquity
-        conn = sqlite3.connect("resources/antiquity-db.sqlite")
+
+
 
         count_potential_fks = 0
         for table in self.tables:
@@ -136,9 +139,6 @@ class BaseDB:
             potential_fks = {}
             for col in [i for i in self.table_data[table]['all_cols'] if i not in existing_fks]:
                 uniques = count_unique(conn, table, col)
-                nulls = count_null(conn, table, col)  # its okay not matching if null
-                if nulls > 0:
-                    uniques = uniques - 1  # we dont count these
                 for pk_col, pk_tables in unique_pks.items():
                     for pk_tbl in pk_tables:
                         if pk_tbl == table:
@@ -146,9 +146,9 @@ class BaseDB:
                         if pk_tbl in self.table_data[table].get('backlink_fk', []):
                             continue
                         viol = fk_violations(conn, table, col, pk_tbl, pk_col)
-                        matches = fk_matches(conn, table, col, pk_tbl, pk_col)
-                        matches_without_nulls = matches - nulls
-                        if len(viol) == 0 and matches > 0 and uniques == matches:
+                        all_fk_present_in_tbl = fk_matches(conn, table, col, pk_tbl, pk_col)
+                        # orphan_count = orphan_check(conn, table, col, pk_tbl, pk_col)
+                        if len(viol) == 0 and uniques > 0 and all_fk_present_in_tbl:
                             if col not in potential_fks:
                                 potential_fks[col] = []
                             potential_fks[col].append({'table': pk_tbl, 'col': pk_col})
@@ -156,7 +156,7 @@ class BaseDB:
                             print(f'Table {table} has added foreign key reference on col {col}: referencing table {pk_tbl}.{pk_col}')
 
             self.table_data[table]['possible_fks'] = potential_fks
-
+            # {k: v['possible_fks'] for k,v in self.table_data.items() if len(v.get('possible_fks', {}))} AI Teams missed?
         # THEN we need to recursively work back to deal with "origin" PK that arent actually origin
         # for example Unit_TransitionShadows has Tag as a Primary Key. and no foreign key.
         # Our analysis shows table Unit_ShadowReplacements which has a column Tag, and so it claims
@@ -175,7 +175,7 @@ class BaseDB:
                             self.table_data[key]['extra_fks'] = {}
                         self.table_data[key]['extra_fks'][fk_col] = {'ref_column': ref_col, 'ref_table': ref_table}
 
-        for key, val in self.table_data.items():
+        for key, val in self.table_data.items():        # now deal with plural sources
             if val.get('possible_fks', False):
                 new_fk_cols = val['possible_fks']
                 for fk_col, fk_info_list in new_fk_cols.items():
@@ -196,7 +196,8 @@ class BaseDB:
                             not_in_ref = ref_pk not in [v.get("ref_column")
                                                         for v in ref_table_info.get("extra_fks", [])
                                                         if "ref_column" in v]
-                            if ref_pk not in ref_table_info['foreign_keys'] and not_in_ref:
+                            non_types_fks = {k: v for k, v in ref_table_info['foreign_keys'].items() if v != 'Types'}
+                            if ref_pk not in non_types_fks and not_in_ref:
                                 if 'extra_fks' not in self.table_data[key]:
                                     self.table_data[key]['extra_fks'] = {}
 
@@ -230,14 +231,13 @@ class BaseDB:
         for table in self.tables:
             cols = conn.execute(f"PRAGMA table_info({table})").fetchall()
             int_cols = [c[1] for c in cols if "INT" in c[2].upper() or "BOOL" in c[2].upper()]
-
             for col in int_cols:
                 vals = {
                     r[0] for r in conn.execute(
-                        f"SELECT DISTINCT {col} FROM {table} WHERE {col} IS NOT NULL"
+                        f"SELECT {col} FROM {table}"
                     )
                 }
-                if vals and vals.issubset({0, 1}):
+                if vals and vals.issubset({0, 1}) and None not in vals:
                     result.setdefault(table, []).append(col)
         for table_name, bool_col_list in result.items():
             self.table_data[table_name]['mined_bools'] = bool_col_list
@@ -255,22 +255,44 @@ def fk_violations(conn, from_table, from_col, to_table, to_col):
     )
     return [r[0] for r in cur.fetchall()]
 
+all_rows_dict = {}
 
 def fk_matches(conn, from_table, from_col, to_table, to_col):
-    cur = conn.execute(
+    cur_2 = conn.execute(
         f"""
-            SELECT COUNT(*)
-            FROM {from_table}
-            WHERE typeof({from_col})='text'
-              AND {from_col} IN (
-                    SELECT {to_col}
-                    FROM {to_table}
-                    WHERE typeof({to_col})='text'
-              )
-            """
+                SELECT *
+                FROM {from_table}
+                WHERE typeof({from_col})='text'
+                  AND {from_col} IN (
+                        SELECT {to_col}
+                        FROM {to_table}
+                        WHERE typeof({to_col})='text'
+                  )
+                """
     )
-    return cur.fetchone()[0]
+    all_matches = cur_2.fetchall()
+    if from_table not in all_rows_dict:
+        cur_3 = conn.execute(
+            f"""SELECT * FROM {from_table}"""
+        )
+        all_rows = cur_3.fetchall()
+        all_rows_dict[from_table] = all_rows
+    else:
+        all_rows = all_rows_dict[from_table]
 
+    return len(all_rows) == len(all_matches)
+
+
+def orphan_check(conn, child_table, child_col, parent_table, parent_col):
+    query_orphans = f"""
+            SELECT COUNT(*) 
+            FROM {child_table} 
+            WHERE {child_col} IS NOT NULL 
+            AND {child_col} NOT IN 
+            (SELECT {parent_col} FROM {parent_table} WHERE {parent_col} IS NOT NULL)
+        """
+    cur = conn.execute(query_orphans)
+    return cur.fetchone()[0]
 
 def count_unique(conn, table, col):
     cur = conn.execute(f"SELECT COUNT(DISTINCT {col}) FROM {table}")
@@ -280,6 +302,12 @@ def count_unique(conn, table, col):
 def count_null(conn, table, col):
     cur = conn.execute(f"SELECT COUNT(*) FROM {table} WHERE {col} IS NULL")
     return cur.fetchone()[0]
+
+def ensure_text_column(conn, table, col):
+    cur = conn.execute(f"SELECT {col} FROM {table}")
+    vals = cur.fetchall()
+    all_string = all(isinstance(i[0], str) for i in vals)
+    return all_string
 
 
 def combine_db_df(df_combined, df_to_add):
