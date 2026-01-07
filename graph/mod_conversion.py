@@ -4,6 +4,7 @@ import sqlparse
 from sqlglot.errors import ParseError
 import itertools
 from itertools import product
+from collections import defaultdict
 
 from xml_handler import read_xml
 from model import convert_xml_to_sql
@@ -16,7 +17,7 @@ from graph.db_spec_singleton import modifier_system_tables, mod_arg_param_map, r
 # needs to be updated to have 3 separate tabs for each different age.
 
 
-def parse_mod_folder(mod_folder_path, graph):
+def build_imported_mod(mod_folder_path, graph):
     modinfo_list = [f for f in glob.glob(f'{mod_folder_path}/*.modinfo*')]
     if len(modinfo_list) != 1:
         return False
@@ -168,10 +169,20 @@ def mod_info_into_orm(sql_info_dict, file_path_list):
 
 def connect_foreign_keys(fk_index, nodes_dict):
     for (parent_table, parent_col, parent_pk), children in fk_index.items():
-        parent_node = nodes_dict[(parent_table, parent_pk)]
+        parent_node = nodes_dict.get(parent_table, {}).get(parent_pk)
+        if parent_node is None:
+            print(f'could not find node entry {parent_table} with primary key {parent_pk} which should have '
+                  f'{len(children)} children connections')
+            continue
+
 
         for child_table, child_pk in children:
-            child_node = nodes_dict[(child_table, child_pk)]
+            child_node = nodes_dict.get(child_table, {}).get(child_pk)
+            if child_node is None:
+                print(f'when making connections for {parent_table} with primary key {",".join(parent_pk)}'
+                      f' could not find child connection {child_table}, {",".join(child_pk)}')
+                continue
+
             primary_key = parent_pk[0]   # technically multiple pks possible, but ports system means just connect one
             src_ports = [i for i in parent_node.output_ports() if i.name() == parent_col]
             if len(src_ports) != 1:
@@ -340,7 +351,7 @@ def build_graph_from_orm(graph, orm_list):
     graph.blockSignals(True)
     graph.viewer().blockSignals(True)
     modifier_skipped, modifier_system_entries = {}, {}
-    for count, orm_instance in enumerate(orm_list):
+    for count, orm_instance in enumerate(orm_list):         # first lets assess which are involved in modifier system
         table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
         if table_name in modifier_system_tables:
             if table_name not in modifier_system_entries:
@@ -352,7 +363,8 @@ def build_graph_from_orm(graph, orm_list):
     # Would be good to be able to ref a existing dynamic Modifier while using mod args stuff
     game_effect_nodes = {k[0]: {'DynamicModifier': v} for k, v in modifier_system_entries.get('DynamicModifiers', {}).items()}
     for mod_type, v in game_effect_nodes.items():
-        matching_mods = {k: v for k, v in modifier_system_entries.get('Modifiers', {}).items() if v['ModifierType'] == mod_type}
+        matching_mods = {k: v for k, v in modifier_system_entries.get('Modifiers', {}).items()
+                         if v['ModifierType'] == mod_type}
         mod_taken = False
         for pk_tuple, entry_info in matching_mods.items():
             if mod_taken:
@@ -380,15 +392,17 @@ def build_graph_from_orm(graph, orm_list):
                         mod_string_taken = True
                         game_effect_nodes[mod_type]['ModifierStrings'] = mod_string_info
 
-    nodes_dict = {}
+    nodes_dict = defaultdict(dict)             # made nodes
     for count, orm_instance in enumerate(orm_list):
         table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
-        if modifier_skipped.get(pk_tuple, True):
+        not_skipped_because_modifiers = modifier_skipped.get(pk_tuple, True)
+        if True:
             class_name = f"{table_name.title().replace('_', '')}Node"
             node = graph.create_node(f'db.table.{table_name.lower()}.{class_name}')
             node.set_spec(col_dicts)
-            nodes_dict[(table_name, pk_tuple)] = node
+            nodes_dict[table_name][pk_tuple] = node
             print(f'there are now {count} nodes')
+    nodes_dict = dict(nodes_dict)
 
     for modifier_type, effects_info in game_effect_nodes.items():
         node = graph.create_node('db.game_effects.GameEffectNode')

@@ -6,6 +6,7 @@ from sqlalchemy import inspect
 from collections import defaultdict
 from graph.db_spec_singleton import modifier_system_tables, effect_system_tables, requirement_system_tables
 from schema_generator import SQLValidator
+from graph.db_spec_singleton import db_spec
 
 mapper_registry = registry()
 
@@ -84,24 +85,64 @@ def get_table_and_key_vals(orm_instance):
 def build_fk_index(instances):
     fk_index = defaultdict(set)
     by_table = defaultdict(list)
+    tables_by_name = {}
     for obj in instances:
-        by_table[inspect(obj).mapper.local_table].append(obj)
+        t = inspect(obj).mapper.local_table
+        by_table[t].append(obj)
+        tables_by_name[t.name] = t
 
     for child in instances:
         sc = inspect(child)
         child_table = sc.mapper.local_table
-        child_pk = tuple(getattr(child, col.name) for col in child_table.primary_key.columns)
+        child_pk = tuple(
+            getattr(child, mapped_attr(child, child_table, c.name)) for c in child_table.primary_key.columns)
+
         for fk in child_table.foreign_keys:
             parent_table = fk.column.table
             parent_col = fk.column.name
-            parent_val = getattr(child, fk.parent.name)
+
+            child_attr = mapped_attr(child, child_table, fk.parent.name)
+            parent_val = getattr(child, child_attr)
             if parent_val is None:
                 continue
-            # TODO: We are currently not connecting the DynamicModifiers or tables associated with it
+
             for parent in by_table.get(parent_table, []):
-                if getattr(parent, parent_col) == parent_val:
-                    if parent_table.name not in modifier_system_tables and child_table.name not in modifier_system_tables:
-                        parent_pk = tuple(getattr(parent, col.name) for col in parent_table.primary_key.columns)
-                        fk_index[(parent_table.name, parent_col, parent_pk)].add((child_table.name, child_pk))
+                parent_attr = mapped_attr(parent, parent_table, parent_col)
+                if getattr(parent, parent_attr) == parent_val:
+                    parent_pk = tuple(getattr(parent, mapped_attr(parent, parent_table, c.name)) for c in
+                                      parent_table.primary_key.columns)
+                    fk_index[(parent_table.name, parent_col, parent_pk)].add((child_table.name, child_pk))
+
+        extra = db_spec.node_templates[child_table.name].get("extra_fks", {})
+        for child_col_name, fk_info in extra.items():
+            ref_table_name = fk_info["ref_table"]
+            ref_col_name = fk_info["ref_column"]
+
+            parent_table = tables_by_name.get(ref_table_name)
+            if parent_table is None:
+                parent_table =  child_table.metadata.tables.get(ref_table_name)
+                if parent_table is None:
+                    continue
+
+            child_attr = mapped_attr(child, child_table, child_col_name)
+            parent_val = getattr(child, child_attr)
+            if parent_val is None:
+                continue
+
+            for parent in by_table.get(parent_table, []):
+                parent_attr = mapped_attr(parent, parent_table, ref_col_name)
+                if getattr(parent, parent_attr) == parent_val:
+                    parent_pk = tuple(getattr(parent, mapped_attr(parent, parent_table, c.name)) for c in
+                                      parent_table.primary_key.columns)
+                    fk_index[(parent_table.name, ref_col_name, parent_pk)].add((child_table.name, child_pk))
 
     return fk_index
+
+
+def mapped_attr(obj, table, col_name):
+    m = inspect(obj).mapper
+    col = table.c[col_name]
+    try:
+        return m.get_property_by_column(col).key
+    except Exception:
+        return col.key

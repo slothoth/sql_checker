@@ -1,5 +1,6 @@
 import pytest
 import json
+import os
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtTest import QTest
 
@@ -9,6 +10,7 @@ from graph.transform_json_to_sql import transform_json, make_modinfo
 from graph.set_hotkeys import write_sql, save_session
 from graph.db_spec_singleton import (modifier_argument_info, requirement_argument_info, req_arg_type_list_map,
                                      mod_arg_type_list_map, db_spec)
+from graph.mod_conversion import build_imported_mod
 
 from utils import check_test_against_expected_sql
 
@@ -244,3 +246,14 @@ def test_save_and_load_on_hidden_params(qtbot):
     assert game_effect.get_property('param_int_2') == 3
     assert req.get_property('param_text_1') == '4'
     assert req.get_property('param_database_1') == 'BUILDING_TEST'
+
+
+def test_import_mod(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    cwd = os.getcwd()
+
+    mod_info_found = build_imported_mod(f'{cwd}/test/test_data/test_mod_import', window.graph)
+    print('test that the graph nodes exist, and they have the right connections')
+    for node in window.graph.all_nodes():
+        print('')

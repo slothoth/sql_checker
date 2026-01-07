@@ -507,7 +507,7 @@ def import_mod(graph):
     """
     from PyQt5.QtWidgets import QFileDialog
     from PyQt5.QtCore import QUrl
-    from graph.mod_conversion import parse_mod_folder
+    from graph.mod_conversion import build_imported_mod
     from graph.windows import Toast
 
     dlg = QFileDialog(graph.viewer(), "Select Folder")
@@ -518,7 +518,7 @@ def import_mod(graph):
     dlg.exec()
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
     if path is not None:
-        mod_info_found = parse_mod_folder(path, graph)
+        mod_info_found = build_imported_mod(path, graph)
         if mod_info_found is not None:
             layout_graph_down(graph)
             graph.auto_layout_nodes()           # layout centre
