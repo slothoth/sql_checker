@@ -135,6 +135,7 @@ def save_session_as(graph):
     if file_path:
         custom_save(graph, file_path)
 
+
 def custom_save(graph, file_path):
     graph_migrated_params = {}
     graph_nodes = graph.all_nodes()

@@ -567,7 +567,6 @@ def constraint_color(index, total,                  # living here as used for in
     return int(r * 255), int(g * 255), int(b * 255)
 
 
-
 def check_valid_sql_against_db(age, sql_commands):
     SQLValidator.state_validation_setup(age)
     result_info = lint_database(SQLValidator.engine_dict[age], {'main.sql': sql_commands}, keep_changes=False)

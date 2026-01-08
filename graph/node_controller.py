@@ -11,9 +11,9 @@ from NodeGraphQt import NodeGraph, NodesPaletteWidget, NodesTreeWidget, Properti
 from NodeGraphQt.widgets.node_widgets import _NodeGroupBox
 
 
-from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type  # expensive  1.7s
-from graph.db_spec_singleton import db_spec                                                         # but other times
-from graph.set_hotkeys import set_hotkeys       # expensive  1.9s                                   # fast?
+from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
+from graph.db_spec_singleton import db_spec
+from graph.set_hotkeys import set_hotkeys
 from graph.dynamic_nodes import generate_tables, GameEffectNode, RequirementEffectNode
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel

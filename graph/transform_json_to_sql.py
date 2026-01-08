@@ -1,6 +1,5 @@
 import json
-from graph.db_spec_singleton import (db_spec, req_arg_type_list_map, mod_arg_type_list_map, req_arg_defaults,
-                                     effect_arg_defaults, modifier_argument_info, requirement_argument_info)
+from graph.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
 
 excludes = ['toggle_extra', 'table_name']
@@ -15,6 +14,7 @@ def transform_json(json_filepath):
         custom_properties = val['custom']
         table_name = val.get('table_name', custom_properties['table_name'])
         custom_properties = SQLValidator.normalize_node_bools(custom_properties, table_name)
+        custom_properties = {k: v for k, v in custom_properties.items() if v is not None}
         if table_name == 'ReqEffectCustom':
             sql_code, error_string = req_custom_transform(data, custom_properties, node_id, sql_code, error_string)
 
@@ -39,14 +39,14 @@ def req_custom_transform(data, custom_properties, node_id, sql_code, error_strin
     sql, error_string = transform_to_sql(columns_dict, 'Requirements', error_string)
     sql_code.append(sql)
     arg_params = custom_properties.get('arg_params', {})
-    for param, arg_name in req_arg_type_list_map[req_type].items():
+    for param, arg_name in db_spec.req_arg_type_list_map[req_type].items():
         arg_value = custom_properties.get(param)
         if arg_value is None:
             arg_value = arg_params.get(param) if arg_params.get(param) != '' else None
             if arg_value is None:
                 continue
-        widget_default = req_arg_defaults[req_type][param]  # default checks
-        arg_info = requirement_argument_info[req_type]['Arguments'][arg_name]
+        widget_default = db_spec.req_arg_defaults[req_type][param]  # default checks
+        arg_info = db_spec.requirement_argument_info[req_type]['Arguments'][arg_name]
         arg_default = arg_info['DefaultValue']
         is_required = bool(arg_info.get('Required', 0))
         if arg_default == '' or arg_default is None:
@@ -127,7 +127,7 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
     sql_code.append(sql)
 
     arg_params = custom_properties.get('arg_params', {})
-    for param, arg_name in mod_arg_type_list_map[effect_type].items():  # ModifierArguments
+    for param, arg_name in db_spec.mod_arg_type_list_map[effect_type].items():  # ModifierArguments
         arg_value = custom_properties.get(param)
         if arg_value is None:
             arg_value = arg_params.get(param) if arg_params.get(param) != '' else None

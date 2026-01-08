@@ -1,14 +1,11 @@
 from NodeGraphQt import BaseNode
 from NodeGraphQt.constants import PortTypeEnum
-from NodeGraphQt.errors import NodePropertyError
 from NodeGraphQt.constants import NodePropWidgetEnum
 from PyQt5 import QtCore, QtGui
 import math
 from collections import defaultdict
 
-from graph.db_spec_singleton import (db_spec, requirement_argument_info, requirement_system_tables, effect_system_tables,
-                                     req_arg_type_list_map, req_all_param_arg_fields, modifier_argument_info,
-                                     mod_arg_type_list_map, all_param_arg_fields)
+from graph.db_spec_singleton import db_spec, effect_system_tables, requirement_system_tables
 from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit, BoolCheckNodeWidget
 
@@ -80,6 +77,12 @@ class BasicDBNode(BaseNode):
                         if not isinstance(value, str):
                             value = str(value)
                     widget.set_value(value)
+                else:
+                    property_exists = self.properties()['custom'].get(col_name, 'DEBUG_MISSED') != 'DEBUG_MISSED'
+                    if property_exists:
+                        self.set_property(col_name, value)
+                    else:
+                        self.create_property(col_name, value)
 
     def set_search_menu(self, col, idx, col_poss_vals, validate=False):
         self.add_custom_widget(
@@ -107,6 +110,7 @@ class BasicDBNode(BaseNode):
 
     def migrate_extra_params(self):
         return
+
     def restore_extra_params(self, migrated_properties):
         return
 
@@ -281,7 +285,6 @@ def create_table_node_class(table_name, graph):
                                        widget_type=NodePropWidgetEnum.QSPIN_BOX.value, tab='fields')
             elif col_poss_vals is not None:
                 if col in self._extra_fields:
-                    default_val = int(default_val) if default_val is not None else 0.0
                     lazy_params[col] = default_val
                     self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
                     continue
@@ -473,13 +476,13 @@ class GameEffectNode(BaseEffectNode):
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='ModifierId', name='ModifierId',
                                                  check_if_edited=True), tab='fields',
                                widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        modifier_arguments = list(modifier_argument_info.keys())
+        modifier_arguments = list(db_spec.modifier_argument_info.keys())
         self.add_custom_widget(
             DropDownLineEdit(parent=self.view, label="EffectType",
                              name="EffectType", text=modifier_arguments[0],
                              suggestions=modifier_arguments),
             tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'],)
+        self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
         self.create_property('ModifierType', '', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.output_port_tables['ModifierId'] = set_output_port_constraints(self, 'Modifiers',
                                                               SQLValidator.pk_ref_map.get('Modifiers'))
@@ -512,7 +515,13 @@ class GameEffectNode(BaseEffectNode):
             if col in mod_spec.get('mined_bools', {}):
                 self.create_property(col, value=False, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
             else:
-                self.create_property(col, value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
+                col_type = SQLValidator.type_map['Modifiers'][col]
+                if isinstance(col_type, bool):
+                    self.create_property(col, None, widget_type=NodePropWidgetEnum.QCHECK_BOX.value)
+                elif isinstance(col_type, int):
+                    self.create_property(col, None, widget_type=NodePropWidgetEnum.QSPIN_BOX.value)
+                else:
+                    self.create_property(col, value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
 
         # ModifierStrings
         self.create_property('Text', value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
@@ -520,7 +529,7 @@ class GameEffectNode(BaseEffectNode):
         # ModifierMetadata. Only used for resource modifiers.
 
         # new logic
-        lazy_arg_params = {prop: '' for prop in all_param_arg_fields}
+        lazy_arg_params = {prop: '' for prop in db_spec.all_param_arg_fields}
         self.create_property('arg_params', lazy_arg_params)
         self.view.setVisible(True)
         self._apply_mode(self.get_property("EffectType"), push_undo=False)
@@ -557,10 +566,10 @@ class GameEffectNode(BaseEffectNode):
             owner_req_widget.update_from_state(new_owner)
 
     def arg_prop_map(self):
-        return mod_arg_type_list_map
+        return db_spec.mod_arg_type_list_map
 
     def argument_info_map(self):
-        return modifier_argument_info
+        return db_spec.modifier_argument_info
 
 
 class RequirementEffectNode(BaseEffectNode):
@@ -579,13 +588,13 @@ class RequirementEffectNode(BaseEffectNode):
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='RequirementId', name='RequirementId'),
                                tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.set_search_menu(col='RequirementType', idx=0,
-                        col_poss_vals= list(requirement_argument_info.keys()),
-                        validate=False)
+                             col_poss_vals= list(db_spec.requirement_argument_info.keys()),
+                             validate=False)
 
         self.add_input('ReqSet')
         self.create_property('ReqSet', '')
 
-        lazy_arg_params = {prop: '' for prop in req_all_param_arg_fields}
+        lazy_arg_params = {prop: '' for prop in db_spec.req_all_param_arg_fields}
         self.create_property('arg_params', lazy_arg_params)
         self.view.setVisible(True)
         self._apply_mode(self.get_property("RequirementType"), push_undo=False)
@@ -607,10 +616,10 @@ class RequirementEffectNode(BaseEffectNode):
             req_id_widget.set_value(new_req_id)
 
     def arg_prop_map(self):
-        return req_arg_type_list_map
+        return db_spec.req_arg_type_list_map
 
     def argument_info_map(self):
-        return requirement_argument_info
+        return db_spec.requirement_argument_info
 
 
 # helper functions

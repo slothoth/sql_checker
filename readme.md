@@ -45,4 +45,4 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Requirements sqwitching is going really weird not showing anything
 - Effects and Requirement Types should use fuzzy finder.
 - Effects and Requirements should not include text like EFFECT or REQUIREMENT at start for visibility and clarity
-- when importing, just skip anything that isnt an UPDATE or DELETE
+- when importing, just skip anything that is an UPDATE or DELETE

@@ -195,10 +195,19 @@ def gather_effects(db_dict):
                     if len(mod_arg_value) == 1:
                         mod_map[key]['Arguments'][mod_arg][mod_arg_col] = list(mod_arg_value)[0]
 
-
-
     with open('resources/ModArgInfo.json', 'w') as f:
         json.dump(mod_map, f, indent=2, default=convert)
+
+    dynamic_mods = mine_sql_per_age(db_dict, f"""
+                       SELECT m.ModifierId, m.ModifierType, dm.CollectionType, dm.EffectType
+                       FROM Modifiers m
+                       JOIN DynamicModifiers dm
+                       ON m.ModifierType = dm.ModifierType;
+                       """)
+    dynamicModifiers = dynamic_mods.groupby("ModifierType", as_index=True).first()[[
+                                            "CollectionType", "EffectType"]].to_dict("index")
+    with open('resources/DynamicModifierMap.json', 'w') as f:
+        json.dump(dynamicModifiers, f, indent=2)
 
     # --------------------------------------------------------------------------------
     # -------------------------   Requirements    ------------------------------------
@@ -547,7 +556,20 @@ def mine_empty_effects():
 
 def is_nan(x):
     return isinstance(x, float) and math.isnan(x)
+
+
 def convert(o):
     if isinstance(o, set):
         return list(o)
     raise TypeError
+
+
+def mine_sql_per_age(db_dict, sql_string):
+    comb_df, comb_df_simple = None, None  # for doing the attachment tables
+    for db, engine in db_dict.items():
+        df = pd.read_sql(sql_string, engine)
+        comb_df = combine_db_df(comb_df, df)
+
+    comb_df_simple = combine_db_df(comb_df_simple, comb_df)
+
+    return comb_df_simple

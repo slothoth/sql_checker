@@ -1,4 +1,3 @@
-from graph.graph_model import BaseDB
 from graph.db_spec_singleton import db_spec
 
 database_path = 'gameplay-copy-cached-base-content.sqlite'

@@ -8,8 +8,7 @@ from PyQt5.QtTest import QTest
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json, make_modinfo
 from graph.set_hotkeys import write_sql, save_session
-from graph.db_spec_singleton import (modifier_argument_info, requirement_argument_info, req_arg_type_list_map,
-                                     mod_arg_type_list_map, db_spec)
+from graph.db_spec_singleton import db_spec
 from graph.mod_conversion import build_imported_mod
 
 from utils import check_test_against_expected_sql
@@ -112,7 +111,7 @@ def test_node_value_change(qtbot):
     qtbot.addWidget(window)
     node = window.graph.create_node('db.game_effects.GameEffectNode')
     missed = []
-    for i in modifier_argument_info:
+    for i in db_spec.modifier_argument_info:
         try:
             node.set_property('EffectType', i)
         except TypeError as e:
@@ -131,7 +130,7 @@ def test_req_effect_value_change(qtbot):
     qtbot.addWidget(window)
     node = window.graph.create_node('db.game_effects.RequirementEffectNode')
     missed = []
-    for i in requirement_argument_info:
+    for i in db_spec.requirement_argument_info:
         try:
             node.set_property('RequirementType', i)
         except TypeError as e:
@@ -144,10 +143,10 @@ def test_req_effect_value_change(qtbot):
 def setup_effect_req(window):
     effect_1, effect_2 = 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE'
     req_1, req_2 = 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS'
-    effect_1_param_map = {v: k for k, v in mod_arg_type_list_map[effect_1].items()}
-    effect_2_param_map = {v: k for k, v in mod_arg_type_list_map[effect_2].items()}
-    req_1_param_map = {v: k for k, v in req_arg_type_list_map[req_1].items()}
-    req_2_param_map = {v: k for k, v in req_arg_type_list_map[req_2].items()}
+    effect_1_param_map = {v: k for k, v in db_spec.mod_arg_type_list_map[effect_1].items()}
+    effect_2_param_map = {v: k for k, v in db_spec.mod_arg_type_list_map[effect_2].items()}
+    req_1_param_map = {v: k for k, v in db_spec.req_arg_type_list_map[req_1].items()}
+    req_2_param_map = {v: k for k, v in db_spec.req_arg_type_list_map[req_2].items()}
 
     # effect changes
     effect_node = window.graph.create_node('db.game_effects.GameEffectNode')

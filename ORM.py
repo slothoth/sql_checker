@@ -4,7 +4,6 @@ from sqlglot import exp
 from sqlalchemy import PrimaryKeyConstraint
 from sqlalchemy import inspect
 from collections import defaultdict
-from graph.db_spec_singleton import modifier_system_tables, effect_system_tables, requirement_system_tables
 from schema_generator import SQLValidator
 from graph.db_spec_singleton import db_spec
 
