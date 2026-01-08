@@ -815,8 +815,8 @@
     },
     "Object": [
       "Player",
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_ADJUST_PLAYER_OR_CITY_UNIT_PURCHASE_EFFICIENCY": {
@@ -884,8 +884,8 @@
     },
     "Object": [
       "Player",
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_ADJUST_PLAYER_RELIC_CONVERTING_CAPITAL": {
@@ -1271,9 +1271,9 @@
       }
     },
     "Object": [
-      "Player",
       "Plot",
-      "Unit"
+      "Unit",
+      "Player"
     ]
   },
   "EFFECT_ADJUST_PLAYER_UNITS_PILLAGE_IMPROVEMENT_MODIFIER": {
@@ -1295,9 +1295,9 @@
       }
     },
     "Object": [
-      "Player",
       "Plot",
-      "Unit"
+      "Unit",
+      "Player"
     ]
   },
   "EFFECT_ADJUST_PLAYER_VALID_UNIT_BUILD": {
@@ -3339,8 +3339,8 @@
       }
     },
     "Object": [
-      "Plot",
       "Player",
+      "Plot",
       "Unit",
       "City"
     ]
@@ -10156,8 +10156,8 @@
   "EFFECT_DO_NOTHING": {
     "Arguments": {},
     "Object": [
-      "Plot",
       "Player",
+      "Plot",
       "Unit",
       "DiplomacyAE"
     ]
@@ -10661,8 +10661,8 @@
       }
     },
     "Object": [
-      "Player",
       "Plot",
+      "Player",
       "Narrative"
     ]
   },
@@ -14461,8 +14461,8 @@
       }
     },
     "Object": [
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_DEDUCT_TREASURY_NARRATIVE": {
@@ -15473,8 +15473,8 @@
     "Object": [
       "Player",
       "Plot",
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_GRANT_TRADITION_SLOTS": {
@@ -15610,8 +15610,8 @@
       }
     },
     "Object": [
-      "District",
-      "Narrative"
+      "Narrative",
+      "District"
     ]
   },
   "EFFECT_PLAYER_GRANT_UNIT_ON_CAPTURE_CITY": {
@@ -15852,8 +15852,8 @@
       }
     },
     "Object": [
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_GRANT_YIELD_NARRATIVE": {
