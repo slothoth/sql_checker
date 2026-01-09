@@ -40,9 +40,9 @@ def req_custom_transform(data, custom_properties, node_id, sql_code, error_strin
     sql_code.append(sql)
     arg_params = custom_properties.get('arg_params', {})
     for param, arg_name in db_spec.req_arg_type_list_map[req_type].items():
-        arg_value = custom_properties.get(param)
+        arg_value = custom_properties.get(arg_name)
         if arg_value is None:
-            arg_value = arg_params.get(param) if arg_params.get(param) != '' else None
+            arg_value = arg_params.get(arg_name) if arg_params.get(arg_name) != '' else None
             if arg_value is None:
                 continue
         widget_default = db_spec.req_arg_defaults[req_type][param]  # default checks
@@ -128,9 +128,9 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
 
     arg_params = custom_properties.get('arg_params', {})
     for param, arg_name in db_spec.mod_arg_type_list_map[effect_type].items():  # ModifierArguments
-        arg_value = custom_properties.get(param)
-        if arg_value is None:
-            arg_value = arg_params.get(param) if arg_params.get(param) != '' else None
+        arg_value = custom_properties.get(arg_name)
+        if arg_value is None:           # insurance
+            arg_value = arg_params.get(arg_name) if arg_params.get(arg_name) != '' else None
             if arg_value is None:
                 continue
         columns_dict = {'ModifierId': no_arg_params['ModifierId'], 'Name': arg_name, 'Value': arg_value}

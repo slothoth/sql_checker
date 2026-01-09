@@ -6,15 +6,15 @@ from PyQt5.QtWidgets import (
     QMainWindow, QSizePolicy
 )
 
-
 from NodeGraphQt import NodeGraph, NodesPaletteWidget, NodesTreeWidget, PropertiesBinWidget
+# patches
 from NodeGraphQt.widgets.node_widgets import _NodeGroupBox
-
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
 from graph.db_spec_singleton import db_spec
 from graph.set_hotkeys import set_hotkeys
-from graph.dynamic_nodes import generate_tables, GameEffectNode, RequirementEffectNode
+from graph.nodes.dynamic_nodes import generate_tables
+from graph.nodes.effect_nodes import GameEffectNode, RequirementEffectNode
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
 # bodge job for blocking recursion
@@ -289,6 +289,11 @@ def update_widget_or_prop(node, widget_name, new_val):
         hidden_property = node.get_property(widget_name)
         if hidden_property is not None:
             node.set_property(widget_name, new_val)
+
+
+###############################################################################################
+########################### Patches to NodeGraphQt ###########################################
+###############################################################################################
 
 # patching NodeGraphBox
 

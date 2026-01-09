@@ -5,6 +5,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 
 class ArgReportNodeBaseWidget(NodeBaseWidget):
+    val_accept = ''
 
     def update_args(self, text):
         arg_params = self.node.get_property('arg_params') or {}
@@ -14,6 +15,8 @@ class ArgReportNodeBaseWidget(NodeBaseWidget):
 
 
 class IntSpinNodeWidget(ArgReportNodeBaseWidget):
+    val_accept = int
+
     def __init__(self, prop, parent=None, minimum=0, maximum=100):
         super().__init__(parent)
 
@@ -88,6 +91,8 @@ class IntSpinNodeWidget(ArgReportNodeBaseWidget):
 
 
 class FloatSpinNodeWidget(ArgReportNodeBaseWidget):
+    val_accept = float
+
     def __init__(self, prop, parent=None):
         super().__init__(parent)
 
@@ -116,6 +121,7 @@ class FloatSpinNodeWidget(ArgReportNodeBaseWidget):
 
 
 class ExpandingLineEdit(ArgReportNodeBaseWidget):
+    val_accept = str
 
     def __init__(self, parent=None, name='', label='', text='', check_if_edited=False):
         super(ExpandingLineEdit, self).__init__(parent, name, label)
@@ -158,6 +164,7 @@ class ExpandingLineEdit(ArgReportNodeBaseWidget):
 
 
 class DropDownLineEdit(ArgReportNodeBaseWidget):
+    val_accept = str
 
     def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False):
         super().__init__(parent, name, label)
@@ -220,6 +227,8 @@ class DropDownLineEdit(ArgReportNodeBaseWidget):
 
 
 class BoolCheckNodeWidget(ArgReportNodeBaseWidget):
+    val_accept = bool
+
     def __init__(self, prop, parent=None):
         super().__init__(parent)
 

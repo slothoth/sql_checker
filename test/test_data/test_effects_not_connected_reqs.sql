@@ -4,5 +4,5 @@ INSERT INTO "Modifiers" ("ModifierId", "ModifierType") VALUES ('ADJUST_UNIT_RESO
 INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'Amount', '6');
 INSERT INTO "ModifierArguments" ("ModifierId", "Name", "Value") VALUES ('ADJUST_UNIT_RESOURCE_DAMAGE_ON_ALL_PLAYERS', 'ResourceClassType', '3');
 INSERT INTO "Requirements" ("RequirementId", "RequirementType") VALUES ('REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS');
-INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingTag', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', '4');
+INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('Amount', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', '4');
 INSERT INTO "RequirementArguments" ("Name", "RequirementId", "Value") VALUES ('BuildingType', 'REQUIREMENT_AGE_CRISIS_STAGE_IS_X_1', 'BUILDING_TEST');

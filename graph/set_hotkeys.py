@@ -144,7 +144,7 @@ def custom_save(graph, file_path):
         graph_migrated_params[idx] = migrated_params
     graph.save_session(file_path)
     for idx, params in graph_migrated_params.items():
-        graph_nodes[idx].restore_extra_params(params)
+        graph_nodes[idx].restore_extra_params(params)           # just used to maintain integrity of running graph
 
 
 def clear_session(graph):

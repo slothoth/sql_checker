@@ -141,31 +141,25 @@ def test_req_effect_value_change(qtbot):
 
 
 def setup_effect_req(window):
-    effect_1, effect_2 = 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE'
-    req_1, req_2 = 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS'
-    effect_1_param_map = {v: k for k, v in db_spec.mod_arg_type_list_map[effect_1].items()}
-    effect_2_param_map = {v: k for k, v in db_spec.mod_arg_type_list_map[effect_2].items()}
-    req_1_param_map = {v: k for k, v in db_spec.req_arg_type_list_map[req_1].items()}
-    req_2_param_map = {v: k for k, v in db_spec.req_arg_type_list_map[req_2].items()}
 
     # effect changes
     effect_node = window.graph.create_node('db.game_effects.GameEffectNode')
-    effect_node.set_property('EffectType', effect_1)
+    effect_node.set_property('EffectType', 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE')
     effect_node.set_property('CollectionType', 'COLLECTION_ALL_PLAYERS')
-    effect_node.set_property(effect_1_param_map['Amount'], '2')
-    effect_node.set_property(effect_1_param_map['YieldType'], 'YIELD_FOOD')
+    effect_node.safe_set_widget_value('Amount', '2')
+    effect_node.safe_set_widget_value('YieldType', 'YIELD_FOOD')
 
-    effect_node.set_property('EffectType', effect_2)
-    effect_node.set_property(effect_2_param_map['Amount'], 6)
-    effect_node.set_property(effect_2_param_map['ResourceClassType'], 3)  # will need to change from int once better
+    effect_node.set_property('EffectType', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE')
+    effect_node.safe_set_widget_value('Amount', 6)
+    effect_node.safe_set_widget_value('ResourceClassType', 3)  # will need to change from int once better
 
     req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')
-    req_node.set_property('RequirementType', req_1)
-    req_node.set_property(req_1_param_map['Amount'], '4')  # string for some reason
-    req_node.set_property(req_1_param_map['UnitType'], 'UNIT_TEST')
+    req_node.set_property('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE')
+    req_node.safe_set_widget_value('Amount', '4')  # string for some reason
+    req_node.safe_set_widget_value('UnitType', 'UNIT_TEST')
 
-    req_node.set_property('RequirementType', req_2)
-    req_node.set_property(req_2_param_map['BuildingType'], 'BUILDING_TEST')  # 'BuildingType' 'BUILDING_TEST'
+    req_node.safe_set_widget_value('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS')
+    req_node.safe_set_widget_value('BuildingType', 'BUILDING_TEST')  # 'BuildingType' 'BUILDING_TEST'
     return effect_node, req_node
 
 
@@ -241,10 +235,10 @@ def test_save_and_load_on_hidden_params(qtbot):
         val = widget.get_value()
         assert req.get_property(key) == val
 
-    assert game_effect.get_property('param_int_1') == 6
-    assert game_effect.get_property('param_int_2') == 3
-    assert req.get_property('param_text_1') == '4'
-    assert req.get_property('param_database_1') == 'BUILDING_TEST'
+    assert game_effect.get_property('Amount') == 6
+    assert game_effect.get_property('ResourceClassType') == 3
+    assert req.get_property('Amount') == '4'
+    assert req.get_property('BuildingType') == 'BUILDING_TEST'
 
 
 def test_import_mod(qtbot):

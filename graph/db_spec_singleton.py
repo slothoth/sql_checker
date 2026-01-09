@@ -149,7 +149,6 @@ class ResourceLoader:
         self.mod_type_arg_map = data['mod_type_arg_map']
         self.req_type_arg_map = data['req_type_arg_map']
 
-
     def update_civ_config(self,data):
         self.civ_config = data
         self.metadata['civ_config'] = data
