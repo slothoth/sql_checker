@@ -1,10 +1,14 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
-import sys, os, json, shutil
+import sys
+import os
+import json
+import shutil
 
 from graph.db_node_support import NodeCreationDialog
 from graph.transform_json_to_sql import transform_json, make_modinfo
 from schema_generator import check_valid_sql_against_db
 from graph.db_spec_singleton import db_spec
+from graph.nodes.effect_nodes import BaseEffectNode
 
 # This file exists because the convenience method for doing hotkeys dies in packaged executables
 
@@ -107,7 +111,14 @@ def import_session(graph):
     current = graph.current_session()
     file_path = graph.load_dialog(current)
     if file_path:
-        graph.import_session(file_path)
+        import_session_set_params(graph, file_path)
+
+
+def import_session_set_params(graph, file_path):
+    graph.import_session(file_path)
+    for node in graph.all_nodes():
+        if isinstance(node, BaseEffectNode):
+            node.finalize_deserialize()
 
 
 def save_session(graph):

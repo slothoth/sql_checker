@@ -2,7 +2,9 @@ import pandas as pd
 from sqlalchemy import create_engine
 import json
 import math
+from collections import defaultdict, Counter
 from graph.db_spec_singleton import db_spec, attach_tables
+from graph.utils import flatten, flatten_avoid_string, to_number
 
 
 def combine_db_df(df_combined, df_to_add):
@@ -53,6 +55,18 @@ def gather_effects(db_dict):
         modifier_arguments_name_df = combine_db_df(modifier_arguments_name_df, df)
 
     ########################################################################################
+    modifier_arguments_name_df[['EffectType', 'Name', 'Value', 'Type', 'Extra', 'SecondExtra', 'CollectionType']].to_csv('resources/AllModArgValues')
+
+    mod_arg_dict = defaultdict(lambda: defaultdict(list))
+    for a, b, c in modifier_arguments_name_df[['EffectType', 'Name', 'Value']].itertuples(index=False):
+        mod_arg_dict[a][b].append(c)
+    for key, val in mod_arg_dict.items():
+        for k, v in val.items():
+            mod_arg_dict[key][k] = list(set(mod_arg_dict[key][k]))
+
+    mod_arg_dict = dict(mod_arg_dict)
+    with open('resources/AllModArgValues.json', 'w') as f:
+        json.dump(mod_arg_dict, f, indent=2, default=convert)
     modifier_arguments_name_df = modifier_arguments_name_df.drop_duplicates(['EffectType', 'Name'])
 
     modifiers_and_args_agg = (
@@ -195,9 +209,6 @@ def gather_effects(db_dict):
                     if len(mod_arg_value) == 1:
                         mod_map[key]['Arguments'][mod_arg][mod_arg_col] = list(mod_arg_value)[0]
 
-    with open('resources/ModArgInfo.json', 'w') as f:
-        json.dump(mod_map, f, indent=2, default=convert)
-
     dynamic_mods = mine_sql_per_age(db_dict, f"""
                        SELECT m.ModifierId, m.ModifierType, dm.CollectionType, dm.EffectType
                        FROM Modifiers m
@@ -209,6 +220,18 @@ def gather_effects(db_dict):
     with open('resources/DynamicModifierMap.json', 'w') as f:
         json.dump(dynamicModifiers, f, indent=2)
 
+    mod_examples = process_arg_examples(mod_arg_dict)
+    mod_type_map, mod_database_references, mod_undiagnosible, mod_missed_database = mine_type_arg_map(mod_examples,
+                                                                                                      mod_map)
+    with open('resources/ModifierArgumentTypes.json', 'w') as f:
+        json.dump(mod_type_map, f, indent=2, default=convert)
+    with open('resources/ModifierArgumentDatabaseTypes.json', 'w') as f:
+        json.dump(mod_database_references, f, indent=2, default=convert)
+
+    deal_with_defaults(mod_map, mod_type_map)
+
+    with open('resources/ModArgInfo.json', 'w') as f:
+        json.dump(mod_map, f, indent=2, default=convert)
     # --------------------------------------------------------------------------------
     # -------------------------   Requirements    ------------------------------------
     # --------------------------------------------------------------------------------
@@ -239,15 +262,15 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
 
             owner_df = pd.read_sql(
                 f"""SELECT dm.CollectionType, dm.EffectType, r_o.RequirementType, r_o.RequirementId
-                                            FROM {tbl} aa
-                                            JOIN Modifiers m
-                                            ON m.ModifierId = aa.ModifierId
-                                            JOIN DynamicModifiers dm
-                                            ON m.ModifierType = dm.ModifierType
-                                            JOIN RequirementSets rs_o ON rs_o.RequirementSetId = m.OwnerRequirementSetId
-                                            JOIN RequirementSetRequirements rsr_o on rsr_o.RequirementSetId = rs_o.RequirementSetId
-                                            LEFT JOIN Requirements r_o on r_o.RequirementId = rsr_o.RequirementId;
-                                            """,
+                    FROM {tbl} aa
+                    JOIN Modifiers m
+                    ON m.ModifierId = aa.ModifierId
+                    JOIN DynamicModifiers dm
+                    ON m.ModifierType = dm.ModifierType
+                    JOIN RequirementSets rs_o ON rs_o.RequirementSetId = m.OwnerRequirementSetId
+                    JOIN RequirementSetRequirements rsr_o on rsr_o.RequirementSetId = rs_o.RequirementSetId
+                    LEFT JOIN Requirements r_o on r_o.RequirementId = rsr_o.RequirementId;
+                    """,
                 engine
             )
             owner_df['AttachTable'] = tbl
@@ -282,27 +305,39 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
 
         reqset_no_modifiers = combine_db_df(reqset_no_modifiers, reqset_tables_per_age)
 
+
+    req_arg_dict = defaultdict(lambda: defaultdict(list))
+    for a, b, c in reqset_no_modifiers[['RequirementType', 'Name', 'Value']].itertuples(index=False):
+        req_arg_dict[a][b].append(c)
+    for key, val in req_arg_dict.items():
+        for k, v in val.items():
+            req_arg_dict[key][k] = list(set(flatten_avoid_string(req_arg_dict[key][k])))
+
+    req_arg_dict = dict(req_arg_dict)
+    with open('resources/AllReqArgValues.json', 'w') as f:
+        json.dump(req_arg_dict, f, indent=2, default=convert)
+
     del reqset_tables_per_age
     modifiers_full = None
     for db, engine in db_dict.items():
         modifier_attach = pd.read_sql(
             f"""SELECT  m.ModifierId, dm.CollectionType, ma.Value FROM Modifiers m 
-                                JOIN ModifierArguments ma ON ma.ModifierId = m.ModifierId
-                                JOIN DynamicModifiers dm ON dm.ModifierType = m.ModifierType
-                                WHERE dm.EffectType = 'EFFECT_ATTACH_MODIFIERS';
-                                """,
+                JOIN ModifierArguments ma ON ma.ModifierId = m.ModifierId
+                JOIN DynamicModifiers dm ON dm.ModifierType = m.ModifierType
+                WHERE dm.EffectType = 'EFFECT_ATTACH_MODIFIERS';
+                """,
             engine
         )
         df = pd.read_sql(
             f"""
-                                SELECT m.ModifierId, dm.CollectionType, dm.EffectType, r.RequirementType, r.RequirementId
-                                FROM Modifiers m
-                                JOIN DynamicModifiers dm
-                                ON m.ModifierType = dm.ModifierType
-                                LEFT JOIN RequirementSets rs ON rs.RequirementSetId = m.SubjectRequirementSetId
-                                LEFT JOIN RequirementSetRequirements rsr on rsr.RequirementSetId = rs.RequirementSetId
-                                LEFT JOIN Requirements r on r.RequirementId = rsr.RequirementId;
-                                """,
+                SELECT m.ModifierId, dm.CollectionType, dm.EffectType, r.RequirementType, r.RequirementId
+                FROM Modifiers m
+                JOIN DynamicModifiers dm
+                ON m.ModifierType = dm.ModifierType
+                LEFT JOIN RequirementSets rs ON rs.RequirementSetId = m.SubjectRequirementSetId
+                LEFT JOIN RequirementSetRequirements rsr on rsr.RequirementSetId = rs.RequirementSetId
+                LEFT JOIN Requirements r on r.RequirementId = rsr.RequirementId;
+                """,
             engine
         )
         df = df.rename(columns={'ModifierId': 'AttachedModifierId', 'CollectionType': 'AttachedCollectionType',
@@ -342,7 +377,11 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
             if len(col_list) == 1:
                 col = col_list[0]
             else:
-                print('ahhh')
+                if tbl == 'NarrativeStory_Rewards':
+                    col = 'NarrativeRewardType'
+                else:
+                    print(f'missed table {tbl} for doing modifier attachments')
+                    continue
             for age, engine in db_dict.items():
                 df = pd.read_sql(
                     f"""SELECT m.{col} FROM {tbl} m WHERE m.{col} IN ('{"', '".join(missing_mods)}');""",
@@ -521,11 +560,23 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
                if k.upper() == k}
     req_map['REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_GOSSIPS']['Arguments'] = \
         {k: v for k, v in req_map['REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_GOSSIPS']['Arguments'].items() if k.upper() != k}
-    with open('resources/RequirementInfo.json', 'w') as f:
-        json.dump(req_map, f, indent=2, default=convert)
 
     with open('resources/GossipInfo.json', 'w') as f:
         json.dump(gossips, f, indent=2, default=convert)
+
+    req_examples = process_arg_examples(req_arg_dict)
+    req_type_map, req_database_references, req_undiagnosible, req_missed_database = mine_type_arg_map(req_examples,
+                                                                                                      req_map)
+    with open('resources/RequirementArgumentTypes.json', 'w') as f:
+        json.dump(req_type_map, f, indent=2, default=convert)
+    with open('resources/RequirementArgumentDatabaseTypes.json', 'w') as f:
+        json.dump(req_database_references, f, indent=2, default=convert)
+
+    # we need to adjust the DefaultVal
+    deal_with_defaults(req_map, req_type_map)
+
+    with open('resources/RequirementInfo.json', 'w') as f:
+        json.dump(req_map, f, indent=2, default=convert)
 
 
 def mine_empty_effects():
@@ -573,3 +624,177 @@ def mine_sql_per_age(db_dict, sql_string):
     comb_df_simple = combine_db_df(comb_df_simple, comb_df)
 
     return comb_df_simple
+
+
+def process_arg_examples(data_examples):
+    examples = defaultdict(set)
+    for k, v in data_examples.items():
+        for key, val in v.items():
+            if isinstance(val, list):
+                [examples[key].add(i) for i in val]
+            else:
+                examples[key].add(val)
+    return dict(examples)
+
+
+def mine_type_arg_map(mined_examples, effect_arg_info):
+    by_type_by_effect = defaultdict(lambda: defaultdict(set))
+    arg_examples = defaultdict(set)
+
+    for effect, val in effect_arg_info.items():
+        for arg, arg_info in val['Arguments'].items():
+            by_type_by_effect[arg_info['ArgumentType']][effect].add(arg)
+            default_val = arg_info['DefaultValue']
+            examples = arg_info['Value']
+            if default_val is not None and default_val != '':
+                arg_examples[arg].add(default_val)
+            if examples is not None and examples != '':
+                if isinstance(examples, (list, set)):
+                    [arg_examples[arg].add(i) for i in examples]
+                else:
+                    arg_examples[arg].add(examples)
+
+    type_list = defaultdict(list)
+    type_set = defaultdict(set)
+    for t, effmap in by_type_by_effect.items():
+        for arg_name, args in effmap.items():
+            for a in args:
+                type_set[a].add(arg_name)
+                type_list[a].append(t)
+
+    convert_map = {'Boolean': 'bool', 'uint': 'int'}
+    # some bools as Boolean
+    counts = {k: dict(Counter(v)) for k, v in type_list.items()}
+    counts = {k: {convert_map.get(key, key): val for key, val in v.items() if key is not None and key != ''} for k, v in counts.items()}
+    counts = {k: {key: val for key, val in v.items() if not is_nan(key) and key != ''} for k, v in counts.items()}  # remove NaN.
+    plural_counts = {k: v for k, v in counts.items() if len(v) > 1}
+    single_counts = {k: list(v)[0] for k, v in counts.items() if len(v) == 1}
+    missed_counts = {k: v for k, v in counts.items() if len(v) == 0}
+
+    bool_int, database_text = {'bool', 'int'}, {'database', 'text'}
+    #type_map = {k: 'bool' if v == bool_int else 'database' if v == database_text else 'text'
+    #            for k, v in plural_counts.items()}
+    type_map = {}
+    used_examples = {k: {i for i in arg_examples[k] if not is_nan(i)} for k, v in counts.items()}
+    undiagnosible = {k: v for k, v in used_examples.items() if len(v) == 0}
+    if len(undiagnosible) > 1:          # theres one arg thats NaN for some reason
+        for i in undiagnosible:
+            print(f'could not find type for {i} as no examples')
+
+    used_examples = {k: [part.strip() for s in v for part in s.split(',')] for k, v in used_examples.items() if len(v) > 0}
+    flattened_examples = {k: [part.strip() for s in v for part in s.split(',')] for k, v in mined_examples.items()
+                          if None not in v}
+    flattened_arg_examples = {k: [part.strip() for s in v
+                                 if not (isinstance(s, float) and math.isnan(s))
+                                 for part in (s.split(',') if isinstance(s, str) else [])]
+                                 for k, v in arg_examples.items()}
+
+    booled = {k: 'bool' for k, v in used_examples.items() if all([i in ['1', '0', 'false', 'true'] for i in v])}
+    type_map.update(booled)         # deals with 1 and 0 and false and true
+    remaining = {k: v for k, v in used_examples.items() if k not in booled}
+
+    numbered = {k: 'int' for k, v in remaining.items() if all([to_number(i) != 'failed' for i in v])}
+    type_map.update(numbered)   # todo deals with number. defaulting int but maybe should override for float in future?
+    remaining = {k: v for k, v in remaining.items() if k not in numbered}
+
+    origins = [k for k, v in db_spec.node_templates.items() if v.get('origin_pk') is not None]
+    missed_database, databased, database_references, fxs_defines, plural_find_table = {}, {}, {}, {}, True
+    for k, v in remaining.items():
+        if k in flattened_examples:
+            examples = flattened_examples[k]
+        else:
+            examples = flattened_arg_examples[k]
+        find_table = {key: val for key, val in db_spec.all_possible_vals.items()
+                      if len(set(examples) - set(val['_PK_VALS'])) != len(set(examples))
+                      and len(set(examples) - set(val['_PK_VALS'])) / len(set(examples)) < 0.05}
+        # ensure at least 95% of the argument values are in a given table, there can be some fails by firaxis
+        if len(find_table) > 1 and 'Types' in find_table:
+            del find_table['Types']
+        if len(find_table) > 1 and 'NarrativeStory_RewardIcons' in find_table:
+            del find_table['NarrativeStory_RewardIcons']
+        if len(find_table) > 1 and 'TypeQuotes' in find_table:
+            del find_table['TypeQuotes']
+        if len(find_table) > 1:
+            plural_find_table = True
+            find_table = {k: v for k, v in find_table.items() if k in origins}
+            if len(find_table) > 1:
+                find_table = {k: v for k, v in find_table.items() if
+                              db_spec.node_templates[k]['foreign_keys'].get(db_spec.node_templates[k]['primary_keys'][0],
+                                                                            'Types') == 'Types'}
+            if len(find_table) > 1:
+                find_table = {k: v for k, v in find_table.items() if
+                              db_spec.node_templates[k].get(
+                    'extra_fks', {}).get(db_spec.node_templates[k]['primary_keys'][0], 'Types') == 'Types'}
+            # now iterate to see if any values are extra_fks or foreign keys
+            if len(find_table) > 1:
+                fks = {k: list(db_spec.node_templates[k]['foreign_keys'].values()) + [j['ref_table']
+                    for j in db_spec.node_templates[k].get('extra_fks', {}).values()] for k, v in find_table.items()}
+                find_table = {k: v for k, v in find_table.items() if not any(i in find_table for i in fks[k])}
+            # gets rid of tables that are not in origins
+        if len(find_table) == 1:
+            database_ref = next(i for i in find_table)
+            database_references[k] = database_ref
+            databased[k] = 'database'
+        elif len(find_table) == 0:
+            if plural_find_table:
+                missed_database[k] = find_table
+                databased[k] = 'database'
+                plural_find_table = False
+        else:
+            missed_database[k] = find_table
+            databased[k] = 'database'
+            if plural_counts.get(k) is not None:
+                plural_vals = plural_counts[k]
+                simple_val = 'bool' if plural_vals == bool_int else 'database' if plural_vals == database_text else 'text'
+                fxs_defines[k] = simple_val
+            elif single_counts.get(k) is not None:
+                fxs_defines[k] = single_counts[k]
+            # try use singular
+
+    type_map.update(databased)
+    remaining = {k: v for k, v in remaining.items() if k not in databased}
+
+    type_map.update(fxs_defines)
+    remaining = {k: v for k, v in remaining.items() if k not in fxs_defines}
+
+    # deal with remaining as text:
+    type_map.update({k: 'text' for k, v in remaining.items()})
+    typed_arg_info = {k: {key: type_map[key] for key, val in v['Arguments'].items()
+                          if not is_nan(key)} for k, v in effect_arg_info.items()}
+    return typed_arg_info, database_references, undiagnosible, missed_database
+
+
+def deal_with_defaults(info_map, type_map):
+    delete_refs = []
+    for k, v in info_map.items():
+        req_info = type_map[k]
+        for key, val in v['Arguments'].items():
+            if is_nan(key):
+                delete_refs.append((k, key))
+                continue
+            default_val = val['DefaultValue']
+            if default_val == '' or is_nan(default_val):
+                # make our own? if
+                arg_type = req_info[key]
+                info_map[k]['Arguments'][key]['DefaultValue'] = None
+            else:
+                if default_val is not None:
+                    arg_type = req_info[key]
+                    if arg_type == 'int':
+                        if not isinstance(default_val, int):
+                            info_map[k]['Arguments'][key]['DefaultValue'] = int(default_val)
+                    elif arg_type in ['database', 'text']:
+                        if not isinstance(default_val, str):
+                            info_map[k]['Arguments'][key]['DefaultValue'] = str(default_val)
+                    elif arg_type == 'bool':
+                        if not isinstance(default_val, bool):
+                            casted_val = True if default_val in ['1', 1, 'true', 'true'] else None
+                            if casted_val is None:
+                                casted_val = False if default_val in ['0', 0, 'False', 'false'] else None
+                            if casted_val is not None:
+                                info_map[k]['Arguments'][key]['DefaultValue'] = casted_val
+                    else:
+                        print(f'oh no, when converting arg {key} default value {default_val} to correct type, had '
+                              f'unhandled argument {arg_type}, skipping')
+    for k, key in delete_refs:
+        del info_map[k]['Arguments'][key]

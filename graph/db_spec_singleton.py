@@ -11,6 +11,7 @@ if sys.platform == 'win32':
 
 from graph.param_calcs import stats_find_arg_length, build_arg_type_list_map, build_param_map
 
+
 modifier_system_tables = ("Modifiers", "ModifierArguments", "DynamicModifiers", "ModifierStrings",
                           "Requirements", "RequirementArguments", "RequirementSets",
                           "RequirementSetRequirements", "ModifierMetadatas")
@@ -27,13 +28,10 @@ class ResourceLoader:
     all_possible_vals = {}
     game_effects_info = {}
     collection_effect_map = {}
-    mod_arg_type_list_map = {}
+    mod_type_arg_map = {}
     all_param_arg_fields = []
     effect_arg_defaults = {}
-    req_arg_type_list_map = {}
     req_all_param_arg_fields = []
-    req_arg_defaults = {}
-    mod_type_arg_map = {}
     req_type_arg_map = {}
     civ_config = ''
     workshop = ''
@@ -63,6 +61,10 @@ class ResourceLoader:
             'dynamic_mod_info': self.resource_path('resources/DynamicModifierMap.json'),
             'metadata': self.resource_path('resources/metadata.json'),
             'arg_param_map': self.resource_path('resources/arg_param_map.json'),
+            'mod_arg_type_list_map': self.resource_path('resources/ModifierArgumentTypes.json'),
+            'mod_arg_database_types': self.resource_path('resources/ModifierArgumentDatabaseTypes.json'),
+            'req_type_arg_map': self.resource_path('resources/RequirementArgumentTypes.json'),
+            'req_arg_database_types': self.resource_path('resources/RequirementArgumentDatabaseTypes.json'),
         }
         if not os.path.exists(self._files['metadata']):
             self.civ_config = find_civ_config()
@@ -97,7 +99,11 @@ class ResourceLoader:
         self.modifier_argument_info = self._read_file(self._files['modifier_argument_info'])
         self.requirement_argument_info = self._read_file(self._files['requirement_argument_info'])
         self.dynamic_mod_info = self._read_file(self._files['dynamic_mod_info'])
-        self.get_arg_param_map()
+
+        self.mod_type_arg_map = self._read_file(self._files['mod_arg_type_list_map'])
+        self.mod_arg_database_types = self._read_file(self._files['mod_arg_database_types'])
+        self.req_type_arg_map = self._read_file(self._files['req_type_arg_map'])
+        self.req_arg_database_types = self._read_file(self._files['req_arg_database_types'])
 
     @staticmethod
     def _read_file(path):
@@ -121,33 +127,6 @@ class ResourceLoader:
         self.all_possible_vals = data
         self._write_file(self._files['all_possible_vals'], data)
 
-    def update_game_effects(self,data):
-        self.game_effects_info = data
-        self._write_file(self._files['game_effects_info'], data)
-
-    def update_arg_param_map(self, data):
-        self.mod_arg_type_list_map = data['mod_arg_type_list_map']
-        self.all_param_arg_fields = data['all_param_arg_fields']
-        self.effect_arg_defaults = data['effect_arg_defaults']
-        self.mod_type_arg_map = data['mod_type_arg_map']
-
-        self.req_arg_type_list_map = data['req_arg_type_list_map']
-        self.req_all_param_arg_fields = data['req_all_param_arg_fields']
-        self.req_arg_defaults = data['req_arg_defaults']
-        self.req_type_arg_map = data['req_type_arg_map']
-
-        self._write_file(self._files['arg_param_map'], data)
-
-    def get_arg_param_map(self):
-        data = self._read_file(self._files['arg_param_map'])
-        self.mod_arg_type_list_map = data['mod_arg_type_list_map']
-        self.all_param_arg_fields = data['all_param_arg_fields']
-        self.effect_arg_defaults = data['effect_arg_defaults']
-        self.req_arg_type_list_map = data['req_arg_type_list_map']
-        self.req_all_param_arg_fields = data['req_all_param_arg_fields']
-        self.req_arg_defaults = data['req_arg_defaults']
-        self.mod_type_arg_map = data['mod_type_arg_map']
-        self.req_type_arg_map = data['req_type_arg_map']
 
     def update_civ_config(self,data):
         self.civ_config = data
@@ -187,26 +166,6 @@ class ResourceLoader:
             if not all_mined_files_exist:
                 self.patch_change = True
         return self.patch_change
-
-    def remake_arg_map(self):
-        length_mod_args = stats_find_arg_length(self.modifier_argument_info)
-        length_req_args = stats_find_arg_length(self.requirement_argument_info)
-        print(f'when remaking arg params, max mod_arg: {max(length_mod_args)} . max req arg: {max(length_req_args)}')
-
-        req_arg_type_list_map, req_all_param_arg_fields = build_arg_type_list_map(self.requirement_argument_info,
-                                                                                  tightness=0.0)
-        mod_arg_type_list_map, all_param_arg_fields = build_arg_type_list_map(self.modifier_argument_info,
-                                                                              tightness=0.0)
-
-        req_default_map, req_arg_defaults = build_param_map(req_all_param_arg_fields, req_arg_type_list_map)
-        effect_default_map, effect_arg_defaults = build_param_map(all_param_arg_fields, mod_arg_type_list_map)
-        req_type_arg_map = {k: {val: key for key, val in v.items()} for k, v in req_arg_type_list_map.items()}
-        mod_type_arg_map = {k: {val: key for key, val in v.items()} for k, v in mod_arg_type_list_map.items()}
-        combined = {'mod_arg_type_list_map': mod_arg_type_list_map, 'all_param_arg_fields': all_param_arg_fields,
-                    'effect_arg_defaults': effect_arg_defaults, 'mod_type_arg_map': mod_type_arg_map,
-                    'req_arg_type_list_map': req_arg_type_list_map, 'req_all_param_arg_fields': req_all_param_arg_fields,
-                    'req_arg_defaults': req_arg_defaults, 'req_type_arg_map': req_type_arg_map}
-        self.update_arg_param_map(combined)
 
     def update_database_spec(self):
         database_path = 'gameplay-copy-cached-base-content.sqlite'
@@ -478,12 +437,44 @@ class BaseDB:
                     self.table_data[ref_table]['extra_backlinks'][original_table] = col
 
         # now we want to work back to get all origin tables, as it helps update things faster in app
-        origin_pks = {key: val['primary_keys'][0] for key, val in self.table_data.items()
-                      if len(val['primary_keys']) == 1 and val['primary_keys'][0] not in val.get('foreign_keys', {}) and
-                      val['primary_keys'][0] not in val.get('extra_fks', {})}
-        for table_name, table_info in self.table_data.items():
-            if table_name in origin_pks:
-                self.table_data[table_name]['origin_pk'] = True
+        def resolve_origin(table_data, table, col, stop_tables):
+            seen = set()
+            t, c = table, col
+
+            while True:
+                k = (t, c)
+                if k in seen:
+                    return t, c
+                seen.add(k)
+
+                fk_map = table_data.get(t, {}).get("foreign_keys", {})
+                ref_t = fk_map.get(c)
+
+                if not ref_t or ref_t in stop_tables:
+                    return t, c
+
+                ref_pks = table_data.get(ref_t, {}).get("primary_keys", [])
+                if len(ref_pks) != 1:
+                    return ref_t, None
+
+                t, c = ref_t, ref_pks[0]
+
+        stop_tables = {"Types"}
+
+        origins = {}
+        for table, val in self.table_data.items():
+            pks = val.get("primary_keys", [])
+            if len(pks) != 1:
+                continue
+            pk = pks[0]
+            origins[(table, pk)] = resolve_origin(self.table_data, table, pk, stop_tables)
+
+        origins_ = [k[0] for k, v in origins.items() if k[0] == v[0]]
+        for k, v in self.table_data.items():
+            if 'origin_pk' in v:
+                self.table_data[k]['origin_pk'] = False
+            if k in origins_:
+                self.table_data[k]['origin_pk'] = True
 
     def fix_firaxis_missing_bools(self):
         result = {}
@@ -558,3 +549,9 @@ db_spec = ResourceLoader()
 attach_tables = [j for j in [i for i in db_spec.node_templates['Modifiers']['extra_backlinks']]
                  + db_spec.node_templates['Modifiers']['backlink_fk'] if j not in modifier_system_tables]
 attach_tables.append('NarrativeStory_Rewards')      # TODO find out why missed
+
+with open('resources/AllReqArgValues.json', 'r') as f:
+    req_arg_examples = json.load(f)
+
+with open('resources/AllModArgValues.json', 'r') as f:
+    mod_arg_examples = json.load(f)

@@ -1,10 +1,7 @@
 import math
 from collections import defaultdict
 from itertools import combinations
-
-
-def flatten(xss):
-    return [x for xs in xss for x in xs]
+from graph.utils import flatten
 
 
 def stats_find_arg_length(argument_info):

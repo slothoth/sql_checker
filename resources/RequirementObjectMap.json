@@ -253,8 +253,8 @@
     "Player"
   ],
   "REQUIREMENT_PLAYER_ELIGIBLE_CS_BONUS": [
-    "Plot",
     "Player",
+    "Plot",
     "Unit",
     "City"
   ],
@@ -507,8 +507,8 @@
   "REQUIREMENT_PLAYER_IS_IN_GOLDEN_AGE": [
     "Player",
     "Plot",
-    "City",
-    "Unit"
+    "Unit",
+    "City"
   ],
   "REQUIREMENT_PLAYER_IS_MAJOR": [
     "Player"
@@ -517,8 +517,8 @@
     "Player"
   ],
   "REQUIREMENT_PLAYER_IS_RELIGION_FOUNDER": [
-    "District",
     "Player",
+    "District",
     "Unit",
     "City"
   ],
@@ -610,8 +610,8 @@
     "City"
   ],
   "REQUIREMENT_PLOT_ADJACENT_FEATURE_TYPE_MATCHES": [
-    "Plot",
-    "City"
+    "City",
+    "Plot"
   ],
   "REQUIREMENT_PLOT_ADJACENT_FRIENDLY_UNIT_TAG_MATCHES": [
     "Combat",
@@ -627,8 +627,8 @@
   "REQUIREMENT_PLOT_ADJACENT_TERRAIN_TYPE_MATCHES": [
     "Combat",
     "Plot",
-    "City",
-    "Unit"
+    "Unit",
+    "City"
   ],
   "REQUIREMENT_PLOT_ADJACENT_TO_COAST": [
     "Combat",
@@ -640,8 +640,8 @@
   ],
   "REQUIREMENT_PLOT_ADJACENT_TO_OWNER": [
     "Combat",
-    "Plot",
-    "Unit"
+    "Unit",
+    "Plot"
   ],
   "REQUIREMENT_PLOT_ADJACENT_TO_OWNER_AT_WAR": [
     "Combat"
@@ -655,26 +655,26 @@
   "REQUIREMENT_PLOT_BIOME_TYPE_MATCHES": [
     "Combat",
     "Plot",
-    "City",
-    "Unit"
+    "Unit",
+    "City"
   ],
   "REQUIREMENT_PLOT_DISTRICT_CLASS": [
+    "City",
     "District",
-    "Plot",
-    "City"
+    "Plot"
   ],
   "REQUIREMENT_PLOT_FEATURE_TYPE_MATCHES": [
     "Combat",
-    "Plot",
-    "Unit"
+    "Unit",
+    "Plot"
   ],
   "REQUIREMENT_PLOT_HAS_ANY_FEATURE": [
     "Unit"
   ],
   "REQUIREMENT_PLOT_HAS_CONSTRUCTIBLE": [
     "District",
-    "Plot",
-    "Unit"
+    "Unit",
+    "Plot"
   ],
   "REQUIREMENT_PLOT_HAS_NUM_CONSTRUCTIBLES": [
     "Plot"
@@ -686,8 +686,8 @@
     "Plot"
   ],
   "REQUIREMENT_PLOT_IN_COMMAND_RADIUS": [
-    "Unit",
-    "Units"
+    "Units",
+    "Unit"
   ],
   "REQUIREMENT_PLOT_IS_COASTAL_LAND": [
     "Plot",
@@ -734,13 +734,13 @@
     "Plot"
   ],
   "REQUIREMENT_PLOT_TERRAIN_TYPE_MATCHES": [
-    "Plot",
     "Combat",
-    "Unit"
+    "Unit",
+    "Plot"
   ],
   "REQUIREMENT_PLOT_UNIQUE_QUARTER": [
-    "Plot",
-    "Unit"
+    "Unit",
+    "Plot"
   ],
   "REQUIREMENT_PLOT_WAS_ASSIGNED_A_SPECIALIST": [
     "Player"
@@ -780,8 +780,8 @@
     "Combat"
   ],
   "REQUIREMENT_UNIT_DOMAIN_MATCHES": [
-    "Unit",
-    "Units"
+    "Units",
+    "Unit"
   ],
   "REQUIREMENT_UNIT_FOCUSED_ATTACK": [
     "Unit"
@@ -835,10 +835,10 @@
     "Unit"
   ],
   "REQUIREMENT_UNIT_TAG_MATCHES": [
-    "Units",
     "Combat",
     "Unit",
-    "Narrative"
+    "Narrative",
+    "Units"
   ],
   "REQUIREMENT_UNIT_TRADE_ROUTE_ESTABLISHED": [
     "Player",
@@ -848,11 +848,11 @@
     "Unit"
   ],
   "REQUIREMENT_WONDER_IS_ACTIVE": [
-    "District",
-    "Plot",
     "Combat",
     "Player",
+    "City",
+    "District",
     "Unit",
-    "City"
+    "Plot"
   ]
 }

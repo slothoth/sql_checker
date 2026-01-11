@@ -1,9 +1,5 @@
-
 from NodeGraphQt.constants import NodePropWidgetEnum
 from PyQt5 import QtCore, QtGui
-import math
-from collections import defaultdict
-import weakref
 
 from graph.db_spec_singleton import db_spec
 from schema_generator import SQLValidator

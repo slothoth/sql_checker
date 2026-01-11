@@ -6,6 +6,7 @@ from graph.db_spec_singleton import db_spec, effect_system_tables
 from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
+from graph.utils import to_number
 
 
 class BaseEffectNode(BasicDBNode):
@@ -17,21 +18,19 @@ class BaseEffectNode(BasicDBNode):
         if name == self.arg_setter_prop:
             if self.graph is not None and self.get_property(self.arg_setter_prop) != value:
                 self.graph.begin_undo("change mode")
-                old = self.old_effect
                 super().set_property(name=name, value=value, push_undo=True)
-                QTimer.singleShot(0, lambda v=value, o=old: self._apply_mode(v, push_undo=True, old_mode=o))
+                self._apply_mode(value, push_undo=True, old_mode=self.old_effect)
                 self.graph.end_undo()
                 return
-        elif name == 'arg_params' and self.graph is None and not self.loaded_transient_widgets:
-                super().set_property(name=name, value=value, push_undo=True)
-                self._apply_mode(value, push_undo=True)
-                self.loaded_transient_widgets = True
+
+        if name in self.get_property('arg_params') and self.graph is not None:
+            self.get_property('arg_params')[name] = value
 
         super().set_property(name, value, push_undo=push_undo)
 
     def update(self):
-        super().update()
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
+        super().update()
 
     def _apply_mode(self, mode, push_undo=False, old_mode=None):
         # show/hide arg_params on change in EffectType/RequirementType
@@ -49,8 +48,8 @@ class BaseEffectNode(BasicDBNode):
             new_params = {k: v for k, v in new_params.items() if k in new_param_list}
             for arg in turn_off_params:
                 self.hide_prop_widget(arg, push_undo)
-        for arg, prop in new_params.items():
-            self.show_or_make_prop_widget(arg, prop, mode, push_undo)
+        for arg, prop_type in new_params.items():
+            self.show_or_make_prop_widget(arg, prop_type, mode, push_undo)
 
         self.view.setVisible(True)
         if hasattr(self.view, "draw_node"):
@@ -66,55 +65,26 @@ class BaseEffectNode(BasicDBNode):
         for arg, prop in new_params.items():
             self.show_or_make_prop_widget(arg, prop, mode, True)
 
-    def show_or_make_prop_widget(self, arg, prop_name, mode, push_undo):        # we wanna deprecate prop_name later
+    def show_or_make_prop_widget(self, arg, prop_type, mode, push_undo):
         widget_name = arg if arg not in self.widget_props else f'{arg}_arg'
         widget = self.get_widget(widget_name)
+        arg_info = self.argument_info_map()[mode]['Arguments'][arg]
+        default_val = arg_info['DefaultValue']
+        preset_val = self.get_property('arg_params').get(widget_name)
         if widget is None:
-            widget = self.add_param_widget(widget_name, prop_name)
+            widget = self.add_param_widget(widget_name, prop_type)
+            initial_value = widget.get_value()
+            if preset_val is not None:
+                widget.set_value(preset_val)
+            else:
+                if initial_value != default_val:
+                    self.set_widget_and_prop(widget_name, default_val)
+
         else:
             self.show_widget(widget_name, push_undo)
-        # widget.set_label(new_params[prop])
-        current_val = widget.get_value()                     # get widget current value
-
-        if current_val in ['', 0]:              # possible default
-            arg_info = self.argument_info_map()[mode]['Arguments'][arg]
-            preset_val = self.get_property('arg_params').get(widget_name)  # if player hasnt edited them, set to new default
-            if preset_val is not None and preset_val not in ['', 0]:
-                self.set_widget_and_prop(widget_name, preset_val)
-                return
-            default_val = arg_info['DefaultValue']
-            if default_val is not None:                             # get default val for arg based on type
-                arg_type = arg_info['ArgumentType']
-                arg_type = arg_type if arg_type not in ['database', 'text', ''] else 'text'
-                widget_accepted_types = widget.val_accept
-                if isinstance(default_val, widget_accepted_types):
-                    self.set_widget_and_prop(widget_name, default_val)
-                else:
-                    if isinstance(default_val, bool):
-                        raise TypeError(f'transforming old param of type {widget_accepted_types} to new_param boolean'
-                                        f'. arg: {arg}, mode: {mode}')
-                    else:
-                        # could not numberify string, try string convert to bool
-                        casted_default = None
-                        if isinstance(default_val, str):
-                            casted_default = to_number(default_val)
-                            if casted_default is None:
-                                if arg_type == 'bool':
-                                    if default_val.lower() in ['false', 'true']:
-                                        casted_default = eval(default_val.capitalize())
-                                    else:
-                                        casted_default = False
-                        if casted_default is None:
-                            if arg_type in ['database', 'text', ''] and not isinstance(default_val, str):
-                                casted_default = ''
-                            elif arg_type in ['int', 'uint'] and not isinstance(default_val, int):
-                                casted_default = 0
-                            elif arg_type == 'float' and not isinstance(default_val, float):
-                                casted_default = 0.0
-                            elif isinstance(arg_type, float) and math.isnan(arg_type):
-                                casted_default = 0
-                    if isinstance(casted_default, widget_accepted_types):
-                        self.set_widget_and_prop(widget_name, casted_default)
+            current_val = widget.get_value()
+            if preset_val is not None:
+                widget.set_value(preset_val)
 
     def hide_prop_widget(self, arg, push_undo):
         widget_name = arg if arg not in self.widget_props else f'{arg}_arg'
@@ -122,19 +92,22 @@ class BaseEffectNode(BasicDBNode):
         if widget:
             self.hide_widget(widget_name, push_undo=push_undo)
 
-    def add_param_widget(self, arg, prop):
-        lower_prop = prop.lower()
-        if 'text' in lower_prop or 'database' in lower_prop:
+    def add_param_widget(self, arg, prop_type):
+        if prop_type == 'text':
             self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=arg, name=arg), tab='fields')
-        elif 'bool' in lower_prop:
+        elif prop_type == 'database':
+            # get db type and use dropdownlinedit
+            self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=arg, name=arg), tab='fields')
+        elif prop_type == 'bool':
             self.set_bool_checkbox(arg, default_val=None, display_in_prop_bin=False)
-        elif 'int' in lower_prop:
+        elif prop_type == 'int':
             self.add_custom_widget(IntSpinNodeWidget(arg, self.view), tab='fields')
-        elif 'float' in lower_prop:
+        elif prop_type == 'float':
             self.add_custom_widget(FloatSpinNodeWidget(arg, self.view), tab='fields')
         else:
-            raise Exception(f'unhandled arg {arg} with prop {prop}')
-        self.get_property('arg_params')[arg] = None
+            raise Exception(f'unhandled arg {arg} with prop {prop_type}')
+        if arg not in self.get_property('arg_params'):
+            self.get_property('arg_params')[arg] = None
         return self.get_widget(arg)
 
     def update_unnamed_cols(self, mode):      # will be overridden
@@ -162,37 +135,18 @@ class BaseEffectNode(BasicDBNode):
         for param, val in migrated_properties.items():
             self.create_property(param, val)
 
-    def safe_set_widget_value(self, param, val):
-        widget = self.get_widget(param)
-        if widget is not None:
-            widget_accepted_types = widget.val_accept
-            if isinstance(val, widget_accepted_types):
-                self.set_widget_and_prop(param, val)
-            else:
-                casted_val = None
-                if isinstance(val, str):
-                    casted_val = to_number(val)
-                    if casted_val is None:
-                        if widget.val_accept == bool:
-                            if val in ['False', 'false', 'FALSE', 'True', 'true', 'True']:
-                                casted_val = eval(val.capitalize())
-                                self.set_widget_and_prop(param, casted_val)
-                    else:
-                        if widget.val_accept in [int, float]:
-                            self.set_widget_and_prop(param, casted_val)
-                elif isinstance(val, int):
-                    # check if we can convert into str
-                    casted_val = str(val)
-                    if widget_accepted_types == str:
-                        self.set_widget_and_prop(param, casted_val)
-                if casted_val is None:
-                    raise TypeError(f'could not find type for param:val {param}: {val}')
-
     def set_widget_and_prop(self, widget_name, value):
         widget = self.get_widget(widget_name)
         if widget:
             widget.set_value(value)
             self.get_property('arg_params')[widget_name] = value
+
+    def finalize_deserialize(self):
+        mode = self.get_property(self.arg_setter_prop)
+        self._apply_mode(mode, push_undo=False, old_mode=None)
+        self.reapply_arg_params()
+        if hasattr(self.view, "draw_node"):
+            self.view.draw_node()
 
 
 class GameEffectNode(BaseEffectNode):
@@ -366,17 +320,3 @@ class RequirementEffectNode(BaseEffectNode):
 
     def argument_info_map(self):
         return db_spec.requirement_argument_info
-
-def to_number(x):
-    if isinstance(x, (int, float)):
-        return x
-    if isinstance(x, str):
-        s = x.strip()
-        try:
-            i = int(s)
-            return i
-        except ValueError:
-            try:
-                return float(s)
-            except ValueError:
-                return

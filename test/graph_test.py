@@ -7,7 +7,7 @@ from PyQt5.QtTest import QTest
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json, make_modinfo
-from graph.set_hotkeys import write_sql, save_session
+from graph.set_hotkeys import write_sql, save_session, import_session_set_params
 from graph.db_spec_singleton import db_spec
 from graph.mod_conversion import build_imported_mod
 
@@ -39,6 +39,37 @@ def mod_output_check(window, test_sql_path):
     sql_lines = transform_json(current)
     write_sql(sql_lines)
     check_test_against_expected_sql(test_sql_path)
+
+
+arg_type_map = {}
+for k, v in db_spec.mod_type_arg_map.items():
+    for key, val in v.items():
+        arg_type_map[key] = val
+
+for k, v in db_spec.req_type_arg_map.items():
+    for key, val in v.items():
+        arg_type_map[key] = val
+
+
+def cast_test_input(arg, value, node):
+    prop_type = arg_type_map[arg]
+    if prop_type == 'text':
+        casted_val = str(value)
+    elif prop_type == 'database':
+        casted_val = str(value)
+    elif prop_type == 'bool':
+        casted_val = 1 if value in ['1', 1, 'true', 'true'] else None
+        if casted_val is None:
+            casted_val = 0 if value in ['0', 0, 'False', 'false'] else None
+        if casted_val is None:
+            casted_val = bool(value)
+    elif prop_type == 'int':
+        casted_val = int(value)
+    elif prop_type == 'float':
+        casted_val = float(value)
+    else:
+        raise Exception(f'unhandled arg {arg} with prop {prop_type}')
+    node.set_widget_and_prop(arg, casted_val)
 
 # UI tests
 
@@ -146,20 +177,22 @@ def setup_effect_req(window):
     effect_node = window.graph.create_node('db.game_effects.GameEffectNode')
     effect_node.set_property('EffectType', 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE')
     effect_node.set_property('CollectionType', 'COLLECTION_ALL_PLAYERS')
-    effect_node.safe_set_widget_value('Amount', '2')
-    effect_node.safe_set_widget_value('YieldType', 'YIELD_FOOD')
+    cast_test_input('Amount', '2', effect_node)
+    cast_test_input('YieldType', 'YIELD_FOOD',  effect_node)
 
     effect_node.set_property('EffectType', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE')
-    effect_node.safe_set_widget_value('Amount', 6)
-    effect_node.safe_set_widget_value('ResourceClassType', 3)  # will need to change from int once better
+
+    cast_test_input('Amount', '6', effect_node)
+    cast_test_input('ResourceClassType', 'RESOURCECLASS_EMPIRE', effect_node)
 
     req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')
     req_node.set_property('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE')
-    req_node.safe_set_widget_value('Amount', '4')  # string for some reason
-    req_node.safe_set_widget_value('UnitType', 'UNIT_TEST')
+    cast_test_input('Amount', '4', req_node)
+    cast_test_input('UnitType', 'UNIT_TEST', req_node)
 
-    req_node.safe_set_widget_value('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS')
-    req_node.safe_set_widget_value('BuildingType', 'BUILDING_TEST')  # 'BuildingType' 'BUILDING_TEST'
+    req_node.set_property('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS')
+    cast_test_input('BuildingType', 'BUILDING_TEST', req_node)
+
     return effect_node, req_node
 
 
@@ -213,32 +246,20 @@ def test_write_effect_and_req_nested(qtbot):            # this version has a req
 def test_save_and_load_on_hidden_params(qtbot):
     window = NodeEditorWindow()
     qtbot.addWidget(window)
-    effect_node, req_node = setup_effect_req(window)
-    old_effect_args = {key: effect_node.get_property(key) for key in effect_node.get_property('arg_params')
-                       if effect_node.get_property(key) is not None and effect_node.get_property(key) in [6, 3]}
-    old_req_args = {key: req_node.get_property(key) for key in req_node.get_property('arg_params')
-                    if req_node.get_property(key) is not None and req_node.get_property(key) in [6, 3]}
+    setup_effect_req(window)
     current = save(window)
     window.graph.clear_session()
-    window.graph.import_session(current)
+    import_session_set_params(window.graph, current)
     # assert that req args are kept
     game_effects = [i for i in window.graph.all_nodes() if i.get_property('table_name') == 'GameEffectCustom']
     reqs = [i for i in window.graph.all_nodes() if i.get_property('table_name') == 'ReqEffectCustom']
-    game_effect = game_effects[0]
-    req = reqs[0]
+    effect_node = game_effects[0]
+    req_node = reqs[0]
 
-    for key, widget in {i: v for i, v in game_effect.widgets().items() if 'param' in i}.items():
-        val = widget.get_value()
-        assert game_effect.get_property(key) == val
-
-    for key, widget in {i: v for i, v in req.widgets().items() if 'param' in i}.items():
-        val = widget.get_value()
-        assert req.get_property(key) == val
-
-    assert game_effect.get_property('Amount') == 6
-    assert game_effect.get_property('ResourceClassType') == 3
-    assert req.get_property('Amount') == '4'
-    assert req.get_property('BuildingType') == 'BUILDING_TEST'
+    assert effect_node.get_property('Amount') == 6
+    assert effect_node.get_property('ResourceClassType') == 'RESOURCECLASS_EMPIRE'
+    assert req_node.get_property('Amount') == 4
+    assert req_node.get_property('BuildingType') == 'BUILDING_TEST'
 
 
 def test_import_mod(qtbot):

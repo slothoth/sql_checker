@@ -724,7 +724,8 @@
         "ref_column": "NotificationType",
         "ref_table": "Notifications"
       }
-    }
+    },
+    "origin_pk": true
   },
   "AdvisoryClasses": {
     "primary_keys": [
@@ -911,7 +912,8 @@
     "possible_fks": {},
     "extra_backlinks": {
       "Resource_Distribution": "AgeType"
-    }
+    },
+    "origin_pk": true
   },
   "AgeConstructibleDefaultMaintenances": {
     "primary_keys": [
@@ -1274,7 +1276,8 @@
     "mined_bools": [
       "FinalMilestone"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "AgeProgressionMilestoneRewards": {
     "primary_keys": [
@@ -2207,7 +2210,8 @@
         "ref_column": "Type",
         "ref_table": "NarrativeStory_RewardIcons"
       }
-    }
+    },
+    "origin_pk": true
   },
   "BarbarianAttackForces": {
     "primary_keys": [
@@ -2490,7 +2494,8 @@
     "mined_bools": [
       "Shareable"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Belief_Priorities": {
     "primary_keys": [
@@ -2628,7 +2633,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "Biome_ValidTerrains": {
     "primary_keys": [
@@ -2915,7 +2921,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "ChargedUnitAbilities": {
     "primary_keys": [
@@ -3084,7 +3091,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "CityStateBonusModifiers": {
     "primary_keys": [
@@ -3236,7 +3244,8 @@
       "UniqueCultureProgressionTree": "ProgressionTrees",
       "StartingCivilizationLevelType": "CivilizationLevels"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "CivilizationCitizenNames": {
     "primary_keys": [
@@ -4094,7 +4103,8 @@
     "extra_backlinks": {
       "ConstructibleModifiers": "ConstructibleType",
       "DiscoverySiftingImprovements": "ConstructibleType"
-    }
+    },
+    "origin_pk": true
   },
   "Constructible_Adjacencies": {
     "primary_keys": [
@@ -4863,7 +4873,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DataTypes": {
     "primary_keys": [
@@ -4936,7 +4947,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "Defeats": {
     "primary_keys": [
@@ -4983,7 +4995,8 @@
       "EnabledByDefault",
       "Global"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Difficulties": {
     "primary_keys": [
@@ -5025,7 +5038,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyActions": {
     "primary_keys": [
@@ -5190,7 +5204,8 @@
       "UnsupportPenalty",
       "WarOnly"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomacyActionGroups": {
     "primary_keys": [
@@ -5225,7 +5240,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyActionGroupSubtypes": {
     "primary_keys": [
@@ -5257,7 +5273,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyActionTags": {
     "primary_keys": [
@@ -5276,7 +5293,8 @@
     "foreign_keys": {
       "DiplomacyActionTagType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomacyAgendaAmountTypes": {
     "primary_keys": [
@@ -5313,7 +5331,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyAgendaAwardToTypes": {
     "primary_keys": [
@@ -5345,7 +5364,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyAgendaWeightingTypes": {
     "primary_keys": [
@@ -5377,7 +5397,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyBasicModifierValueTypes": {
     "primary_keys": [
@@ -5409,7 +5430,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyBonusEnvoyData": {
     "primary_keys": [
@@ -5523,7 +5545,8 @@
     "foreign_keys": {
       "DiplomacyFavorGrievanceEventGroupType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomacyModifierTargetTypes": {
     "primary_keys": [
@@ -5558,7 +5581,8 @@
     },
     "extra_backlinks": {
       "DiplomaticActionResponseModifiers": "ModifierTarget"
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyPlayerRelationships": {
     "primary_keys": [
@@ -5596,7 +5620,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiplomacyStatements": {
     "primary_keys": [
@@ -5737,7 +5762,8 @@
     "mined_bools": [
       "InfCostSupportIncreasePercent"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomaticActionResponses": {
     "primary_keys": [
@@ -5900,7 +5926,8 @@
       "CheckForReveal",
       "CheckForTurnedBasedInfluenceCost"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomaticActionValidTokens": {
     "primary_keys": [
@@ -5961,7 +5988,8 @@
       "ShowCapitalRadius",
       "ShowCapitals"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiplomaticProjects_UI_Data": {
     "primary_keys": [
@@ -6078,7 +6106,8 @@
     "foreign_keys": {
       "DiplomaticResponseType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "DiscoverySiftingImprovements": {
     "primary_keys": [
@@ -6130,7 +6159,8 @@
         "ref_column": "ConstructibleType",
         "ref_table": "Constructibles"
       }
-    }
+    },
+    "origin_pk": true
   },
   "DiscoveryStory_Activations": {
     "primary_keys": [
@@ -6329,7 +6359,8 @@
       "Water",
       "Workable"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "District_FreeConstructibles": {
     "primary_keys": [],
@@ -6417,7 +6448,8 @@
     "possible_fks": {},
     "extra_backlinks": {
       "Modifiers": "ModifierType"
-    }
+    },
+    "origin_pk": true
   },
   "EmbarkationValidTerrains": {
     "primary_keys": [
@@ -6583,7 +6615,8 @@
     "backlink_fk": [
       "RandomEventUI"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "EventPopupData": {
     "primary_keys": [
@@ -6821,7 +6854,8 @@
       "Removable",
       "SightThroughModifier"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Feature_AdjacentFeatures": {
     "primary_keys": [
@@ -7082,7 +7116,8 @@
     "foreign_keys": {
       "FeatureClassType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Fertilities": {
     "primary_keys": [
@@ -7115,7 +7150,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "GameCapabilities": {
     "primary_keys": [
@@ -7136,7 +7172,8 @@
       "GameCapabilityDependencies",
       "GameCapabilityDependencies"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GameCapabilityDependencies": {
     "primary_keys": [
@@ -7192,7 +7229,8 @@
     "possible_fks": {},
     "extra_backlinks": {
       "RequirementSets": "RequirementSetType"
-    }
+    },
+    "origin_pk": true
   },
   "GameEffectArguments": {
     "primary_keys": [
@@ -7307,7 +7345,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "GameSpeed_Durations": {
     "primary_keys": [
@@ -7479,7 +7518,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "GoldenAgeModifiers": {
     "primary_keys": [
@@ -7545,7 +7585,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "GoodyHutSubTypes": {
     "primary_keys": [
@@ -7636,7 +7677,8 @@
     "foreign_keys": {
       "GossipType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Governments": {
     "primary_keys": [
@@ -7677,7 +7719,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "Government_ValidGoldenAges": {
     "primary_keys": [
@@ -7803,7 +7846,8 @@
       "CityStatesSuzerained",
       "GenerateDuplicateIndividuals"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GreatPersonIndividuals": {
     "primary_keys": [
@@ -8018,7 +8062,8 @@
       "ScaleInfluenceCostByRelationship",
       "Settler"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "GreatPersonIndividualActionModifiers": {
     "primary_keys": [
@@ -8287,7 +8332,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "GreatWorkSlotTypes": {
     "primary_keys": [
@@ -8638,7 +8684,8 @@
     },
     "extra_backlinks": {
       "LegacyIndependents": "IndependentType"
-    }
+    },
+    "origin_pk": true
   },
   "IndependentTribeTypes": {
     "primary_keys": [
@@ -8787,7 +8834,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "Kinds": {
     "primary_keys": [
@@ -8884,7 +8932,8 @@
     "possible_fks": {},
     "extra_backlinks": {
       "AdvancedStartCards": "UniqueLeader"
-    }
+    },
+    "origin_pk": true
   },
   "LeaderCivPriorities": {
     "primary_keys": [
@@ -9048,7 +9097,8 @@
     "extra_backlinks": {
       "NamedRiverCivilizations": "CivilizationType",
       "NamedVolcanoCivilizations": "CivilizationType"
-    }
+    },
+    "origin_pk": true
   },
   "LegacyCivilizationTraits": {
     "primary_keys": [
@@ -9142,7 +9192,8 @@
     },
     "extra_backlinks": {
       "Independents": "IndependentType"
-    }
+    },
+    "origin_pk": true
   },
   "LegacyLeaderCivPriorities": {
     "primary_keys": [
@@ -9239,7 +9290,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "LegacyPathClasses": {
     "primary_keys": [
@@ -9465,7 +9517,8 @@
     },
     "extra_backlinks": {
       "MapResourceMinimumAmountModifier": "MapSizeType"
-    }
+    },
+    "origin_pk": true
   },
   "Map_GreatPersonClasses": {
     "primary_keys": [
@@ -9760,7 +9813,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "MementoModifiers": {
     "primary_keys": [
@@ -9817,7 +9871,8 @@
         "ref_column": "ModifierId",
         "ref_table": "Modifiers"
       }
-    }
+    },
+    "origin_pk": true
   },
   "Modifiers": {
     "primary_keys": [
@@ -10090,7 +10145,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "Movies": {
     "primary_keys": [
@@ -10474,7 +10530,8 @@
       "AgeCrisisEvents": "NarrativeStoryType",
       "NarrativeStory_Links": "ToNarrativeStoryType",
       "NarrativeVariations": "VariationStoryType"
-    }
+    },
+    "origin_pk": true
   },
   "NarrativeStory_Activations": {
     "primary_keys": [
@@ -10811,7 +10868,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "NarrativeVariations": {
     "primary_keys": [
@@ -11117,7 +11175,8 @@
         "ref_column": "ModifierId",
         "ref_table": "Modifiers"
       }
-    }
+    },
+    "origin_pk": true
   },
   "PlotEffects": {
     "primary_keys": [
@@ -11313,7 +11372,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "ProgressionTree_Advisories": {
     "primary_keys": [
@@ -11617,7 +11677,8 @@
       "UpgradeToCity",
       "WMD"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Project_GreatPersonPoints": {
     "primary_keys": [
@@ -11810,7 +11871,8 @@
     "foreign_keys": {
       "QuestType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "RandomEvents": {
     "primary_keys": [
@@ -11870,7 +11932,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "RandomEventDamages": {
     "primary_keys": [
@@ -12037,7 +12100,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "RegionClaimObstacles": {
     "primary_keys": [
@@ -12106,7 +12170,8 @@
       "Pantheon",
       "RequiresCustomName"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Requirements": {
     "primary_keys": [
@@ -12410,7 +12475,8 @@
     "possible_fks": {},
     "extra_backlinks": {
       "ModifierMetadatas": "String"
-    }
+    },
+    "origin_pk": true
   },
   "Resource_Distribution": {
     "primary_keys": [
@@ -12456,7 +12522,8 @@
     "extra_backlinks": {
       "AgeProgressions": "AgeType",
       "LegacyIndependents": "Age"
-    }
+    },
+    "origin_pk": true
   },
   "Resource_Harvests": {
     "primary_keys": [
@@ -12632,7 +12699,8 @@
     "mined_bools": [
       "Assignable"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "ResourceClassApplicableLegacyPaths": {
     "primary_keys": [
@@ -12705,7 +12773,8 @@
       "PlacementRequiresRoutePresent",
       "PlacementValue"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Route_ValidBuildUnits": {
     "primary_keys": [
@@ -12872,7 +12941,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "SettlementPreferences": {
     "primary_keys": [
@@ -13499,7 +13569,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "TerrainBiomeFeature_YieldChanges": {
     "primary_keys": [
@@ -13584,7 +13655,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "TradeYields": {
     "primary_keys": [
@@ -13751,7 +13823,8 @@
     "mined_bools": [
       "InternalOnly"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "TraitModifiers": {
     "primary_keys": [
@@ -14148,7 +14221,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "TurnTimers": {
     "primary_keys": [
@@ -14370,7 +14444,8 @@
     "possible_fks": {},
     "extra_backlinks": {
       "CivilizationFavoredWonders": "FavoredWonderType"
-    }
+    },
+    "origin_pk": true
   },
   "TypeTags": {
     "primary_keys": [
@@ -14443,7 +14518,8 @@
         "ref_column": "WarType",
         "ref_table": "Wars"
       }
-    }
+    },
+    "origin_pk": true
   },
   "UnhappinessEffects": {
     "primary_keys": [
@@ -14819,7 +14895,8 @@
       "WMDCapable",
       "ZoneOfControl"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "Unit_Abilities": {
     "primary_keys": [
@@ -15091,7 +15168,8 @@
     },
     "extra_backlinks": {
       "Unit_ShadowReplacements": "Tag"
-    }
+    },
+    "origin_pk": true
   },
   "UnitAbilities": {
     "primary_keys": [
@@ -15379,7 +15457,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "UnitDiplomacyAction_Targets": {
     "primary_keys": [
@@ -15460,7 +15539,8 @@
         "ref_column": "Type",
         "ref_table": "Types"
       }
-    }
+    },
+    "origin_pk": true
   },
   "UnitFormationClasses": {
     "primary_keys": [
@@ -15662,7 +15742,8 @@
     "mined_bools": [
       "Commendation"
     ],
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitPromotionClasses": {
     "primary_keys": [
@@ -15685,7 +15766,8 @@
     "foreign_keys": {
       "PromotionClassType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitPromotionClassSets": {
     "primary_keys": [
@@ -15732,7 +15814,8 @@
     "foreign_keys": {
       "UnitPromotionDisciplineType": "Types"
     },
-    "possible_fks": {}
+    "possible_fks": {},
+    "origin_pk": true
   },
   "UnitPromotionDisciplineDetails": {
     "primary_keys": [
@@ -15855,7 +15938,8 @@
     "extra_backlinks": {
       "AdvancedStartCards": "Unlock",
       "UnlockRewards": "UnlockType"
-    }
+    },
+    "origin_pk": true
   },
   "UnlockConfigurationValues": {
     "primary_keys": [
@@ -16244,7 +16328,8 @@
     },
     "extra_backlinks": {
       "TypeToDiplomacyStatements": "Type"
-    }
+    },
+    "origin_pk": true
   },
   "Warehouse_YieldChanges": {
     "primary_keys": [
@@ -16554,7 +16639,8 @@
     },
     "extra_backlinks": {
       "CityStateTypes": "YieldType"
-    }
+    },
+    "origin_pk": true
   },
   "IProperties": {
     "primary_keys": [

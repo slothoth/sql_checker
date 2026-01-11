@@ -126,6 +126,7 @@ def backlink_port_get(original_table, connect_table):
               f' defaulting to first option')
     return fk_ports[0]
 
+
 def set_output_port_constraints(node, table_name, fk_backlink):
     pk = SQLValidator.pk_map[table_name][0]
     color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
@@ -138,6 +139,7 @@ def set_output_port_constraints(node, table_name, fk_backlink):
     return port_outputs
 
 # helper functions
+
 
 def index_label(order, text):
     PREFIX = '\u200B\u200B'   # Toxic Zero White Space character to order labels with numbers without those showing

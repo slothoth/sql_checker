@@ -3,6 +3,7 @@ from graph.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
 
 excludes = ['toggle_extra', 'table_name']
+default_mapper = {'int': 0, 'float': 0.0, 'text': '', 'database': '', 'bool': False}
 
 
 def transform_json(json_filepath):
@@ -31,6 +32,30 @@ def transform_json(json_filepath):
     return [i + '\n' for i in sql_code]
 
 
+def argument_transform(sql_code, error_string, effect_string, effect_id, custom_properties, type_arg, effect_info):
+    arg_params = custom_properties.get('arg_params', {})
+    for arg_name, param in type_arg.items():
+        arg_value = custom_properties.get(arg_name)
+        if arg_value is None:
+            arg_value = arg_params.get(arg_name) if arg_params.get(arg_name) != '' else None
+            if arg_value is None:
+                continue
+        widget_default = default_mapper[param]
+        arg_info = effect_info['Arguments'][arg_name]
+        arg_default = arg_info['DefaultValue']  # if val is default, we can ignore
+        if arg_default is None:
+            if widget_default != arg_value:
+                sql, error_string = transform_to_sql({f'{effect_string}Id': effect_id, 'Name': arg_name,
+                                                      'Value': arg_value},
+                                                     f'{effect_string}Arguments', error_string)
+                sql_code.append(sql)
+        else:
+            if arg_value != arg_default:
+                sql, error_string = transform_to_sql({f'{effect_string}Id': effect_id, 'Name': arg_name,
+                                                      'Value': arg_value}, f'{effect_string}Arguments', error_string)
+                sql_code.append(sql)
+
+
 def req_custom_transform(data, custom_properties, node_id, sql_code, error_string):
     req_id = custom_properties['RequirementId']
     req_type = custom_properties['RequirementType']  # need to change on data level as used in cols dict.
@@ -38,36 +63,9 @@ def req_custom_transform(data, custom_properties, node_id, sql_code, error_strin
                     and k != 'ReqSet'}
     sql, error_string = transform_to_sql(columns_dict, 'Requirements', error_string)
     sql_code.append(sql)
-    arg_params = custom_properties.get('arg_params', {})
-    for param, arg_name in db_spec.req_arg_type_list_map[req_type].items():
-        arg_value = custom_properties.get(arg_name)
-        if arg_value is None:
-            arg_value = arg_params.get(arg_name) if arg_params.get(arg_name) != '' else None
-            if arg_value is None:
-                continue
-        widget_default = db_spec.req_arg_defaults[req_type][param]  # default checks
-        arg_info = db_spec.requirement_argument_info[req_type]['Arguments'][arg_name]
-        arg_default = arg_info['DefaultValue']
-        is_required = bool(arg_info.get('Required', 0))
-        if arg_default == '' or arg_default is None:
-            if arg_value != widget_default:  # if no default check against widget default
-                sql, error_string = transform_to_sql({'RequirementId': req_id, 'Name': arg_name,
-                                                      'Value': arg_value},
-                                                     'RequirementArguments', error_string)
-                sql_code.append(sql)
-            else:
-                if is_required:
-                    req_arg_error = (f'\nERROR for reqType {req_type}  and arg {arg_name} there was no changed'
-                                     f' value, was required and no known default')
-                    print(req_arg_error)
-                    error_string += req_arg_error
-
-        else:
-            if arg_value != arg_default:
-                sql, error_string = transform_to_sql({'RequirementId': req_id, 'Name': arg_name,
-                                                      'Value': arg_value}, 'RequirementArguments', error_string)
-                sql_code.append(sql)
-
+    argument_transform(sql_code, error_string, 'Requirement', req_id, custom_properties,
+                       db_spec.req_type_arg_map[req_type],
+                       db_spec.requirement_argument_info[req_type])
     return sql_code, error_string
 
 
@@ -126,16 +124,9 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
     sql, error_string = transform_to_sql(columns_dict, 'Modifiers', error_string)
     sql_code.append(sql)
 
-    arg_params = custom_properties.get('arg_params', {})
-    for param, arg_name in db_spec.mod_arg_type_list_map[effect_type].items():  # ModifierArguments
-        arg_value = custom_properties.get(arg_name)
-        if arg_value is None:           # insurance
-            arg_value = arg_params.get(arg_name) if arg_params.get(arg_name) != '' else None
-            if arg_value is None:
-                continue
-        columns_dict = {'ModifierId': no_arg_params['ModifierId'], 'Name': arg_name, 'Value': arg_value}
-        sql, error_string = transform_to_sql(columns_dict, 'ModifierArguments', error_string)
-        sql_code.append(sql)  # TODO not covering Extra and Extra2, but then we arent in node either
+    argument_transform(sql_code, error_string, 'Modifier', no_arg_params['ModifierId'], custom_properties,
+                       db_spec.mod_type_arg_map[effect_type],
+                       db_spec.modifier_argument_info[effect_type])
 
     template = db_spec.node_templates['ModifierStrings']  # ModifierStrings
     mod_string_cols = template['all_cols']
