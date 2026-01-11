@@ -1,20 +1,20 @@
-from PyQt5.QtCore import QTimer
 from NodeGraphQt.constants import NodePropWidgetEnum
-import math
 
 from graph.db_spec_singleton import db_spec, effect_system_tables
 from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
-from graph.utils import to_number
 
-
+# {k: {key: val for key, val in v.items() if val=='database' and key not in self.database_arg_map} for k, v in self.arg_prop_map.items() if any(val=='database' and key not in self.database_arg_map for key, val in v.items())}
+# Tooltip, NotifySummary, Valid, BlockActions, DamageType, MultiplierType, SystemType, RevealType
 class BaseEffectNode(BasicDBNode):
     arg_setter_prop = None
     widget_props = []
-    loaded_transient_widgets = False
+    argument_info_map = {}
+    arg_prop_map = {}
+    database_arg_map = {}
 
-    def set_property(self, name, value, push_undo=True):   # TODO on reload, try get this to trigger on setting effectType
+    def set_property(self, name, value, push_undo=True):
         if name == self.arg_setter_prop:
             if self.graph is not None and self.get_property(self.arg_setter_prop) != value:
                 self.graph.begin_undo("change mode")
@@ -36,13 +36,13 @@ class BaseEffectNode(BasicDBNode):
         # show/hide arg_params on change in EffectType/RequirementType
         if old_mode == mode:
             return
-        new_params = self.arg_prop_map().get(mode)
+        new_params = self.arg_prop_map.get(mode)
         if new_params is None:
             return
         self.view.setVisible(False)
 
         if old_mode is not None:
-            old_params = self.arg_prop_map()[old_mode]
+            old_params = self.arg_prop_map[old_mode]
             turn_off_params = list(set(old_params) - set(new_params))
             new_param_list = list(set(new_params) - set(old_params))
             new_params = {k: v for k, v in new_params.items() if k in new_param_list}
@@ -61,14 +61,14 @@ class BaseEffectNode(BasicDBNode):
 
     def reapply_arg_params(self):
         mode = self.get_property(self.arg_setter_prop)
-        new_params = self.arg_prop_map().get(mode)
+        new_params = self.arg_prop_map.get(mode)
         for arg, prop in new_params.items():
             self.show_or_make_prop_widget(arg, prop, mode, True)
 
     def show_or_make_prop_widget(self, arg, prop_type, mode, push_undo):
         widget_name = arg if arg not in self.widget_props else f'{arg}_arg'
         widget = self.get_widget(widget_name)
-        arg_info = self.argument_info_map()[mode]['Arguments'][arg]
+        arg_info = self.argument_info_map[mode]['Arguments'][arg]
         default_val = arg_info['DefaultValue']
         preset_val = self.get_property('arg_params').get(widget_name)
         if widget is None:
@@ -96,8 +96,13 @@ class BaseEffectNode(BasicDBNode):
         if prop_type == 'text':
             self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=arg, name=arg), tab='fields')
         elif prop_type == 'database':
-            # get db type and use dropdownlinedit
-            self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=arg, name=arg), tab='fields')
+            # get db type and use dropdownlinedit database_arg_map
+            arg_table = self.database_arg_map.get(arg)
+            if arg_table is None:
+                arg_table = self.database_arg_map[arg.replace('_arg', '')]
+            uhhh = ['ah']
+            self.add_custom_widget(DropDownLineEdit(parent=self.view, label=arg, name=arg, text=uhhh[0],
+                                                    suggestions=uhhh), tab='fields')
         elif prop_type == 'bool':
             self.set_bool_checkbox(arg, default_val=None, display_in_prop_bin=False)
         elif prop_type == 'int':
@@ -112,12 +117,6 @@ class BaseEffectNode(BasicDBNode):
 
     def update_unnamed_cols(self, mode):      # will be overridden
         return
-
-    def arg_prop_map(self):
-        return {}
-
-    def argument_info_map(self):
-        return {}
 
     def migrate_extra_params(self):             # we should technically cover this anyways
         lazy_params = self.get_property('arg_params')
@@ -155,6 +154,9 @@ class GameEffectNode(BaseEffectNode):
     old_effect = None
     arg_setter_prop = 'EffectType'
     output_port_tables = {}
+    argument_info_map = db_spec.modifier_argument_info
+    arg_prop_map = db_spec.mod_type_arg_map
+    database_arg_map = db_spec.mod_arg_database_types
 
     def __init__(self):
         super().__init__()
@@ -261,12 +263,6 @@ class GameEffectNode(BaseEffectNode):
             subject_req_widget.update_from_state(new_subject)
             owner_req_widget.update_from_state(new_owner)
 
-    def arg_prop_map(self):
-        return db_spec.mod_type_arg_map
-
-    def argument_info_map(self):
-        return db_spec.modifier_argument_info
-
 
 class RequirementEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
@@ -275,6 +271,9 @@ class RequirementEffectNode(BaseEffectNode):
 
     arg_setter_prop = 'RequirementType'
     output_port_tables = {}
+    argument_info_map = db_spec.requirement_argument_info
+    arg_prop_map = db_spec.req_type_arg_map
+    database_arg_map = db_spec.req_arg_database_types
 
     def __init__(self):
         super().__init__()
@@ -314,9 +313,3 @@ class RequirementEffectNode(BaseEffectNode):
             else:                                                           # if not, name based on requirementType
                 new_req_id = f'{mode}_{unique_req_type_count}'
             req_id_widget.set_value(new_req_id)
-
-    def arg_prop_map(self):
-        return db_spec.req_type_arg_map
-
-    def argument_info_map(self):
-        return db_spec.requirement_argument_info

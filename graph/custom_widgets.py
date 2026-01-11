@@ -13,6 +13,9 @@ class ArgReportNodeBaseWidget(NodeBaseWidget):
         if prop_name in arg_params:
             arg_params[prop_name] = text
 
+    def update_available_vals(self, text):
+        print()
+
 
 class IntSpinNodeWidget(ArgReportNodeBaseWidget):
     val_accept = int
@@ -141,14 +144,14 @@ class ExpandingLineEdit(ArgReportNodeBaseWidget):
         return 'ExpandingLineEdit'
 
     def _on_text_changed(self, text):
-        self.set_value(text)
+        print('')
 
     def set_value(self, text):
         if text != self.get_value():
             self.get_custom_widget().setText(text)
             self.on_value_changed()
             self.update_args(text)
-
+            self.update_available_vals(text)
 
     def get_value(self):
         return self.line_edit.text()
@@ -163,8 +166,11 @@ class ExpandingLineEdit(ArgReportNodeBaseWidget):
         return False
 
 
+
+
 class DropDownLineEdit(ArgReportNodeBaseWidget):
     val_accept = str
+    current_suggestions = []
 
     def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False):
         super().__init__(parent, name, label)
@@ -208,7 +214,7 @@ class DropDownLineEdit(ArgReportNodeBaseWidget):
             self.get_custom_widget().setText(text)
             self.on_value_changed()
             self.update_args(text)
-
+            self.update_available_vals(text)
 
     def get_value(self):
         return str(self.get_custom_widget().text())
@@ -224,6 +230,11 @@ class DropDownLineEdit(ArgReportNodeBaseWidget):
 
     def set_suggestions(self, suggestions):
         self._completer_model.setStringList(suggestions)
+        self.current_suggestions = suggestions
+
+    def add_new_suggestions(self, new_suggestions):
+        combined_suggestions = self.current_suggestions + new_suggestions
+        self.set_suggestions(combined_suggestions)
 
 
 class BoolCheckNodeWidget(ArgReportNodeBaseWidget):

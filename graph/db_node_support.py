@@ -98,14 +98,7 @@ class SearchListDialog(QtWidgets.QDialog):
 
 # used to resync possible options for node combo boxes when changing age or adding new origin values
 # like say a Units entry
-def sync_node_options(graph):
-    print('syncing nodes...')
-    age = graph.property('meta').get('Age')
-    if age == 'ALWAYS':
-        age_specific_db = db_spec.all_possible_vals
-    else:
-        age_specific_db = db_spec.possible_vals.get(age, {})
-
+def sync_node_options(graph, age_specific_db):
     valid_options_dict = {}             # find all nodes that have an origin PK, and their values
     target_nodes = [n for n in graph.all_nodes() if 'db.table.' in n.type_]
     for node in target_nodes:
@@ -113,7 +106,7 @@ def sync_node_options(graph):
         pk_val = node.get_property(db_spec.node_templates[node_table]['primary_keys'][0])
         if db_spec.node_templates.get(node_table, False):
             if node_table not in valid_options_dict:
-                valid_options_dict[node_table] = set([pk_val])
+                valid_options_dict[node_table] = {pk_val}
             else:
                 valid_options_dict[node_table].add(pk_val)
 

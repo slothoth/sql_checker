@@ -2,19 +2,19 @@ import uuid
 import json
 
 from PyQt5 import QtGui, QtWidgets, QtCore
-from PyQt5.QtWidgets import (
-    QMainWindow, QSizePolicy
-)
+from PyQt5.QtWidgets import QMainWindow, QSizePolicy
 
 from NodeGraphQt import NodeGraph, NodesPaletteWidget, NodesTreeWidget, PropertiesBinWidget
 # patches
 from NodeGraphQt.widgets.node_widgets import _NodeGroupBox
+from graph.patchs import _patched_size_hint
 
 from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
 from graph.db_spec_singleton import db_spec
 from graph.set_hotkeys import set_hotkeys
 from graph.nodes.dynamic_nodes import generate_tables
 from graph.nodes.effect_nodes import GameEffectNode, RequirementEffectNode
+from graph.port import port_connect_transmit, update_widget_or_prop
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
 # bodge job for blocking recursion
@@ -50,10 +50,10 @@ class NodeEditorWindow(QMainWindow):
         # custom pullout
         self.enable_auto_node_creation()
 
-        self.graph.property_changed.connect(on_property_changed)
+        # self.graph.property_changed.connect(on_property_changed)
 
         viewer = self.graph.viewer()
-        self.graph.port_connected.connect(on_connection_changed)
+        self.graph.port_connected.connect(port_connect_transmit)
 
         old_resize = viewer.resizeEvent
 
@@ -101,7 +101,6 @@ class NodeEditorWindow(QMainWindow):
         nodes_palette.set_category_label('db.table', 'Database Nodes')
         nodes_palette.set_category_label('db.game_effects', 'GameEffect Nodes')
         nodes_palette.show()
-
 
     def enable_auto_node_creation(self):
         """
@@ -185,21 +184,17 @@ class NodeEditorWindow(QMainWindow):
         return name
 
 
-def on_property_changed(node, property_name, property_value):
+def on_property_changed(node, property_name, property_value):           # unreliable, syncs on graph property not node
     sync_nodes_check(node, property_name)
     propogate_port_check(node, property_name)
 
 
 def sync_nodes_check(node, property_name):
     age = node.graph.property('meta').get('Age')
-    if age == 'ALWAYS':
-        age_specific_db = db_spec.all_possible_vals
-    else:
-        age_specific_db = db_spec.possible_vals.get(age, {})
-
+    age_specific_db = db_spec.all_possible_vals if age == 'ALWAYS' else db_spec.possible_vals.get(age, {})
     pk_list = age_specific_db.get(node.name(), {}).get('primary_keys', {})
     if len(pk_list) == 1 and pk_list[0] == property_name:
-        sync_node_options(node.graph)
+        sync_node_options(node.graph, age_specific_db)
 
 
 # handles recursion. We want it so if a node changes a field that is linked to another node, backwards OR forwards
@@ -243,73 +238,8 @@ def propagate_value_by_port_name(source_node, prop_name):
                     target_node.set_property(target_prop_name, prop_value)
 
 
-def on_connection_changed(input_port, output_port):
-    input_name, output_name = input_port.name(), output_port.name()
-    input_node, output_node = input_port.node(), output_port.node()
-    input_widget = input_node.get_widget(input_name)
-    current_input_value = input_node.get_property(input_name) if input_widget is None else input_widget.get_value()
-    output_widget = output_node.get_widget(output_name)
-    current_output_value = output_node.get_property(output_name) if output_widget is None else output_widget.get_value()
-    if current_input_value == current_output_value:
-        return
-    else:
-        changing_node, new_value = None, None
-        if current_input_value == '' or current_input_value is None:
-            changing_node = input_node
-            changing_name = input_name
-            new_value = current_output_value
-        elif current_output_value == '' or current_output_value is None:
-            changing_node = output_node
-            changing_name = output_name
-            new_value = current_input_value
-        if changing_node is not None and new_value is not None:
-            update_widget_or_prop(changing_node, changing_name, new_value)
-    # update gameEffects property to build requirements Set, with nested req OR AND
-    if output_node.name() == 'CustomGameEffect' and input_name in ['ReqSet', 'RequirementSetId']:
-        current_reqset = output_node.get_property('RequirementSetDict')
-        if current_reqset:
-            current_reqset = current_reqset[output_name]
-            # build new req
-            input_node_name = input_node.get_property('table_name')
-            if input_node_name == 'ReqEffectCustom':            # add single req to list
-                req_id = input_node.get_widget('RequirementId').get_value()
-                current_reqset['reqs'].append(req_id)
-            elif input_node_name == 'RequirementSets':          # use existant reqset
-                reqset_id = input_node.get_widget('RequirementSetId').get_value()
-                current_reqset['reqs'].append({'reqset': reqset_id})
-            else:
-                print(f'oh no! wrong input table: {input_node_name}')
-
-
-def update_widget_or_prop(node, widget_name, new_val):
-    display_widget = node.get_widget(widget_name)
-    if display_widget is not None:
-        display_widget.set_value(new_val)
-    else:
-        hidden_property = node.get_property(widget_name)
-        if hidden_property is not None:
-            node.set_property(widget_name, new_val)
-
-
 ###############################################################################################
 ########################### Patches to NodeGraphQt ###########################################
 ###############################################################################################
-
-# patching NodeGraphBox
-
-def _patched_size_hint(self, *args):
-    base = QtWidgets.QGroupBox.sizeHint(self)
-
-    title = self.title()
-    if not title:
-        return base
-
-    fm = self.fontMetrics()
-    title_width = fm.horizontalAdvance(title)
-
-    margins = self.layout().contentsMargins()
-    width = max(base.width(), title_width + margins.left() + margins.right() + 8)
-
-    return QtCore.QSize(width, base.height())
 
 _NodeGroupBox.sizeHint = _patched_size_hint

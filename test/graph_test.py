@@ -225,21 +225,27 @@ def test_write_effect_and_req_nested(qtbot):            # this version has a req
     reqset.set_property('RequirementSetId', 'TEST_REQSET_1')
 
     reqset_reqs = window.graph.create_node('db.table.requirementsetrequirements.RequirementsetrequirementsNode')
+    reqset_reqs.set_property('RequirementSetId', 'TEST_REQSET_1')
 
     req_input_port = req_node.inputs()['ReqSet']              # connect req and effect
     req_output_port = effect_node.outputs()['SubjectReq']
     req_output_port.connect_to(req_input_port)
+    assert req_output_port in req_input_port.connected_ports()
 
     reqset_port_reqset = reqset.outputs()['RequirementSetId']            # connect reqset to rsr
     reqset_req_port_reqset = reqset_reqs.inputs()['RequirementSetId']
-    reqset_port_reqset.connect_to(reqset_req_port_reqset)
+    reqset_port_reqset.connect_to(reqset_req_port_reqset)                # renames!
+    assert reqset_port_reqset in reqset_req_port_reqset.connected_ports()
 
     reqset_req_port_req = reqset_reqs.inputs()['RequirementId']          # connect reqset to req
     req_port_req = req1.outputs()['RequirementId']
     reqset_req_port_req.connect_to(req_port_req)
+    assert reqset_req_port_req in req_port_req.connected_ports()
 
     other_reqset_port = reqset.inputs()['RequirementSetId']             # connect req custom to reqset
     req_output_port.connect_to(other_reqset_port)
+    assert req_output_port in other_reqset_port.connected_ports()
+    # 'TEST_REQ_1', 'TEST_REQSET_1'
     mod_output_check(window, 'nested_reqs.sql')
 
 
