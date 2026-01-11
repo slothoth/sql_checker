@@ -86,7 +86,7 @@
     "TerrainType": "database"
   },
   "REQUIREMENT_CITY_HAS_TRANSFER_UNREST_STAGE": {
-    "CityTransferUnrestStageType": "database"
+    "CityTransferUnrestStageType": "text"
   },
   "REQUIREMENT_CITY_HAS_UNIQUE_QUARTER": {
     "UniqueQuarterType": "database"
@@ -183,7 +183,7 @@
     "FeatureType": "database"
   },
   "REQUIREMENT_METAPROGRESSION_COMPLETED_CHALLENGES": {
-    "Challenges": "database",
+    "Challenges": "text",
     "ChallengesCategory": "text",
     "ChallengesClass": "text",
     "CompleteAll": "bool",
@@ -195,7 +195,7 @@
     "CheckForAdditionalContentPaths": "bool",
     "LeaderType": "database",
     "LegendPaths": "text",
-    "LevelThreshold": "database"
+    "LevelThreshold": "text"
   },
   "REQUIREMENT_NEAR_RELIGIOUS_CITY": {
     "FriendlyCity": "bool"
@@ -222,7 +222,7 @@
   },
   "REQUIREMENT_PLAYER_CARD_EFFECTS_COMPLETE": {},
   "REQUIREMENT_PLAYER_CIVILIZATION_TYPE_MATCHES": {
-    "CivilizationType": "database",
+    "CivilizationType": "text",
     "IsPastCivilization": "bool"
   },
   "REQUIREMENT_PLAYER_COMPLETED_ESPIONAGE_ACTION": {
@@ -320,7 +320,7 @@
     "Amount": "int",
     "Distance": "int",
     "DuplicateCount": "int",
-    "GossipTypes": "database",
+    "GossipTypes": "text",
     "OrderedTurnWindow": "int",
     "TurnWindow": "int"
   },
@@ -543,7 +543,7 @@
   },
   "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_AT": {
     "Amount": "int",
-    "SettlementLocationType": "database",
+    "SettlementLocationType": "text",
     "Tiles": "int"
   },
   "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_FOREIGN_HEMISPHERE": {
@@ -583,7 +583,7 @@
   },
   "REQUIREMENT_PLAYER_HAS_X_WARS": {
     "Amount": "int",
-    "CivilizationType": "database",
+    "CivilizationType": "text",
     "DeclaredByOpponent": "bool",
     "WarType": "database"
   },
@@ -628,7 +628,7 @@
     "GOSSIP_DIPLOMACY_RESPONSE": "text",
     "GOSSIP_PILLAGE": "text",
     "GOSSIP_UNIT_COMBAT_DEATH": "text",
-    "GossipTypes": "database"
+    "GossipTypes": "text"
   },
   "REQUIREMENT_PLAYER_MET_NUM_CIVS": {
     "Amount": "int",

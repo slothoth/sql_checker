@@ -43,7 +43,7 @@
   },
   "EFFECT_ADJUST_CITY_COMMANDER_UNHAPPINESS_REDUCTION": {
     "Percent": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_ADJUST_CITY_IGNORE_UNHAPPINESS_EFFECT": {
     "UnhappinessEffect": "text"
@@ -53,7 +53,7 @@
   },
   "EFFECT_ADJUST_CITY_TREASURE_FLEET_MOD": {
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_ADJUST_FORBID_UPGRADE_TOWN_TO_CITY": {},
@@ -70,7 +70,7 @@
   "EFFECT_ADJUST_PLAYER_ALLIANCE_TRADE": {
     "OtherPercent": "int",
     "SelfPercent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldTypeOther": "database",
     "YieldTypeSelf": "database"
   },
@@ -85,11 +85,11 @@
     "BuildingType": "database",
     "ConstructibleClass": "database",
     "Percent": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_ADJUST_PLAYER_OR_CITY_UNIT_PURCHASE_EFFICIENCY": {
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "UnitClass": "database",
     "UnitTag": "database"
   },
@@ -170,7 +170,7 @@
   },
   "EFFECT_ADJUST_TOWN_CAN_PURCHASE_TAGGED_CONSTRUCTIBLES": {
     "ConstructibleTag": "database",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_ADJUST_UNIT_ACTIVE_DIPLOMACY_GROUP_COMBAT_STRENGTH": {
     "Amount": "int",
@@ -219,7 +219,7 @@
   },
   "EFFECT_ADJUST_UNIT_EMBARKED_MOVEMENT": {
     "Amount": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_ADJUST_UNIT_EMBARKED_STRENGTH_MODIFIER": {
     "Amount": "int"
@@ -305,7 +305,7 @@
     "AbilityType": "database",
     "Amount": "int",
     "StackPercent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "Type": "text"
   },
   "EFFECT_ADJUST_UNIT_SUZERAIN_OF_COMBAT_MODIFIER": {
@@ -323,7 +323,7 @@
   },
   "EFFECT_ADJUST_UNIT_VALID_TERRAIN": {
     "TerrainType": "database",
-    "Valid": "database"
+    "Valid": "text"
   },
   "EFFECT_ADJUST_UNIT_WAR_SUPPORT_COMBAT_STRENGTH": {
     "Amount": "int"
@@ -394,11 +394,11 @@
     "Modifier1Type": "database",
     "Modifier1Value": "int",
     "NotifyMessage": "text",
-    "NotifySummary": "database",
-    "Tooltip": "database"
+    "NotifySummary": "text",
+    "Tooltip": "text"
   },
   "EFFECT_BLOCK_DIPLOMAITC_ACTION_GROUP_FOR_X_TURNS": {
-    "BlockActions": "database",
+    "BlockActions": "text",
     "BlockGroupType": "database",
     "NumTurns": "int",
     "TargetType": "database"
@@ -413,7 +413,7 @@
   },
   "EFFECT_CITY_ACTIVATE_CONSTRUCTIBLE_ADJACENCY": {
     "ConstructibleAdjacency": "database",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ACTIVATE_CONSTRUCTIBLE_WAREHOUSE_YIELD": {
     "ConstructibleWarehouseYield": "database"
@@ -429,7 +429,7 @@
     "Adjacency_YieldChange": "database",
     "Amount": "int",
     "Divisor": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ADJUST_AVOID_RANDOM_EVENT": {
     "RandomEventClass": "text"
@@ -444,7 +444,7 @@
     "Amount": "int",
     "Gold": "bool",
     "Happiness": "bool",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ADJUST_BUILDING_PRODUCTION_PRODUCTION_PER_LEGACY_POINT": {
     "ConstructibleType": "database",
@@ -458,7 +458,7 @@
     "ConstructibleType": "database",
     "Percent": "int",
     "Tag": "database",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ADJUST_CONSTRUCTIBLE_PRODUCTION_PER_RESOURCE": {
     "Amount": "int",
@@ -485,7 +485,7 @@
     "ConstructibleType": "database",
     "Description": "text",
     "Tag": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_CONSTRUCTIBLE_YIELD_PER_PLAYER_ALLIANCE": {
@@ -522,7 +522,7 @@
   },
   "EFFECT_CITY_ADJUST_GROWTH": {
     "Percent": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ADJUST_GROWTH_PER_RESOURCE": {
     "GlobalSlots": "bool",
@@ -535,7 +535,7 @@
   },
   "EFFECT_CITY_ADJUST_OVERBUILD_PRODUCTION_MOD": {
     "Percent": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ADJUST_POPULATION": {
     "Amount": "int"
@@ -551,7 +551,7 @@
   "EFFECT_CITY_ADJUST_RANDOM_EVENT_CONSTRUCTIBLE_YIELD": {
     "Amount": "int",
     "ConstructibleType": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_RAZE_RATE": {
@@ -572,7 +572,7 @@
     "Amount": "int",
     "ConstructibleType": "database",
     "PercentMultiplier": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_TOTAL_DISTRICT_HEALTH": {
@@ -585,7 +585,7 @@
   "EFFECT_CITY_ADJUST_TRADE_ROUTE_RANGE": {
     "Amount": "int",
     "DomainType": "text",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ADJUST_TRADE_ROUTE_RANGE_PER_SUZERAIN_OF": {
     "Amount": "int",
@@ -594,7 +594,7 @@
   },
   "EFFECT_CITY_ADJUST_TRADE_YIELD": {
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_UNHAPPINESS_EFFECT": {
@@ -611,7 +611,7 @@
     "Description": "text",
     "Domain": "text",
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "UnitClass": "database",
     "UnitCoreClass": "text",
     "UnitTag": "database",
@@ -645,13 +645,13 @@
   },
   "EFFECT_CITY_ADJUST_WORKER_MAINTENANCE_EFFICIENCY": {
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_WORKER_YIELD": {
     "Amount": "int",
     "Description": "text",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD": {
@@ -659,7 +659,7 @@
     "Apply": "text",
     "Percent": "int",
     "PercentMultiplier": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELDS_PER_SETTLEMENT_OVER_CAP": {
@@ -672,14 +672,14 @@
     "FromYieldType": "database",
     "Percent": "int",
     "ToYieldType": "database",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_ACTIVE_TRADITION": {
     "Amount": "int",
     "CivUnique": "bool",
     "Invert": "bool",
     "PercentMultiplier": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_ATTRIBUTE": {
@@ -710,20 +710,20 @@
     "Amount": "int",
     "MaxPercent": "int",
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_NUM_CITIES": {
     "Amount": "int",
     "Cities": "bool",
     "DistantLands": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "Towns": "bool",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_NUM_TRADE_ROUTES": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_POPULATION": {
@@ -731,7 +731,7 @@
     "Amount": "int",
     "Divisor": "int",
     "Rural": "text",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "Urban": "text",
     "YieldType": "database"
   },
@@ -739,25 +739,25 @@
     "Amount": "int",
     "PercentMultiplier": "bool",
     "ResourceType": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_RESOURCE_CLASS": {
     "Amount": "int",
     "ResourceClassType": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "Unassigned": "bool",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_SURPLUS_HAPPINESS": {
     "Amount": "int",
     "Divisor": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_SUZERAIN": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_SUZERAINED_CITY_STATE_TYPE": {
@@ -771,7 +771,7 @@
   },
   "EFFECT_CITY_ADJUST_YIELD_PER_UNLOCKED_PROGRESSION_TREE_NODE": {
     "Amount": "int",
-    "SystemType": "database",
+    "SystemType": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_ADJUST_YIELD_WITH_DECAY": {
@@ -782,7 +782,7 @@
   },
   "EFFECT_CITY_DAMAGE_CONSTRUCTIBLES": {
     "Amount": "int",
-    "DamageType": "database"
+    "DamageType": "text"
   },
   "EFFECT_CITY_GRANT_FREE_BUILDING": {
     "Amount": "int"
@@ -794,7 +794,7 @@
   "EFFECT_CITY_GRANT_NATURAL_YIELDS": {
     "MinorRivers": "bool",
     "TerrainTypes": "database",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_CITY_GRANT_UNIT": {
     "AllowUniqueOverride": "bool",
@@ -808,7 +808,7 @@
     "UnitType": "database"
   },
   "EFFECT_CITY_GRANT_WAREHOUSE_YIELD": {
-    "Tooltip": "database",
+    "Tooltip": "text",
     "WarehouseYieldChange": "database"
   },
   "EFFECT_CITY_GRANT_YIELD": {
@@ -816,7 +816,7 @@
     "YieldType": "database"
   },
   "EFFECT_CITY_GRANT_YIELD_DISCOVERY": {
-    "MultiplierType": "database",
+    "MultiplierType": "text",
     "YieldType": "database"
   },
   "EFFECT_CITY_GRANT_YIELD_PER_POP_DEFENSE_CONSTRUCTED": {
@@ -896,7 +896,7 @@
     "Amount": "int"
   },
   "EFFECT_DAE_ESPIONAGE_STEAL_TREE_NODE": {
-    "SystemType": "database"
+    "SystemType": "text"
   },
   "EFFECT_DAE_FREE_CAPTURED_COMMANDER_CHANGE_INITIATOR_GOLD": {
     "RemoveGold": "bool"
@@ -909,7 +909,7 @@
     "Percent": "int",
     "SupportAmount": "int",
     "TargetPercent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_DAE_GRANT_YIELD_PER_RELATIONSHIP": {
@@ -934,7 +934,7 @@
   "EFFECT_DIPLOMACY_ADJUST_CITY_YIELD_PER_PLAYER_RELATIONSHIP": {
     "Percent": "int",
     "RelationshipType": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "UseAlliances": "bool",
     "YieldType": "database"
   },
@@ -968,7 +968,7 @@
   "EFFECT_DIPLOMACY_ADJUST_RELATIONSHIP_GAIN_FROM_EVENT": {
     "EventType": "database",
     "Percent": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_DIPLOMACY_ADJUST_UNIT_MAINTENANCE_PER_PLAYER_RELATIONSHIP": {
     "Amount": "int",
@@ -978,14 +978,14 @@
   "EFFECT_DIPLOMACY_ADJUST_YIELD_PER_PLAYER_INVOLVED_ACTION": {
     "ActionGroupType": "database",
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_DIPLOMACY_ADJUST_YIELD_PER_PLAYER_RELATIONSHIP": {
     "Amount": "int",
     "Percent": "int",
     "RelationshipType": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "UseAlliances": "bool",
     "YieldType": "database"
   },
@@ -996,15 +996,15 @@
   "EFFECT_DIPLOMACY_AGENDA_ON_DISPERSE_IP": {
     "AwardAmtType": "database",
     "NotifyMessage": "text",
-    "NotifySummary": "database"
+    "NotifySummary": "text"
   },
   "EFFECT_DIPLOMACY_AGENDA_ON_WAR_START": {
     "AwardAmtTypeFormal": "database",
     "AwardAmtTypeSurprise": "database",
     "ModName": "text",
     "NotifyMessage": "text",
-    "NotifySummary": "database",
-    "Tooltip": "database"
+    "NotifySummary": "text",
+    "Tooltip": "text"
   },
   "EFFECT_DIPLOMACY_AGENDA_TIMED_UPDATE": {
     "ApplyToPlayers": "bool",
@@ -1021,18 +1021,18 @@
     "FirstMeetDelay": "int",
     "ModName": "text",
     "NotifyMessage": "text",
-    "NotifySummary": "database",
+    "NotifySummary": "text",
     "ShowNotification": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "UpdateFreq": "int",
-    "WeightType": "database"
+    "WeightType": "text"
   },
   "EFFECT_DIPLOMACY_GRANT_DIPLOMATIC_ACTION": {
     "ActionType": "text"
   },
   "EFFECT_DISTRICT_ADJUST_FORTIFIED_COMBAT_STRENGTH": {
     "Amount": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_DISTRICT_ADJUST_HEAL_PER_TURN": {
     "Amount": "int"
@@ -1074,7 +1074,7 @@
   },
   "EFFECT_GRANT_DIPLOMATIC_ENVOYS": {
     "Amount": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_GRANT_EXHIBIT_GREAT_WORK": {
     "ArchaeologyAge": "database",
@@ -1100,7 +1100,7 @@
     "YieldType": "database"
   },
   "EFFECT_GRANT_REVEAL_TYPE": {
-    "RevealType": "database"
+    "RevealType": "text"
   },
   "EFFECT_GRANT_SUPPORT_RESPONSE_BONUS": {
     "Amount": "int",
@@ -1179,7 +1179,7 @@
     "FromYieldType": "database",
     "Percent": "int",
     "ToYieldType": "database",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_MODIFY_PLAYER_YIELD_FOR_X_TURNS": {
     "ReductionPercent": "int",
@@ -1190,7 +1190,7 @@
     "GoldenAgeType": "database"
   },
   "EFFECT_PLAYER_ADD_YIELD_DEBT_NARRATIVE": {
-    "MultiplierType": "database",
+    "MultiplierType": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_AGE_PROGRESS": {
@@ -1206,19 +1206,19 @@
     "ConstructibleClass": "database",
     "ConstructibleType": "database",
     "Tag": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_CONSTRUCTIBLE_YIELD_BY_ATTRIBUTE": {
     "Amount": "int",
     "AttributeType": "database",
     "ConstructibleType": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_GOLDEN_AGE_DURATION": {
     "Percent": "int",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_PLAYER_ADJUST_LEGACY_PATH_GREAT_WORK_SCORING": {
     "GreatWorkObjectType": "database",
@@ -1262,11 +1262,11 @@
   "EFFECT_PLAYER_ADJUST_PROGRESSION_TREE_EFFICIENCY": {
     "Percent": "int",
     "ProgressionTreeNodeType": "database",
-    "SystemType": "database"
+    "SystemType": "text"
   },
   "EFFECT_PLAYER_ADJUST_PROGRESSION_TREE_MASTERY_EFFICIENCY": {
     "Percent": "int",
-    "SystemType": "database"
+    "SystemType": "text"
   },
   "EFFECT_PLAYER_ADJUST_PURCHASE_EFFICIENCY_PER_RESOURCE": {
     "AffectBuildings": "bool",
@@ -1278,7 +1278,7 @@
     "Ageless": "bool",
     "Amount": "int",
     "Minimum": "bool",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_PLAYER_ADJUST_TRADE_CAPACITY": {
     "Amount": "int",
@@ -1295,7 +1295,7 @@
   "EFFECT_PLAYER_ADJUST_UNIT_MAINTENANCE_EFFICIENCY": {
     "Amount": "int",
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "UnitClass": "database",
     "UnitDomain": "text",
     "UnitTag": "database",
@@ -1321,7 +1321,7 @@
     "Amount": "int",
     "Percent": "int",
     "PercentMultiplier": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_CONVERSION": {
@@ -1335,7 +1335,7 @@
   },
   "EFFECT_PLAYER_ADJUST_YIELD_FOR_COMPLETING_NARRATIVE_EVENTS": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_FOR_GOLDEN_AGE_START": {
@@ -1344,21 +1344,21 @@
   },
   "EFFECT_PLAYER_ADJUST_YIELD_FROM_DISTATERS": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_ACTIVE_TRADITION": {
     "Amount": "int",
     "CivUnique": "bool",
     "Invert": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_ATTRIBUTE_AND_ALLIANCES": {
     "Amount": "int",
     "AttributeType": "database",
     "Divisor": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_COMMANDER_LEVEL": {
@@ -1367,42 +1367,42 @@
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_COMPLETED_MASTERY": {
     "Amount": "int",
-    "SystemType": "database",
-    "Tooltip": "database",
+    "SystemType": "text",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_CONQUERED_CITY": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_CONQUERED_SETTLEMENT": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_NUM_CITIES": {
     "Amount": "int",
     "Cities": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "Towns": "bool",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_NUM_CIVS_TRADING_WITH": {
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_NUM_TRADE_ROUTES": {
     "Amount": "int",
     "Imported": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_NUM_TRADE_ROUTES_AND_SUZERAINED_TYPE": {
     "Amount": "int",
     "CityStateType": "database",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_PROPERTY_VALUE": {
@@ -1412,13 +1412,13 @@
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_RAZED_SETTLEMENT": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_RESOURCE": {
     "Amount": "int",
     "Imported": "bool",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "Unassigned": "bool",
     "YieldType": "database"
   },
@@ -1430,12 +1430,12 @@
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_SUZERAIN": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_UNIQUE_CIV_CONQUERED_CITY": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_UNIQUE_RESOURCE": {
@@ -1458,10 +1458,10 @@
     "Scale": "bool"
   },
   "EFFECT_PLAYER_DEDUCT_TREASURY_DISCOVERY": {
-    "MultiplierType": "database"
+    "MultiplierType": "text"
   },
   "EFFECT_PLAYER_DEDUCT_TREASURY_NARRATIVE": {
-    "MultiplierType": "database"
+    "MultiplierType": "text"
   },
   "EFFECT_PLAYER_DESTROY_UNIT_WITH_HIGHEST_LEVEL": {
     "MatchAllTags": "bool",
@@ -1499,7 +1499,7 @@
   },
   "EFFECT_PLAYER_DIPLOMACY_ADJUST_HAS_BOOSTED_SUPPORT_EFFECTS": {
     "IsBoosted": "bool",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_PLAYER_DIPLOMACY_ADJUST_THIRD_PARTY_SUPPORT_MAX": {
     "Amount": "int"
@@ -1534,7 +1534,7 @@
   },
   "EFFECT_PLAYER_GRANT_FAVORS_GRIEVANCES": {
     "Amount": "int",
-    "TargetCivilization": "database"
+    "TargetCivilization": "text"
   },
   "EFFECT_PLAYER_GRANT_FREE_PURCHASE_CHARGE": {
     "Amount": "int",
@@ -1561,7 +1561,7 @@
     "BoostPercentage": "int",
     "FreeProgressionType": "text",
     "NodeType": "database",
-    "SystemType": "database"
+    "SystemType": "text"
   },
   "EFFECT_PLAYER_GRANT_TRADITION_SLOTS": {
     "Amount": "int",
@@ -1595,15 +1595,15 @@
   },
   "EFFECT_PLAYER_GRANT_YIELD_ASSIGNED_WORKERS": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_GRANT_YIELD_DISCOVERY": {
-    "MultiplierType": "database",
+    "MultiplierType": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_GRANT_YIELD_NARRATIVE": {
-    "MultiplierType": "database",
+    "MultiplierType": "text",
     "YieldType": "database"
   },
   "EFFECT_PLAYER_LOWER_ALL_INDEPENDENT_RELATIONSHIPS": {
@@ -1648,12 +1648,12 @@
   },
   "EFFECT_PLOT_ADJUST_WORKER_MAINTENANCE": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLOT_ADJUST_WORKER_YIELD": {
     "Amount": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLOT_ADJUST_YIELD": {
@@ -1661,12 +1661,12 @@
     "Apply": "text",
     "Description": "text",
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLOT_ADJUST_YIELD_PER_PLAYER_NATURAL_WONDER": {
     "Percent": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "EFFECT_PLOT_DESTROY_DISCOVERY": {},
@@ -1695,7 +1695,7 @@
   },
   "EFFECT_UNIT_ADJUST_ABILITY": {
     "AbilityType": "database",
-    "Tooltip": "database"
+    "Tooltip": "text"
   },
   "EFFECT_UNIT_ADJUST_COMBAT_STRENGTH_PER_GAME_DIFFICULTY": {
     "Amount": "int",
@@ -1740,7 +1740,7 @@
   },
   "EFFECT_UNIT_ADJUST_HEAL_PER_TURN": {
     "Amount": "int",
-    "TerritoryTypes": "database"
+    "TerritoryTypes": "text"
   },
   "EFFECT_UNIT_ADJUST_IGNORE_MOVEMENT_OBSTACLE": {
     "FeatureClassTypes": "database",
@@ -1799,7 +1799,7 @@
   "TRIGGER_CITY_GRANT_YIELD_ON_PROGRESSION_TREE_NODE_DEPTH_UNLOCKED": {
     "MasteryNodesOnly": "bool",
     "PercentCost": "int",
-    "SystemType": "database",
+    "SystemType": "text",
     "YieldType": "database"
   },
   "TRIGGER_PLAYER_ADJUST_POPULATION_ON_CELEBRATION_STARTED": {
@@ -1819,13 +1819,13 @@
     "AllowUniqueOverride": "bool",
     "Amount": "int",
     "Depth": "int",
-    "SystemType": "database",
+    "SystemType": "text",
     "UnitTag": "database"
   },
   "TRIGGER_PLAYER_GRANT_YIELD_ON_FIND_WONDER": {
     "Amount": "int",
     "DistantLandBonus": "int",
-    "Tooltip": "database",
+    "Tooltip": "text",
     "YieldType": "database"
   },
   "TRIGGER_PLAYER_GRANT_YIELD_ON_MASTERY_COMPLETED": {
@@ -1837,7 +1837,7 @@
     "Depth": "int",
     "PercentCost": "int",
     "PercentYieldPerTurn": "int",
-    "SystemType": "database",
+    "SystemType": "text",
     "YieldType": "database",
     "YieldTypeConverted": "database"
   },

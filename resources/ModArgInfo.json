@@ -815,8 +815,8 @@
     },
     "Object": [
       "Player",
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_ADJUST_PLAYER_OR_CITY_UNIT_PURCHASE_EFFICIENCY": {
@@ -884,8 +884,8 @@
     },
     "Object": [
       "Player",
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_ADJUST_PLAYER_RELIC_CONVERTING_CAPITAL": {
@@ -1271,9 +1271,9 @@
       }
     },
     "Object": [
-      "Player",
+      "Plot",
       "Unit",
-      "Plot"
+      "Player"
     ]
   },
   "EFFECT_ADJUST_PLAYER_UNITS_PILLAGE_IMPROVEMENT_MODIFIER": {
@@ -1295,9 +1295,9 @@
       }
     },
     "Object": [
-      "Player",
+      "Plot",
       "Unit",
-      "Plot"
+      "Player"
     ]
   },
   "EFFECT_ADJUST_PLAYER_VALID_UNIT_BUILD": {
@@ -1841,8 +1841,8 @@
       }
     },
     "Object": [
-      "Combat",
-      "Unit"
+      "Unit",
+      "Combat"
     ]
   },
   "EFFECT_ADJUST_UNIT_COMBAT_STRENGTH_PREVIOUS_ENGAGEMENT_KILL_BONUS": {
@@ -3071,8 +3071,8 @@
       }
     },
     "Object": [
-      "Unit",
-      "Plot"
+      "Plot",
+      "Unit"
     ]
   },
   "EFFECT_ARMY_ADJUST_ALWAYS_FULL_MOVE": {
@@ -3324,10 +3324,10 @@
       }
     },
     "Object": [
-      "Player",
       "Plot",
       "Unit",
-      "City"
+      "City",
+      "Player"
     ]
   },
   "EFFECT_BASIC_DIPLOMACY_MODS": {
@@ -5940,8 +5940,8 @@
       }
     },
     "Object": [
-      "City",
-      "Plot"
+      "Plot",
+      "City"
     ]
   },
   "EFFECT_CITY_ADJUST_WORKER_MAINTENANCE_EFFICIENCY": {
@@ -9031,9 +9031,9 @@
       }
     },
     "Object": [
+      "Plot",
       "Player",
-      "Narrative",
-      "Plot"
+      "Narrative"
     ]
   },
   "EFFECT_DIPLOMACY_ADJUST_DIPLOMATIC_ACTION_TYPE_EFFICIENCY": {
@@ -10023,8 +10023,8 @@
       }
     },
     "Object": [
-      "Player",
-      "Plot"
+      "Plot",
+      "Player"
     ]
   },
   "EFFECT_DISTRICT_ADJUST_FORTIFIED_COMBAT_STRENGTH": {
@@ -10111,10 +10111,10 @@
   "EFFECT_DO_NOTHING": {
     "Arguments": {},
     "Object": [
+      "Plot",
       "Player",
-      "DiplomacyAE",
       "Unit",
-      "Plot"
+      "DiplomacyAE"
     ]
   },
   "EFFECT_ELEVATE_INDEPENDENT": {
@@ -10269,8 +10269,8 @@
       }
     },
     "Object": [
-      "Narrative",
-      "Plot"
+      "Plot",
+      "Narrative"
     ]
   },
   "EFFECT_GRANT_BUILDING_IN_CITY_ADJACENT_TO_TERRAIN": {
@@ -10601,9 +10601,9 @@
       }
     },
     "Object": [
+      "Plot",
       "Player",
-      "Narrative",
-      "Plot"
+      "Narrative"
     ]
   },
   "EFFECT_GRANT_PRODUCTION_IN_CITY": {
@@ -10962,8 +10962,8 @@
       }
     },
     "Object": [
-      "Units",
       "Unit",
+      "Units",
       "Commander"
     ]
   },
@@ -11289,9 +11289,9 @@
       }
     },
     "Object": [
+      "City",
       "Player",
-      "Unit",
-      "City"
+      "Unit"
     ]
   },
   "EFFECT_METAPROGRESSION_SEND_EVENT": {
@@ -11726,8 +11726,8 @@
       }
     },
     "Object": [
-      "Player",
-      "Plot"
+      "Plot",
+      "Player"
     ]
   },
   "EFFECT_PLAYER_ADJUST_CONSTRUCTIBLE_YIELD_BY_ATTRIBUTE": {
@@ -11846,8 +11846,8 @@
       }
     },
     "Object": [
-      "Player",
-      "Plot"
+      "Plot",
+      "Player"
     ]
   },
   "EFFECT_PLAYER_ADJUST_LEGACY_PATH_GREAT_WORK_SCORING": {
@@ -12499,8 +12499,8 @@
       }
     },
     "Object": [
-      "Player",
-      "Plot"
+      "Plot",
+      "Player"
     ]
   },
   "EFFECT_PLAYER_ADJUST_TRADE_CAPACITY": {
@@ -12609,8 +12609,8 @@
       }
     },
     "Object": [
-      "Player",
-      "Plot"
+      "Plot",
+      "Player"
     ]
   },
   "EFFECT_PLAYER_ADJUST_UNIT_MAINTENANCE_EFFICIENCY": {
@@ -13116,9 +13116,9 @@
       }
     },
     "Object": [
+      "Plot",
       "Player",
-      "Narrative",
-      "Plot"
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_ADJUST_YIELD_FOR_GOLDEN_AGE_START": {
@@ -14150,9 +14150,9 @@
       }
     },
     "Object": [
+      "Plot",
       "Player",
-      "Narrative",
-      "Plot"
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_ADJUST_YIELD_PER_UNIQUE_CIV_CONQUERED_CITY": {
@@ -14328,9 +14328,9 @@
       }
     },
     "Object": [
+      "Plot",
       "Player",
-      "Narrative",
-      "Plot"
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_BLOCK_GOVERNMENT_SELECTION": {
@@ -14401,8 +14401,8 @@
       }
     },
     "Object": [
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_DEDUCT_TREASURY_NARRATIVE": {
@@ -15172,9 +15172,9 @@
   "EFFECT_PLAYER_GRANT_GOLDEN_AGE": {
     "Arguments": {},
     "Object": [
+      "Plot",
       "Player",
-      "Narrative",
-      "Plot"
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_GRANT_LEGACY_POINTS": {
@@ -15396,10 +15396,10 @@
       }
     },
     "Object": [
-      "Player",
-      "Narrative",
       "Plot",
-      "City"
+      "Player",
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_GRANT_TRADITION_SLOTS": {
@@ -15777,8 +15777,8 @@
       }
     },
     "Object": [
-      "Narrative",
-      "City"
+      "City",
+      "Narrative"
     ]
   },
   "EFFECT_PLAYER_GRANT_YIELD_NARRATIVE": {
@@ -16627,8 +16627,8 @@
       }
     },
     "Object": [
-      "Units",
-      "Unit"
+      "Unit",
+      "Units"
     ]
   },
   "EFFECT_UNIT_ADJUST_COMBAT_STRENGTH_PER_GAME_DIFFICULTY": {
@@ -17148,8 +17148,8 @@
       }
     },
     "Object": [
-      "Combat",
-      "Unit"
+      "Unit",
+      "Combat"
     ]
   },
   "EFFECT_UNIT_ADJUST_MOVE_AFTER_ATTACK": {
@@ -17275,8 +17275,8 @@
       }
     },
     "Object": [
-      "Units",
-      "Unit"
+      "Unit",
+      "Units"
     ]
   },
   "EFFECT_UNIT_GRANT_FREE_BUILDING_IGNORE": {
@@ -18147,8 +18147,8 @@
       }
     },
     "Object": [
-      "Player",
-      "Plot"
+      "Plot",
+      "Player"
     ]
   }
 }

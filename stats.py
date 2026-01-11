@@ -736,20 +736,19 @@ def mine_type_arg_map(mined_examples, effect_arg_info):
             database_references[k] = database_ref
             databased[k] = 'database'
         elif len(find_table) == 0:
-            if plural_find_table:
+            if plural_find_table:               # too much got pared away
                 missed_database[k] = find_table
                 databased[k] = 'database'
-                plural_find_table = False
         else:
             missed_database[k] = find_table
-            databased[k] = 'database'
             if plural_counts.get(k) is not None:
                 plural_vals = plural_counts[k]
-                simple_val = 'bool' if plural_vals == bool_int else 'database' if plural_vals == database_text else 'text'
+                simple_val = 'bool' if plural_vals == bool_int else 'text'
                 fxs_defines[k] = simple_val
             elif single_counts.get(k) is not None:
-                fxs_defines[k] = single_counts[k]
+                fxs_defines[k] = single_counts[k] if single_counts[k] != 'database' else 'text'
             # try use singular
+        plural_find_table = False
 
     type_map.update(databased)
     remaining = {k: v for k, v in remaining.items() if k not in databased}
