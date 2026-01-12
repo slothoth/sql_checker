@@ -3,6 +3,7 @@ from NodeGraphQt.constants import Z_VAL_NODE_WIDGET, ViewerEnum
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 import os
+from collections import Counter
 
 
 class ArgReportNodeBaseWidget(NodeBaseWidget):
@@ -203,12 +204,13 @@ class ExpandingLineEdit(SuggestorPopulatorWidget):
 
 class DropDownLineEdit(ExpandingLineEdit):
     current_suggestions = []
+    _static_suggestions = []
 
     def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False):
         super().__init__(parent, name, label)
 
         self._base_suggestions = list(suggestions or [])
-        self._prefix = _common_prefix(self._base_suggestions)
+        self._prefix = _majority_prefix(self._base_suggestions)
         self._full_value = str(text or '')
 
         self._completer_model = _PrefixDisplayStringListModel(self._prefix)
@@ -278,7 +280,7 @@ class DropDownLineEdit(ExpandingLineEdit):
 
     def set_static_suggestions(self, suggestions):
         self._static_suggestions = list(suggestions or [])
-        self._prefix = _common_prefix(self._static_suggestions)
+        self._prefix = _majority_prefix(self._static_suggestions)
         self._completer_model.prefix = self._prefix
         self.set_dynamic_suggestions([])
         self._resize_completer_popup()
@@ -356,20 +358,28 @@ def text_input_style(widget):
     #widget.setAlignment(QtCore.Qt.AlignCenter)
 
 
-def _common_prefix(values):
+def _majority_prefix(values, min_ratio=0.8, require_delim='_', max_parts=2):
     vals = [str(v) for v in values if v]
-    if len(vals) < 2:
+    if not vals:
         return ''
-    p = os.path.commonprefix(vals)
-    if not p:
+
+    counts = Counter()
+    for s in vals:
+        if require_delim and require_delim not in s:
+            continue
+        parts = s.split(require_delim)
+        for k in range(1, min(max_parts, len(parts) - 1) + 1):
+            p = require_delim.join(parts[:k]) + require_delim
+            counts[p] += 1
+
+    if not counts:
         return ''
-    if '_' in p:
-        p = p[:p.rfind('_') + 1]
-    if len(p) < 2:
+
+    prefix, hits = counts.most_common(1)[0]
+    if hits / len(vals) < float(min_ratio):
         return ''
-    if any(v == p for v in vals):
-        return ''
-    return p
+    return prefix
+
 
 
 def _strip_prefix(s, prefix):
