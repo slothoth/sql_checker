@@ -2,6 +2,7 @@ from NodeGraphQt import NodeBaseWidget
 from NodeGraphQt.constants import Z_VAL_NODE_WIDGET, ViewerEnum
 
 from PyQt5 import QtWidgets, QtCore, QtGui
+import os
 
 
 class ArgReportNodeBaseWidget(NodeBaseWidget):
@@ -207,24 +208,81 @@ class DropDownLineEdit(ExpandingLineEdit):
         super().__init__(parent, name, label)
 
         self._base_suggestions = list(suggestions or [])
+        self._prefix = _common_prefix(self._base_suggestions)
+        self._full_value = str(text or '')
 
-        self._completer_model = QtCore.QStringListModel()
+        self._completer_model = _PrefixDisplayStringListModel(self._prefix)
         self._completer = QtWidgets.QCompleter(self._completer_model)
         self._completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
         self._completer.setFilterMode(QtCore.Qt.MatchContains)
         self._completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+
+        if hasattr(self._completer, "setCompletionRole"):
+            self._completer.setCompletionRole(QtCore.Qt.UserRole)
+        else:
+            self._completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+            print()
+
+        popup = QtWidgets.QListView()
+        popup.setTextElideMode(QtCore.Qt.ElideNone)
+        popup.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self._completer.setPopup(popup)
+
         self.line_edit.setCompleter(self._completer)
 
-        self.set_static_suggestions(self._base_suggestions)
+        m = self._completer_model
+        m.modelReset.connect(self._resize_completer_popup)
+        m.dataChanged.connect(self._resize_completer_popup)
+        m.rowsInserted.connect(self._resize_completer_popup)
+        m.rowsRemoved.connect(self._resize_completer_popup)
 
+        self.line_edit.installEventFilter(self)
+        self.line_edit.textEdited.connect(self._on_text_edited)
+
+        self.set_static_suggestions(self._base_suggestions)
+        self._apply_display_text()
+
+    def eventFilter(self, obj, event):
+        if obj is self.line_edit:
+            t = event.type()
+            if t == QtCore.QEvent.FocusIn:
+                self.line_edit.setText(self._full_value)
+            elif t == QtCore.QEvent.FocusOut:
+                self._full_value = self.line_edit.text()
+                self._apply_display_text()
+        return super().eventFilter(obj, event)
+
+    def _on_text_edited(self, txt):
+        self._full_value = txt
+
+    def _apply_display_text(self):
+        if self.line_edit.hasFocus():
+            self.line_edit.setText(self._full_value)
+        else:
+            self.line_edit.setText(_strip_prefix(self._full_value, self._prefix))
 
     @property
     def type_(self):
         return 'DropDownLineEdit'
 
+    def set_value(self, text):
+        text = '' if text is None else str(text)
+        if text != self._full_value:
+            self._full_value = text
+            self._apply_display_text()
+            self.on_value_changed()
+            self._commit()
+
+    def get_value(self):
+        return self._full_value
+
     def set_static_suggestions(self, suggestions):
         self._static_suggestions = list(suggestions or [])
+        self._prefix = _common_prefix(self._static_suggestions)
+        self._completer_model.prefix = self._prefix
         self.set_dynamic_suggestions([])
+        self._resize_completer_popup()
+        self._apply_display_text()
 
     def set_dynamic_suggestions(self, dynamic):
         seen = set()
@@ -238,6 +296,37 @@ class DropDownLineEdit(ExpandingLineEdit):
             seen.add(s)
             out.append(s)
         self._completer_model.setStringList(out)
+
+    def _resize_completer_popup(self, *args):       # ensures popup is sized to accomodate longest entry
+        view = self._completer.popup()
+        model = self._completer_model
+        if model.rowCount() == 0:
+            return
+
+        fm = QtGui.QFontMetrics(view.font())
+        longest = 0
+        for r in range(model.rowCount()):
+            s = model.data(model.index(r, 0), QtCore.Qt.DisplayRole)
+            if s is None:
+                continue
+            longest = max(longest, fm.horizontalAdvance(str(s)))
+
+        frame = view.frameWidth() * 2
+        margins = view.contentsMargins().left() + view.contentsMargins().right()
+        scrollbar = view.verticalScrollBar().sizeHint().width()
+        padding = 24
+
+        w = longest + frame + margins + scrollbar + padding
+        w = max(w, self.line_edit.width())
+
+        screen = QtWidgets.QApplication.screenAt(self.line_edit.mapToGlobal(QtCore.QPoint(0, 0)))
+        if screen:
+            avail = screen.availableGeometry()
+            max_w = avail.right() - self.line_edit.mapToGlobal(QtCore.QPoint(0, 0)).x()
+            w = min(w, max_w)
+
+        view.setMinimumWidth(w)
+        view.setFixedWidth(w)
 
 
 def text_input_style(widget):
@@ -265,3 +354,43 @@ def text_input_style(widget):
         stylesheet += style
     widget.setStyleSheet(stylesheet)
     #widget.setAlignment(QtCore.Qt.AlignCenter)
+
+
+def _common_prefix(values):
+    vals = [str(v) for v in values if v]
+    if len(vals) < 2:
+        return ''
+    p = os.path.commonprefix(vals)
+    if not p:
+        return ''
+    if '_' in p:
+        p = p[:p.rfind('_') + 1]
+    if len(p) < 2:
+        return ''
+    if any(v == p for v in vals):
+        return ''
+    return p
+
+
+def _strip_prefix(s, prefix):
+    s = '' if s is None else str(s)
+    if prefix and s.startswith(prefix):
+        return s[len(prefix):]
+    return s
+
+
+class _PrefixDisplayStringListModel(QtCore.QStringListModel):       # strip prefix if present in all suggestions
+    def __init__(self, prefix='', parent=None):
+        super().__init__(parent)
+        self.prefix = prefix
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if not index.isValid():
+            return None
+        full = super().data(index, QtCore.Qt.DisplayRole)
+        if role == QtCore.Qt.DisplayRole:
+            return _strip_prefix(full, self.prefix)
+        if role == QtCore.Qt.UserRole:
+            return full
+        return super().data(index, role)
+
