@@ -69,10 +69,11 @@ class BasicDBNode(BaseNode):
                     else:
                         self.create_property(col_name, value)
 
-    def set_search_menu(self, col, idx, col_poss_vals, validate=False):
+    def set_search_menu(self, col, idx, col_poss_vals):
         self.add_custom_widget(
             DropDownLineEdit(parent=self.view, label=index_label(idx, col),
-                             name=col, text=col_poss_vals[0] if col_poss_vals else None, suggestions=col_poss_vals or []),
+                             name=col, text=col_poss_vals[0] if col_poss_vals else None,
+                             suggestions=col_poss_vals or []),
             tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         return
 

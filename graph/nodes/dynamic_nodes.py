@@ -120,6 +120,9 @@ def create_table_node_class(table_name, graph):
         if table_name == 'RequirementSets':
             self.add_input('RequirementSetId')
 
+        if len(primary_keys) == 1:
+            self.create_property('primary_key', primary_keys[0])
+
         cols_ordered = primary_keys + prim_texts + second_texts
         default_map = SQLValidator.default_map.get(table_name, {})
         fk_to_tbl_map = SQLValidator.fk_to_tbl_map.get(table_name, {})

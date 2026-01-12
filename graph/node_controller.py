@@ -4,21 +4,20 @@ import json
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import QMainWindow, QSizePolicy
 
-from NodeGraphQt import NodeGraph, NodesPaletteWidget, NodesTreeWidget, PropertiesBinWidget
+from NodeGraphQt import NodeGraph, PropertiesBinWidget
 # patches
 from NodeGraphQt.widgets.node_widgets import _NodeGroupBox
 from graph.patchs import _patched_size_hint
 
-from graph.db_node_support import NodeCreationDialog, sync_node_options, set_nodes_visible_by_type
-from graph.db_spec_singleton import db_spec
+from graph.db_node_support import NodeCreationDialog, set_nodes_visible_by_type
 from graph.set_hotkeys import set_hotkeys
 from graph.nodes.dynamic_nodes import generate_tables
 from graph.nodes.effect_nodes import GameEffectNode, RequirementEffectNode
 from graph.port import port_connect_transmit, update_widget_or_prop
+from graph.node_state import SuggestionHub
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
-# bodge job for blocking recursion
-recently_changed = {}
+
 
 with open('data/mod_metadata.json') as f:
     default_meta = json.load(f)
@@ -39,9 +38,7 @@ class NodeEditorWindow(QMainWindow):
         table_nodes_list = generate_tables(self.graph)
         self.graph.register_nodes(table_nodes_list + [GameEffectNode, RequirementEffectNode])
 
-        # db.game_effects.modifier
         graph_widget = self.graph.widget             # show the node graph widget.
-        # graph_widget.resize(1100, 800)
         graph_widget.setWindowTitle("Database Editor")
         graph_widget.show()
 
@@ -50,11 +47,11 @@ class NodeEditorWindow(QMainWindow):
         # custom pullout
         self.enable_auto_node_creation()
 
-        # self.graph.property_changed.connect(on_property_changed)
+        self.graph.property_changed.connect(on_property_changed)
+        self.graph.port_connected.connect(port_connect_transmit)
+        self.suggest_hub = SuggestionHub(self.graph)
 
         viewer = self.graph.viewer()
-        self.graph.port_connected.connect(port_connect_transmit)
-
         old_resize = viewer.resizeEvent
 
         panel = CollapsiblePanel(viewer)
@@ -76,31 +73,16 @@ class NodeEditorWindow(QMainWindow):
         hide = self.graph.property("Hide Types") or False
         set_nodes_visible_by_type(self.graph, 'db.table.types.TypesNode', not hide)
 
-
-
         # create a node properties bin widget.
         properties_bin = PropertiesBinWidget(node_graph=self.graph, parent=graph_widget)
         properties_bin.setWindowFlags(QtCore.Qt.Tool)
 
-        # example show the node properties bin widget when a node is double-clicked.
         def display_properties_bin(node):
             if not properties_bin.isVisible():
                 properties_bin.show()
 
         # wire function to "node_double_clicked" signal.
         self.graph.node_double_clicked.connect(display_properties_bin)
-
-        # create a nodes tree widget.
-        nodes_tree = NodesTreeWidget(node_graph=self.graph)
-        nodes_tree.set_category_label('db.table', 'Database Nodes')
-        nodes_tree.set_category_label('db.game_effects', 'GameEffect Nodes')
-        nodes_tree.show()
-
-        # create a node palette widget.
-        nodes_palette = NodesPaletteWidget(node_graph=self.graph)
-        nodes_palette.set_category_label('db.table', 'Database Nodes')
-        nodes_palette.set_category_label('db.game_effects', 'GameEffect Nodes')
-        nodes_palette.show()
 
     def enable_auto_node_creation(self):
         """
@@ -185,57 +167,11 @@ class NodeEditorWindow(QMainWindow):
 
 
 def on_property_changed(node, property_name, property_value):           # unreliable, syncs on graph property not node
-    sync_nodes_check(node, property_name)
-    propogate_port_check(node, property_name)
+    print('')
+    #sync_nodes_check(node, property_name)
+    #propogate_port_check(node, property_name)
 
 
-def sync_nodes_check(node, property_name):
-    age = node.graph.property('meta').get('Age')
-    age_specific_db = db_spec.all_possible_vals if age == 'ALWAYS' else db_spec.possible_vals.get(age, {})
-    pk_list = age_specific_db.get(node.name(), {}).get('primary_keys', {})
-    if len(pk_list) == 1 and pk_list[0] == property_name:
-        sync_node_options(node.graph, age_specific_db)
-
-
-# handles recursion. We want it so if a node changes a field that is linked to another node, backwards OR forwards
-# it updates downstream and upstream, changing fields. This prevents those field change retriggering on the
-# original node, ad infinitum. Couldn't find a cleaner way with blocking signals.
-def propogate_port_check(node, property_name):
-    node_name = node.name()
-    if recently_changed.get(node_name,  {}).get(property_name, {}):
-        recently_changed[node_name][property_name] = False
-        return
-    else:
-        if node_name not in recently_changed:
-            recently_changed[node_name] = {}
-        recently_changed[node_name][property_name] = True
-        propogate_node_ports(node, property_name)
-        recently_changed[node_name][property_name] = False
-
-
-def propogate_node_ports(node, property_name):
-    matching_ports = [p for p in list(node.inputs().values()) + list(node.outputs().values())
-                      if p.name() == property_name]
-    for matching_port in matching_ports:
-        is_connected = bool(matching_port.connected_ports())
-        if is_connected:
-            propagate_value_by_port_name(node, property_name)
-
-
-def propagate_value_by_port_name(source_node, prop_name):
-    prop_value = source_node.get_property(prop_name)
-    all_ports = list(source_node.inputs().values()) + list(source_node.outputs().values())
-    for port in all_ports:
-        if port.name() == prop_name:
-            for connected_port in port.connected_ports():
-                target_prop_name = connected_port.name()
-                target_node = connected_port.node()
-                if target_node.has_property(target_prop_name):
-                    # we need to make sure if the target node is a comboBox, we first add the option
-                    widget = target_node.get_widget(target_prop_name)
-                    if widget.__class__.__name__ == 'NodeComboBox':
-                        widget.add_items([prop_value])
-                    target_node.set_property(target_prop_name, prop_value)
 
 
 ###############################################################################################

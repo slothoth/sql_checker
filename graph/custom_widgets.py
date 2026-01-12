@@ -13,9 +13,6 @@ class ArgReportNodeBaseWidget(NodeBaseWidget):
         if prop_name in arg_params:
             arg_params[prop_name] = text
 
-    def update_available_vals(self, text):
-        print()
-
 
 class IntSpinNodeWidget(ArgReportNodeBaseWidget):
     val_accept = int
@@ -29,7 +26,7 @@ class IntSpinNodeWidget(ArgReportNodeBaseWidget):
         self.spin = QtWidgets.QSpinBox()
         self.spin.setRange(minimum, maximum)
         self.spin.valueChanged.connect(self._on_changed)
-
+        # style sheet needed as otherwise arrows move based on zoom
         self.spin.setStyleSheet("""
                     QSpinBox {
                         background-color: #353535;
@@ -57,7 +54,7 @@ class IntSpinNodeWidget(ArgReportNodeBaseWidget):
                         image: none;
                         border-left: 4px solid none;
                         border-right: 4px solid none;
-                        border-bottom: 5px solid #bbb; /* This creates a triangle */
+                        border-bottom: 5px solid #bbb;
                         width: 0;
                         height: 0;
                     }
@@ -123,120 +120,6 @@ class FloatSpinNodeWidget(ArgReportNodeBaseWidget):
         self.update_args(value)
 
 
-class ExpandingLineEdit(ArgReportNodeBaseWidget):
-    val_accept = str
-
-    def __init__(self, parent=None, name='', label='', text='', check_if_edited=False):
-        super(ExpandingLineEdit, self).__init__(parent, name, label)
-        self.set_name(name)
-
-        self.line_edit = QtWidgets.QLineEdit()
-        self.line_edit.setText(text)
-        self.line_edit.textChanged.connect(self._on_text_changed)
-        text_input_style(self.line_edit)
-        if check_if_edited:
-            self.line_edit.user_edited = False
-            self.line_edit.textEdited.connect(self.on_user_edit)
-        self.set_custom_widget(self.line_edit)
-
-    @property
-    def type_(self):
-        return 'ExpandingLineEdit'
-
-    def _on_text_changed(self, text):
-        print('')
-
-    def set_value(self, text):
-        if text != self.get_value():
-            self.get_custom_widget().setText(text)
-            self.on_value_changed()
-            self.update_args(text)
-            self.update_available_vals(text)
-
-    def get_value(self):
-        return self.line_edit.text()
-
-    def on_user_edit(self):
-        self.line_edit.user_edited = True
-
-    def update_from_state(self, new_value):
-        if not self.line_edit.user_edited:
-            self.line_edit.setText(new_value)
-            return True
-        return False
-
-
-
-
-class DropDownLineEdit(ArgReportNodeBaseWidget):
-    val_accept = str
-    current_suggestions = []
-
-    def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False):
-        super().__init__(parent, name, label)
-        self.set_name(name)
-
-        self.line_edit = QtWidgets.QLineEdit()
-        self.line_edit.setText(text)
-
-        self._completer_model = QtCore.QStringListModel()
-        self._completer = QtWidgets.QCompleter(self._completer_model)
-        self._completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self._completer.setFilterMode(QtCore.Qt.MatchContains)
-        self._completer.setCompletionMode(
-            QtWidgets.QCompleter.PopupCompletion
-        )
-        self.line_edit.setCompleter(self._completer)
-
-        if suggestions:
-            self.set_suggestions(suggestions)
-
-        text_input_style(self.line_edit)
-        self.line_edit.editingFinished.connect(self.on_value_changed)
-        # self.line_edit.clearFocus()
-
-        if check_if_edited:
-            self.line_edit.user_edited = False
-            self.line_edit.textEdited.connect(self.on_user_edit)
-
-        self.set_custom_widget(self.line_edit)
-
-
-    @property
-    def type_(self):
-        return 'DropDownLineEdit'
-
-    def _on_text_changed(self, text):
-        self.set_value(text)
-
-    def set_value(self, text):
-        if text != self.get_value():
-            self.get_custom_widget().setText(text)
-            self.on_value_changed()
-            self.update_args(text)
-            self.update_available_vals(text)
-
-    def get_value(self):
-        return str(self.get_custom_widget().text())
-
-    def on_user_edit(self):
-        self.line_edit.user_edited = True
-
-    def update_from_state(self, new_value):
-        if not self.line_edit.user_edited:
-            self.line_edit.setText(new_value)
-            return True
-        return False
-
-    def set_suggestions(self, suggestions):
-        self._completer_model.setStringList(suggestions)
-        self.current_suggestions = suggestions
-
-    def add_new_suggestions(self, new_suggestions):
-        combined_suggestions = self.current_suggestions + new_suggestions
-        self.set_suggestions(combined_suggestions)
-
-
 class BoolCheckNodeWidget(ArgReportNodeBaseWidget):
     val_accept = bool
 
@@ -263,6 +146,98 @@ class BoolCheckNodeWidget(ArgReportNodeBaseWidget):
         self.check.blockSignals(False)
         self.on_value_changed()
         self.update_args(value)
+
+
+class SuggestorPopulatorWidget(ArgReportNodeBaseWidget):
+    committed = QtCore.pyqtSignal(object)
+
+    def _commit(self):
+        v = self.get_value()
+        self.on_value_changed()
+        self.committed.emit(self)
+
+
+class ExpandingLineEdit(SuggestorPopulatorWidget):
+    val_accept = str
+    line_edit = None
+
+    def __init__(self, parent=None, name='', label='', text='', check_if_edited=False):
+        super().__init__(parent, name, label)
+        self.set_name(name)
+
+        self.line_edit = QtWidgets.QLineEdit()
+        self.line_edit.setText(text)
+        text_input_style(self.line_edit)
+
+        self.line_edit.editingFinished.connect(self._commit)
+
+        if check_if_edited:
+            self.line_edit.user_edited = False
+            self.line_edit.textEdited.connect(self.on_user_edit)
+
+        self.set_custom_widget(self.line_edit)
+
+    @property
+    def type_(self):
+        return 'ExpandingLineEdit'
+
+    def set_value(self, text):
+        if text != self.get_value():
+            self.get_custom_widget().setText(text)
+            self.on_value_changed()
+            self._commit()
+
+    def get_value(self):
+        return self.line_edit.text()
+
+    def on_user_edit(self):
+        self.line_edit.user_edited = True
+
+    def update_from_state(self, new_value):
+        if not self.line_edit.user_edited:
+            self.line_edit.setText(new_value)
+            return True
+        return False
+
+
+class DropDownLineEdit(ExpandingLineEdit):
+    current_suggestions = []
+
+    def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False):
+        super().__init__(parent, name, label)
+
+        self._base_suggestions = list(suggestions or [])
+
+        self._completer_model = QtCore.QStringListModel()
+        self._completer = QtWidgets.QCompleter(self._completer_model)
+        self._completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        self._completer.setFilterMode(QtCore.Qt.MatchContains)
+        self._completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+        self.line_edit.setCompleter(self._completer)
+
+        self.set_static_suggestions(self._base_suggestions)
+
+
+    @property
+    def type_(self):
+        return 'DropDownLineEdit'
+
+    def set_static_suggestions(self, suggestions):
+        self._static_suggestions = list(suggestions or [])
+        self.set_dynamic_suggestions([])
+
+    def set_dynamic_suggestions(self, dynamic):
+        seen = set()
+        out = []
+        for s in self._static_suggestions + list(dynamic or []):
+            if not s:
+                continue
+            s = str(s)
+            if s in seen:
+                continue
+            seen.add(s)
+            out.append(s)
+        self._completer_model.setStringList(out)
 
 
 def text_input_style(widget):

@@ -6,73 +6,15 @@ from PyQt5.QtTest import QTest
 
 
 from graph.node_controller import NodeEditorWindow
-from graph.transform_json_to_sql import transform_json, make_modinfo
-from graph.set_hotkeys import write_sql, save_session, import_session_set_params
+from graph.transform_json_to_sql import make_modinfo
+from graph.set_hotkeys import import_session_set_params
 from graph.db_spec_singleton import db_spec
 from graph.mod_conversion import build_imported_mod
 
-from utils import check_test_against_expected_sql
+from utils import check_test_against_expected_sql, create_node, setup_types_node, save, mod_output_check, cast_test_input
 
-
-def setup_types_node(qtbot):
-    window = NodeEditorWindow()
-    qtbot.addWidget(window)
-    window.show()
-    qtbot.waitExposed(window.graph.viewer())
-    name = 'Types'
-    class_name = f"{name.title().replace('_', '')}Node"
-    node = window.graph.create_node(f'db.table.{name.lower()}.{class_name}')
-    return node, window
-
-
-def save(window):
-    current = window.graph.current_session()
-    if not current:
-        current = 'resources/graph.json'
-    window.graph._model.session = current
-    save_session(window.graph)
-    return current
-
-
-def mod_output_check(window, test_sql_path):
-    current = save(window)
-    sql_lines = transform_json(current)
-    write_sql(sql_lines)
-    check_test_against_expected_sql(test_sql_path)
-
-
-arg_type_map = {}
-for k, v in db_spec.mod_type_arg_map.items():
-    for key, val in v.items():
-        arg_type_map[key] = val
-
-for k, v in db_spec.req_type_arg_map.items():
-    for key, val in v.items():
-        arg_type_map[key] = val
-
-
-def cast_test_input(arg, value, node):
-    prop_type = arg_type_map[arg]
-    if prop_type == 'text':
-        casted_val = str(value)
-    elif prop_type == 'database':
-        casted_val = str(value)
-    elif prop_type == 'bool':
-        casted_val = 1 if value in ['1', 1, 'true', 'true'] else None
-        if casted_val is None:
-            casted_val = 0 if value in ['0', 0, 'False', 'false'] else None
-        if casted_val is None:
-            casted_val = bool(value)
-    elif prop_type == 'int':
-        casted_val = int(value)
-    elif prop_type == 'float':
-        casted_val = float(value)
-    else:
-        raise Exception(f'unhandled arg {arg} with prop {prop_type}')
-    node.set_widget_and_prop(arg, casted_val)
 
 # UI tests
-
 
 def test_drag_port_to_empty_space_triggers_release(qtbot):
     node, window = setup_types_node(qtbot)
@@ -119,7 +61,6 @@ def test_graph_widget_loaded(qtbot):
     window = NodeEditorWindow(parent=None)
     qtbot.addWidget(window)
     window.show()
-
     assert window.graph is not None
     assert window.centralWidget() == window.graph.widget
 
@@ -172,8 +113,6 @@ def test_req_effect_value_change(qtbot):
 
 
 def setup_effect_req(window):
-
-    # effect changes
     effect_node = window.graph.create_node('db.game_effects.GameEffectNode')
     effect_node.set_property('EffectType', 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE')
     effect_node.set_property('CollectionType', 'COLLECTION_ALL_PLAYERS')
@@ -266,6 +205,77 @@ def test_save_and_load_on_hidden_params(qtbot):
     assert effect_node.get_property('ResourceClassType') == 'RESOURCECLASS_EMPIRE'
     assert req_node.get_property('Amount') == 4
     assert req_node.get_property('BuildingType') == 'BUILDING_TEST'
+
+
+def test_update_suggestions(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    unit_stats = create_node(window, 'Unit_Stats')
+    qtbot.wait(1)
+    init_suggestions = set(unit_stats.get_widget('UnitType')._completer_model.stringList())
+
+    unit = create_node(window, 'Units')
+    qtbot.wait(1)
+    unit.get_widget('UnitType').set_value('UNIT_TEST')
+    qtbot.wait(1)
+    new_suggestions = set(unit_stats.get_widget('UnitType')._completer_model.stringList())
+    difference = new_suggestions - init_suggestions
+    assert 'UNIT_TEST' in difference
+    assert len(difference) == 1
+
+
+def test_update_suggestions_remove_on_change(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    unit_stats = create_node(window, 'Unit_Stats')
+    qtbot.wait(1)
+    unit = create_node(window, 'Units')
+    qtbot.wait(1)
+    unit.get_widget('UnitType').set_value('UNIT_TEST')
+    qtbot.wait(1)
+    unit.get_widget('UnitType').set_value('UNIT_OTHER_TEST')
+    qtbot.wait(1)
+    newest_suggestions = set(unit_stats.get_widget('UnitType')._completer_model.stringList())
+    assert 'UNIT_TEST' not in newest_suggestions
+    assert 'UNIT_OTHER_TEST' in newest_suggestions
+
+
+def test_update_suggestions_remove_on_delete(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    unit_stats = create_node(window, 'Unit_Stats')
+    qtbot.wait(1)
+    unit = create_node(window, 'Units')
+    qtbot.wait(1)
+    unit.get_widget('UnitType').set_value('UNIT_TEST')
+    qtbot.wait(1)
+
+    window.graph.delete_node(unit)
+    qtbot.wait(1)
+    suggestions = set(unit_stats.get_widget('UnitType')._completer_model.stringList())
+    assert 'UNIT_TEST' not in suggestions
+
+
+def test_update_suggestions_plural_same_node(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    unit_stats = create_node(window, 'Unit_Stats')
+    qtbot.wait(1)
+    unit = create_node(window, 'Units')
+    qtbot.wait(1)
+    unit.get_widget('UnitType').set_value('UNIT_TEST')
+    qtbot.wait(1)
+    unit_two = create_node(window, 'Units')
+    qtbot.wait(1)
+    unit_two.get_widget('UnitType').set_value('UNIT_TEST_2')
+    qtbot.wait(1)
+    suggestions = set(unit_stats.get_widget('UnitType')._completer_model.stringList())
+    assert 'UNIT_TEST_2' in suggestions
+    assert 'UNIT_TEST' in suggestions
 
 
 def test_import_mod(qtbot):

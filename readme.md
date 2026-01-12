@@ -27,7 +27,6 @@ It also includes a graph GUI where you can package and plan your own mod.
 - backlink FK lists have duplicates, but seems covered where it matters, like port connections since it gets Dictionaried
 - refactor state validation to be threaded on start up, or at least only when graph planner opened
 - Make it so arg values are highlighted if they are set to the default one.
-- need to improve type system for args using statistical harvesting as some GameEffectsArguments are wrong. like EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE:ResourceClassType is int_2
 # Big Features TODO:
 - Image imports
 - Localisation entries (and displaying them as options in relevant gameplay graph)
@@ -38,11 +37,8 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Big Graphs compress tables of the same type into one node.
 - Auto build Localisation. You put the name/description that you want to show, and the build process converts it and adds values to the localized db based on the PK name. For this we need to do some mining of which columns are used in loc db. Also deal with ModifierString context so no need to think abt it.
 ## Known bugs
-- Some uncommonly used integers are viewed as Bools, like Ages.AgeTechBackgroundTextureOffsetX, mined_bools issue.
 - Can double click when making new node to get two
-- importing shows hidden widgets in ugly way by default before click
 - custom requirements doesnt change params correctly on switch requirementtyp
-- Requirements sqwitching is going really weird not showing anything
 - Effects and Requirement Types should use fuzzy finder.
 - Effects and Requirements should not include text like EFFECT or REQUIREMENT at start for visibility and clarity
 - when importing, just skip anything that is an UPDATE or DELETE
