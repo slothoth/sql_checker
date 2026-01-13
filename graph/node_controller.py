@@ -19,7 +19,7 @@ from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
 
 
-with open('data/mod_metadata.json') as f:
+with open('resources/mod_metadata.json') as f:
     default_meta = json.load(f)
 
 
@@ -49,7 +49,7 @@ class NodeEditorWindow(QMainWindow):
 
         self.graph.property_changed.connect(on_property_changed)
         self.graph.port_connected.connect(port_connect_transmit)
-        self.suggest_hub = SuggestionHub(self.graph)
+        self.graph.suggest_hub = SuggestionHub(self.graph)
 
         viewer = self.graph.viewer()
         old_resize = viewer.resizeEvent

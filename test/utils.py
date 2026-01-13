@@ -3,6 +3,7 @@ from graph.transform_json_to_sql import transform_json
 from graph.set_hotkeys import write_sql, save_session, write_loc_sql
 from graph.db_spec_singleton import db_spec
 
+
 def create_node(window, name):
     class_name = f"{name.title().replace('_', '')}Node"
     node = window.graph.create_node(f'db.table.{name.lower()}.{class_name}')

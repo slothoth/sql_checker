@@ -6,15 +6,51 @@ from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
 from graph.set_hotkeys import write_sql, write_loc_sql
 
-from utils import check_test_against_expected_sql
+from utils import check_test_against_expected_sql, save
+
 
 def test_all_table_nodes(qtbot):
-    window = NodeEditorWindow()  # this version has a reqset as connected
+    window = NodeEditorWindow()
     qtbot.addWidget(window)
     sql_commands, loc_lines = transform_json('test/test_data/perf_test_fin.json')
     write_sql(sql_commands)
     write_loc_sql(loc_lines)
     check_test_against_expected_sql('all_table_nodes.sql')
+
+
+def test_all_effect_args(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    effect_node = window.graph.create_node('db.game_effects.GameEffectNode')
+    effect_node.set_property('CollectionType', 'COLLECTION_ALL_PLAYERS')
+    qtbot.wait(1)
+    possible_effects = effect_node.get_widget('EffectType')._completer_model.stringList()
+    for effect in possible_effects:
+        effect_node.set_property('EffectType', effect)
+        qtbot.wait(1)
+        current = save(window)
+        sql_lines, loc_lines = transform_json(current)
+        write_sql(sql_lines)
+        write_loc_sql(loc_lines)
+        qtbot.wait(1)
+
+
+def test_all_req_args(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')
+    qtbot.wait(1)
+    possible_reqs = req_node.get_widget('RequirementType')._completer_model.stringList()
+    for effect in possible_reqs:
+        req_node.set_property('RequirementType', effect)
+        qtbot.wait(1)
+        current = save(window)
+        sql_lines, loc_lines = transform_json(current)
+        write_sql(sql_lines)
+        write_loc_sql(loc_lines)
+        qtbot.wait(1)
 
 
 def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up

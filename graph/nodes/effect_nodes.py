@@ -99,9 +99,13 @@ class BaseEffectNode(BasicDBNode):
             arg_table = self.database_arg_map.get(arg)
             if arg_table is None:
                 arg_table = self.database_arg_map[arg.replace('_arg', '')]
-            uhhh = ['ah']
-            self.add_custom_widget(DropDownLineEdit(parent=self.view, label=arg, name=arg, text=uhhh[0],
-                                                    suggestions=uhhh), tab='fields')
+
+            base_vals = db_spec.possible_vals[self.graph.property('meta')['Age']].get(arg_table, {}).get('_PK_VALS') or []
+
+            self.add_custom_widget(DropDownLineEdit(parent=self.view, label=arg, name=arg, text='',
+                                                    suggestions=base_vals), tab='fields')
+            widget = self.get_widget(arg)
+            self.graph.suggest_hub._dropdowns_by_target_table.setdefault(arg_table, set()).add(widget)
         elif prop_type == 'bool':
             self.set_bool_checkbox(arg, default_val=None, display_in_prop_bin=False)
         elif prop_type == 'int':
@@ -177,7 +181,7 @@ class GameEffectNode(BaseEffectNode):
         modifier_arguments = list(db_spec.modifier_argument_info.keys())
         self.add_custom_widget(
             DropDownLineEdit(parent=self.view, label="EffectType",
-                             name="EffectType", text=modifier_arguments[0],
+                             name="EffectType", text='',
                              suggestions=modifier_arguments),
             tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
@@ -279,13 +283,14 @@ class RequirementEffectNode(BaseEffectNode):
         self.view.setVisible(False)
         self.create_property('table_name', value='ReqEffectCustom')
 
-        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='RequirementId', name='RequirementId'),
+        self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='RequirementId', name='RequirementId',
+                                                 check_if_edited=True),
                                tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
 
         reqs = list(db_spec.requirement_argument_info.keys())
         self.add_custom_widget(
             DropDownLineEdit(parent=self.view, label="RequirementType",
-                             name="RequirementType", text=reqs[0],
+                             name="RequirementType", text='',
                              suggestions=reqs),
             tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
 
@@ -305,8 +310,9 @@ class RequirementEffectNode(BaseEffectNode):
         req_count = 1               # TODO used for discerning requirements in same set, set as 1 for now
         unique_req_type_count = 1   # TODO used for discerning requirements of same type, if not named usually
         req_id_widget = self.get_widget('RequirementId')
-        if req_id_widget.get_value() == '':             # once hooked, shouldnt change, as could be used in multiple
-            req_set = self.get_property('ReqSet')       # can we get connecting node?
+        user_edited = req_id_widget.line_edit.user_edited
+        if not user_edited:             # once hooked, shouldnt change, as could be used in multiple
+            req_set = self.get_property('ReqSet')
             if req_set != '':
                 new_req_id = f"{req_set}_{req_count}"
             else:                                                           # if not, name based on requirementType
