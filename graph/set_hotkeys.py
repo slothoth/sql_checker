@@ -464,9 +464,10 @@ def test_session(graph):
     """
     current = graph.current_session() or 'resources/graph.json'
     graph.save_session(current)
-    sql_lines = transform_json(current)
+    sql_lines, loc_lines = transform_json(current)
     # save SQL, then trigger main run model
     write_sql(sql_lines)
+    write_loc_sql(loc_lines)
     age = graph.property('meta').get('Age')
     push_to_log(graph, f'Testing mod for: {age}')
     data = check_valid_sql_against_db(age, sql_lines)
@@ -485,12 +486,11 @@ def save_session_to_mod(graph, parent=None):
         current = 'resources/graph.json'
 
     graph.save_session(current)
-    sql_lines = transform_json(current)
+    sql_lines, loc_lines = transform_json(current)
     write_sql(sql_lines)
+    write_loc_sql(loc_lines)
 
-    # if local mod dir exists, use that
-    base_home = os.path.expanduser("~")
-    civ_mods_path = db_spec.civ_config + '/Mods'
+    civ_mods_path = db_spec.civ_config + '/Mods'             # if local mod dir exists, use that
     if not os.path.exists(civ_mods_path):
         civ_mods_path = QtWidgets.QFileDialog.getExistingDirectory(
             parent,
@@ -506,6 +506,7 @@ def save_session_to_mod(graph, parent=None):
     os.makedirs(target, exist_ok=True)
 
     shutil.copy('resources/main.sql', os.path.join(target, "main.sql"))
+    shutil.copy('resources/loc.sql', os.path.join(target, "loc.sql"))
 
     with open(os.path.join(target, f"{mod_name}.modinfo"), "w", encoding="utf-8") as f:
         f.write(template)
@@ -556,6 +557,11 @@ def write_sql(sql_lines):
     # save SQL, then trigger main run model
     with open('resources/main.sql', 'w') as f:
         f.writelines(sql_lines)
+
+def write_loc_sql(loc_lines):
+    if loc_lines is not None:
+        with open('resources/loc.sql', 'w') as f:
+            f.writelines(loc_lines)
 
 
 def extract_state_test(graph, data):

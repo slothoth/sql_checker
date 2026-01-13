@@ -163,13 +163,13 @@ class ExpandingLineEdit(SuggestorPopulatorWidget):
     val_accept = str
     line_edit = None
 
-    def __init__(self, parent=None, name='', label='', text='', check_if_edited=False):
+    def __init__(self, parent=None, name='', label='', text='', check_if_edited=False, localise=False):
         super().__init__(parent, name, label)
         self.set_name(name)
 
         self.line_edit = QtWidgets.QLineEdit()
         self.line_edit.setText(text)
-        text_input_style(self.line_edit)
+        text_input_style(self.line_edit, localise)
 
         self.line_edit.editingFinished.connect(self._commit)
 
@@ -206,7 +206,7 @@ class DropDownLineEdit(ExpandingLineEdit):
     current_suggestions = []
     _static_suggestions = []
 
-    def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False):
+    def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False, localise=False):
         super().__init__(parent, name, label)
 
         self._base_suggestions = list(suggestions or [])
@@ -331,14 +331,18 @@ class DropDownLineEdit(ExpandingLineEdit):
         view.setFixedWidth(w)
 
 
-def text_input_style(widget):
-    bg_color = ViewerEnum.BACKGROUND_COLOR.value
+def text_input_style(widget, localise):
+    bg_color = list((*ViewerEnum.BACKGROUND_COLOR.value, 20))
+    if localise:
+        bg_color[2] = bg_color[2] + 200
+        bg_color[3] = bg_color[3] + 60
+
     text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
                            bg_color))
     text_sel_color = text_color
     style_dict = {
         'QLineEdit': {
-            'background': 'rgba({0},{1},{2},20)'.format(*bg_color),
+            'background': 'rgba({0},{1},{2},{3})'.format(*bg_color),
             'border': '1px solid rgb({0},{1},{2})'
             .format(*ViewerEnum.GRID_COLOR.value),
             'border-radius': '3px',

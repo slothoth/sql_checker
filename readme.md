@@ -15,30 +15,20 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Toggle Types nodes being added for performance/clarity. [x]
 - Dialogs converted into toasts where possible [x]
 - ModifierArgs/RequirementArgs Value completions using Name   []
-- ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier  []
-- pk fk connects done prior to making the connection or the downstream node get the value  [ ]
+- ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier  [x]
 - Search highlights most used set (predefined/ user tracked?)     [ ]
 - Sort port topdown so required ones are at the top                 [ ]
 - Effect Attach Modifier, ModifierArgument Extra Connection             [ ]
-- Searchable dropdown comboBox is prettier                 [ ]
-- Types autofills KIND based on connecting module           []
-- PK port connections with just the first PK value if combined PK  []
-- setEditable on ComboxBox to add new values?
 - backlink FK lists have duplicates, but seems covered where it matters, like port connections since it gets Dictionaried
 - refactor state validation to be threaded on start up, or at least only when graph planner opened
 - Make it so arg values are highlighted if they are set to the default one.
 # Big Features TODO:
 - Image imports
-- Localisation entries (and displaying them as options in relevant gameplay graph)
+- Localisation entries (and displaying them as options in relevant gameplay graph) [x]
 - frontend modelling
 - VI port (ahhh)
 - Tabbed graphs, so you can see content in different criteria.
 - Node connections can only happen between valid connectors (PK-FK), node.add_accept_port_type
 - Big Graphs compress tables of the same type into one node.
-- Auto build Localisation. You put the name/description that you want to show, and the build process converts it and adds values to the localized db based on the PK name. For this we need to do some mining of which columns are used in loc db. Also deal with ModifierString context so no need to think abt it.
 ## Known bugs
 - Can double click when making new node to get two
-- custom requirements doesnt change params correctly on switch requirementtyp
-- Effects and Requirement Types should use fuzzy finder.
-- Effects and Requirements should not include text like EFFECT or REQUIREMENT at start for visibility and clarity
-- when importing, just skip anything that is an UPDATE or DELETE

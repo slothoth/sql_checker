@@ -31,6 +31,9 @@
 				<UpdateDatabase>
 					<Item>main.sql</Item>
 				</UpdateDatabase>
+				<UpdateText>
+					<Item>loc.sql</Item>
+				</UpdateText>
 			</Actions>
 		</ActionGroup>
 	</ActionGroups>

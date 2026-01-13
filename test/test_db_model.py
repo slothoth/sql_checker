@@ -50,7 +50,7 @@ from schema_generator import SQLValidator
 
 def test_state_validation_fail_fk():
     start_time = time.time()
-    sql_commands = transform_json('test/test_data/test_graph.json')
+    sql_commands, loc_lines = transform_json('test/test_data/test_graph.json')
     result = check_valid_sql_against_db('AGE_ANTIQUITY', sql_commands)
     assert len(result['foreign_key_errors']) == 2
     assert (result['fk_error_explanations']['title_errors'][('TraitModifiers', 'Modifiers', 'ModifierId')] ==

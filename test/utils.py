@@ -1,6 +1,6 @@
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
-from graph.set_hotkeys import write_sql, save_session
+from graph.set_hotkeys import write_sql, save_session, write_loc_sql
 from graph.db_spec_singleton import db_spec
 
 def create_node(window, name):
@@ -29,9 +29,10 @@ def save(window):
 
 def mod_output_check(window, test_sql_path):
     current = save(window)
-    sql_lines = transform_json(current)
+    sql_lines, loc_lines = transform_json(current)
     write_sql(sql_lines)
-    check_test_against_expected_sql(test_sql_path)
+    write_loc_sql(loc_lines)
+    check_test_against_expected_sql(test_sql_path, 'resources/main.sql')
 
 
 arg_type_map = {}
@@ -65,11 +66,11 @@ def cast_test_input(arg, value, node):
     node.set_widget_and_prop(arg, casted_val)
 
 
-def check_test_against_expected_sql(test_sql_path):
-    with open('resources/main.sql', 'r') as f:
+def check_test_against_expected_sql(test_sql_path, expected_sql_path):
+    with open(expected_sql_path, 'r') as f:
         test_sql = f.readlines()
 
-    with open('resources/main.sql', 'r') as f:
+    with open(expected_sql_path, 'r') as f:
         ref_sql = f.read()
 
     with open(f'test/test_data/{test_sql_path}', 'r') as f:

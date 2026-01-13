@@ -5,8 +5,7 @@ from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
 
-# {k: {key: val for key, val in v.items() if val=='database' and key not in self.database_arg_map} for k, v in self.arg_prop_map.items() if any(val=='database' and key not in self.database_arg_map for key, val in v.items())}
-# Tooltip, NotifySummary, Valid, BlockActions, DamageType, MultiplierType, SystemType, RevealType
+
 class BaseEffectNode(BasicDBNode):
     arg_setter_prop = None
     widget_props = []

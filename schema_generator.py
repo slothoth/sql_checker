@@ -155,7 +155,6 @@ class SchemaInspector:
 
         self.class_table_name_map = {v: k for k, v in self.table_name_class_map.items()}
 
-
     def engine_instantiation(self, db_path):
         empty_engine = self.make_base_db(db_path)
         Base = automap_base()

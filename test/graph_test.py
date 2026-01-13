@@ -7,7 +7,7 @@ from PyQt5.QtTest import QTest
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import make_modinfo
-from graph.set_hotkeys import import_session_set_params
+from graph.set_hotkeys import import_session_set_params, save_session_to_mod
 from graph.db_spec_singleton import db_spec
 from graph.mod_conversion import build_imported_mod
 
@@ -184,8 +184,23 @@ def test_write_effect_and_req_nested(qtbot):            # this version has a req
     other_reqset_port = reqset.inputs()['RequirementSetId']             # connect req custom to reqset
     req_output_port.connect_to(other_reqset_port)
     assert req_output_port in other_reqset_port.connected_ports()
-    # 'TEST_REQ_1', 'TEST_REQSET_1'
     mod_output_check(window, 'nested_reqs.sql')
+
+
+def test_write_node_with_loc(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    unit = create_node(window, 'Units')
+    qtbot.wait(1)
+    unit.get_widget('Name').set_value('Extra Cool Unit')
+    unit.get_widget('UnitType').set_value('TEST_UNIT')
+    unit.get_widget('CoreClass').set_value('CORE_CLASS_MILITARY')
+    unit.get_widget('FormationClass').set_value('FORMATION_CLASS_LAND_COMBAT')
+    unit.get_widget('UnitMovementClass').set_value('UNIT_MOVEMENT_CLASS_FOOT')
+    unit.get_widget('Domain').set_value('DOMAIN_LAND')
+    save_session_to_mod(window.graph)
+    check_test_against_expected_sql('units_with_name.sql', 'resources/main.sql')
+    check_test_against_expected_sql('units_with_name_loc.sql', 'resources/loc.sql')
 
 
 def test_save_and_load_on_hidden_params(qtbot):

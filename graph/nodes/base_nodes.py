@@ -69,11 +69,11 @@ class BasicDBNode(BaseNode):
                     else:
                         self.create_property(col_name, value)
 
-    def set_search_menu(self, col, idx, col_poss_vals):
+    def set_search_menu(self, col, idx, col_poss_vals, localise=False):
         self.add_custom_widget(
             DropDownLineEdit(parent=self.view, label=index_label(idx, col),
                              name=col, text=col_poss_vals[0] if col_poss_vals else None,
-                             suggestions=col_poss_vals or []),
+                             suggestions=col_poss_vals or [], localise=localise),
             tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         return
 
@@ -84,9 +84,9 @@ class BasicDBNode(BaseNode):
         self.add_custom_widget(BoolCheckNodeWidget(parent=self.view, prop=col), tab='fields',
                                widget_type=NodePropWidgetEnum.QCHECK_BOX.value if display_in_prop_bin else None)
 
-    def set_text_input(self, col, idx=0, default_val=None):
+    def set_text_input(self, col, idx=0, default_val=None, localise=False):
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=index_label(idx, col), name=col,
-                                                 text=str(default_val or '')), tab='fields',
+                                                 text=str(default_val or ''), localise=localise), tab='fields',
                                widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         text_widget = self.get_widget(col)
         text_widget.get_custom_widget().setMinimumHeight(24)

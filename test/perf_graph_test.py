@@ -4,15 +4,16 @@ from collections import defaultdict
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
-from graph.set_hotkeys import write_sql
+from graph.set_hotkeys import write_sql, write_loc_sql
 
 from utils import check_test_against_expected_sql
 
 def test_all_table_nodes(qtbot):
     window = NodeEditorWindow()  # this version has a reqset as connected
     qtbot.addWidget(window)
-    sql_commands = transform_json('test/test_data/perf_test_fin.json')
+    sql_commands, loc_lines = transform_json('test/test_data/perf_test_fin.json')
     write_sql(sql_commands)
+    write_loc_sql(loc_lines)
     check_test_against_expected_sql('all_table_nodes.sql')
 
 

@@ -128,6 +128,7 @@ def create_table_node_class(table_name, graph):
         fk_to_tbl_map = SQLValidator.fk_to_tbl_map.get(table_name, {})
         fk_to_pk_map = SQLValidator.fk_to_pk_map.get(table_name, {})
         require_map = SQLValidator.required_map.get(table_name, {})
+        localised_cols = db_spec.node_templates[table_name].get('localised', [])
         lazy_params = {}
         for idx, col in enumerate(cols_ordered):
             default_val = default_map.get(col, None)
@@ -167,16 +168,17 @@ def create_table_node_class(table_name, graph):
                     continue
                 self.set_search_menu(col=col, idx=idx, col_poss_vals=col_poss_vals['vals'])
             else:
+                is_localised = col in localised_cols
                 if col in self._extra_fields:
                     default_val = default_val if default_val is not None else ''
                     lazy_params[col] = default_val
                     self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
                     continue
-                self.set_text_input(col, idx, default_val)
+                self.set_text_input(col, idx, default_val, localise=is_localised)
 
         self.create_property('arg_params', lazy_params)
-        # Validate all fields after initialization
-        self._validate_all_fields()
+
+        self._validate_all_fields()     # Validate all fields after initialization
 
         fk_backlink = SQLValidator.pk_ref_map.get(table_name)
         if fk_backlink is not None:

@@ -65,6 +65,7 @@ class ResourceLoader:
             'mod_arg_database_types': self.resource_path('resources/ModifierArgumentDatabaseTypes.json'),
             'req_type_arg_map': self.resource_path('resources/RequirementArgumentTypes.json'),
             'req_arg_database_types': self.resource_path('resources/RequirementArgumentDatabaseTypes.json'),
+            'localized_tags': self.resource_path('resources/LocalizedTags.json'),
         }
         if not os.path.exists(self._files['metadata']):
             self.civ_config = find_civ_config()
@@ -104,6 +105,7 @@ class ResourceLoader:
         self.mod_arg_database_types = self._read_file(self._files['mod_arg_database_types'])
         self.req_type_arg_map = self._read_file(self._files['req_type_arg_map'])
         self.req_arg_database_types = self._read_file(self._files['req_arg_database_types'])
+        self.localized_tags = self._read_file(self._files['localized_tags'])
 
     @staticmethod
     def _read_file(path):

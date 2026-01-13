@@ -10,7 +10,7 @@ def transform_json(json_filepath):
     error_string = ''
     with open(json_filepath) as f:
         data = json.load(f)
-    sql_code = []
+    sql_code, loc_dict_list, loc_code = [], [], None
     for node_id, val in data['nodes'].items():
         custom_properties = val['custom']
         table_name = val.get('table_name', custom_properties['table_name'])
@@ -23,13 +23,20 @@ def transform_json(json_filepath):
             sql_code, error_string = effect_custom_transform(custom_properties, sql_code, error_string)
 
         else:
+            loc_entries = transform_localisation(custom_properties, table_name)
+            loc_dict_list.extend(loc_entries)
             sql, error_string = transform_to_sql(custom_properties, table_name, error_string)
             sql_code.append(sql)
 
     if len(error_string) > 0:
         return error_string
 
-    return [i + '\n' for i in sql_code]
+    if len(loc_dict_list) > 0:
+        loc_code = "INSERT INTO LocalizedText(Language, Tag, Text) VALUES\n"    # doing string manip as no engine for loc
+        loc_code = loc_code + ",\n".join(f"('{i['Language']}', '{i['Tag']}', '{i['Text']}')"
+                                         for i in loc_dict_list if i['Text'] != '') + ';'
+
+    return [i + '\n' for i in sql_code], loc_code
 
 
 def argument_transform(sql_code, error_string, effect_string, effect_id, custom_properties, type_arg, effect_info):
@@ -148,46 +155,19 @@ def transform_to_sql(ui_dict, table_name, error_string):
     return f"{sql_command};", error_string
 
 
-def old_transform_to_sql(columns_dict, table_name, error_string):
-
-    template = db_spec.node_templates[table_name]
-    columns = [key for key in columns_dict.keys()]
-    values = [val for val in columns_dict.values()]
-
-    # transform bools into 0 or 1
-    values = ['1' if isinstance(val, bool) and val else val for val in values]
-    values = ['0' if isinstance(val, bool) and not val else val for val in values]
-    # transform '' to NULL?
-    values = ['NULL' if val == '' else val for val in values]
-    # get rid of weird double quotes like '"NO_RESOURCECLASS"'
-    values = [val.replace('"', '') if isinstance(val, str) else val for val in values]
-
-    # lint sql
-    pk_satisfied = set(template['primary_keys']).issubset(columns)  # all primary keys present
-    # primary texts present. Those that cannot be NULL, and have no default
-    req_fields_no_default_satisfied = set(template['primary_texts']).issubset(columns)
-
-    if not pk_satisfied:
-        missing_values = list(set(columns) - set(template['primary_keys']))
-        error_string += f'Missing Primary Key for {table_name}: {missing_values}\n'
-
-    if not req_fields_no_default_satisfied:
-        missing_values = list(set(columns) - set(template['primary_texts']))
-        error_string += f'Missing Required Columns for {table_name}: {missing_values}\n'
-
-    if table_name == 'Types':  # deal with Hashed default
-        if 'Hash' in columns:
-            hash_index = columns.index('Hash')
-            columns.remove('Hash')
-            values.remove(values[hash_index])
-    columns = ", ".join(columns)
-    values = [i.replace('"', "'") if isinstance(None, str) and '"' in i else i for i in values] # deals with added quotes
-    values = ", ".join(f'"{value}"' if isinstance(value, str) else str(value) for value in values)
-    sql = f"INSERT INTO {table_name} ({columns}) VALUES ({values});"
-    sql = sql.replace('"', "'").replace("'NULL'", "NULL")
-
-    return sql, error_string
-
+def transform_localisation(ui_dict, table_name):
+    info = db_spec.node_templates[table_name]
+    loc_cols = info.get('localised')
+    if loc_cols is None:
+        return []
+    loc_entries = []
+    pk_string = '_'.join([ui_dict[i] for i in info['primary_keys']])
+    for col in loc_cols:
+        loc_string = f'LOC_{table_name}_{pk_string}_{col}'
+        loc_entry = {'Language': 'en_US', 'Tag': loc_string, 'Text': ui_dict[col]}
+        loc_entries.append(loc_entry)
+        ui_dict[col] = loc_string
+    return loc_entries
 
 criteria_names = {
     'ALWAYS': 'always',

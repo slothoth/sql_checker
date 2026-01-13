@@ -1,10 +1,11 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 import json
 import math
 from collections import defaultdict, Counter
 from graph.db_spec_singleton import db_spec, attach_tables
 from graph.utils import flatten, flatten_avoid_string, to_number
+import sqlite3
 
 
 def combine_db_df(df_combined, df_to_add):
@@ -238,6 +239,43 @@ def gather_effects(db_dict):
     # first get requirements from modifier tables
     mine_requirements(manual_collection_classification, db_dict, mod_tables, TableOwnerObjectMap)
 
+    # get localization
+    conn = sqlite3.connect(f'{db_spec.civ_config}/Debug/localization-copy.sqlite')
+    cursor = conn.cursor()
+    cursor.execute("SELECT Tag FROM LocalizedText;")
+    localised = [i[0] for i in cursor.fetchall()]
+    with open('resources/LocalizedTags.json', 'w') as f:
+        json.dump(localised, f)
+    localised = set(localised)
+
+    localise_table_cols = defaultdict(list)
+    for db, engine in db_dict.items():
+
+        for table_name, info in db_spec.node_templates.items():
+            if table_name in ['IProperties', 'IPropertyTypes', 'ReportingEvents', 'GameCoreEvents']:
+                continue
+            for column_name in info['all_cols']:
+                with engine.connect() as conn:
+                    trans = conn.begin()
+                    rows = {i[0] for i in conn.execute(text(f"""SELECT {column_name} FROM {table_name} 
+                                            t WHERE {column_name} IS NOT NULL""")).fetchall()}
+                trans.rollback()
+                if len(rows) == 0:
+                    continue
+                non_localised = rows - localised
+                localised_proportions = (len(rows) - len(non_localised)) / len(rows)
+                if localised_proportions >= 0.5:
+                    localise_table_cols[table_name].append(column_name)
+                else:
+                    if column_name in ['Name', 'Description']:
+                        print(f'missed localisation on these rows for {table_name}.{column_name}:', rows)
+    for table_name, table_cols in localise_table_cols.items():
+        db_spec.node_templates[table_name]['localised'] = []
+        for col in table_cols:
+            db_spec.node_templates[table_name]['localised'].append(col)
+        db_spec.node_templates[table_name]['localised'] = list(set(db_spec.node_templates[table_name]['localised']))
+
+    db_spec.update_node_templates(db_spec.node_templates)
 
 def mine_requirements(manual_collection_classification, db_dict, mod_tables, TableOwnerObjectMap):
     total_subject_req_df, subject_req_combined_df, owner_req_combined_df, total_owner_req_df = None, None, None, None
