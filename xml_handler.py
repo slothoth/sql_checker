@@ -1,7 +1,9 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+from lxml import etree
 from collections import defaultdict
 import tempfile
+
 
 def dict_to_etree(d, root):
     for k, v in d.items():
@@ -81,10 +83,18 @@ def read_xml(filepath):
         if test is None:
             print('couldnt find a way to parse xml')
             raise new_error
-        with tempfile.TemporaryFile() as fp:
-            fp.write(pretty_file.encode('utf-8'))
-            fp.seek(0)
-            tree = ET.parse(fp)
+        try:
+            with tempfile.TemporaryFile() as fp:
+                fp.write(pretty_file.encode('utf-8'))
+                fp.seek(0)
+                tree = ET.parse(fp)
+        except ET.ParseError as e:
+            print(f'poorly formed xml {filepath}, doing smart parse skipping malformed tags, jesus take the wheel,'
+                  f' hopefully its gameeffects. Full file:')
+            print(pretty_file)
+            parse_gameeffects_to_dict(fp)
+
+
     t = tree.getroot()
     return etree_to_dict(t)
 
@@ -112,3 +122,50 @@ def etree_to_dict(t):
             d[t.tag] = text
 
     return d
+
+
+def parse_gameeffects_to_dict(path):
+    parser = etree.XMLParser(recover=True, huge_tree=True)
+    tree = etree.parse(path, parser)
+    root = tree.getroot()
+
+    bad_lines = set()
+    for e in parser.error_log:
+        if getattr(e, "line", None):
+            bad_lines.add(e.line)
+            if e.line > 1:
+                bad_lines.add(e.line - 1)
+
+    def local(tag):
+        return tag.rsplit("}", 1)[-1] if "}" in tag else tag
+
+    def text(el):
+        return "".join(el.itertext()).strip() if el is not None else ""
+
+    out = {local(root.tag): {"_attrs": dict(root.attrib), "Modifier": []}}
+
+    for mod in root:
+        if local(mod.tag) != "Modifier":
+            continue
+        if mod.sourceline in bad_lines:
+            continue
+
+        m = {"_attrs": dict(mod.attrib), "Argument": {}, "String": {}}
+
+        for ch in mod:
+            if ch.sourceline in bad_lines:
+                continue
+
+            t = local(ch.tag)
+            if t == "Argument":
+                name = ch.get("name")
+                if name:
+                    m["Argument"][name] = text(ch)
+            elif t == "String":
+                ctx = ch.get("context")
+                if ctx:
+                    m["String"][ctx] = text(ch)
+
+        out[local(root.tag)]["Modifier"].append(m)
+
+    return out

@@ -36,3 +36,4 @@ It also includes a graph GUI where you can package and plan your own mod.
 ## Known bugs
 - Can double click when making new node to get two
 - not a bug, but writing with shift toggles a mode in graph which is pain
+- xml handler needs to handle line by line xml, because of the Matts scotland example where gameeffects works but the tags are wrong on the String section. yet it parses everything else!

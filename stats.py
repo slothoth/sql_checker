@@ -1,11 +1,12 @@
-import pandas as pd
-from sqlalchemy import create_engine, text
 import json
 import math
 from collections import defaultdict, Counter
+import sqlite3
+import pandas as pd
+from sqlalchemy import create_engine, text
+
 from graph.db_spec_singleton import db_spec, attach_tables
 from graph.utils import flatten, flatten_avoid_string, to_number
-import sqlite3
 
 
 def combine_db_df(df_combined, df_to_add):
@@ -276,6 +277,7 @@ def gather_effects(db_dict):
         db_spec.node_templates[table_name]['localised'] = list(set(db_spec.node_templates[table_name]['localised']))
 
     db_spec.update_node_templates(db_spec.node_templates)
+
 
 def mine_requirements(manual_collection_classification, db_dict, mod_tables, TableOwnerObjectMap):
     total_subject_req_df, subject_req_combined_df, owner_req_combined_df, total_owner_req_df = None, None, None, None

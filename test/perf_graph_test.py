@@ -1,12 +1,22 @@
 import pytest
 from collections import defaultdict
+import os
 
+import graph.windows
+def new_combo_value(parent, age_list, mod_list):
+    return 'AGE_ANTIQUITY', {}
+
+graph.windows.get_combo_value = new_combo_value
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
 from graph.set_hotkeys import write_sql, write_loc_sql
+from graph.db_spec_singleton import db_spec
+from graph.mod_conversion import build_imported_mod
 
 from utils import check_test_against_expected_sql, save
+
+
 
 
 def test_all_table_nodes(qtbot):
@@ -52,6 +62,33 @@ def test_all_req_args(qtbot):
         write_loc_sql(loc_lines)
         qtbot.wait(1)
 
+
+def test_against_all_mods(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    qtbot.wait(1)
+    local_folder = f'{db_spec.civ_config}/Mods'
+    local_mods = [f'{local_folder}/{i}' for i in os.listdir(local_folder)]
+    workshop_mods = [f'{db_spec.workshop}/{i}' for i in os.listdir(db_spec.workshop)]
+    hit_mods = []
+    for idx, workshop_mod in enumerate(workshop_mods[23:]):
+        mod_info_found = build_imported_mod(workshop_mod, window.graph)
+        qtbot.wait(1)
+        window.graph.clear_session()
+        qtbot.wait(1)
+        hit_mods.append(workshop_mod)
+        with open('test.log', 'w') as f:
+            f.writelines(hit_mods)
+
+    for local_mod in local_mods:
+        mod_info_found = build_imported_mod(local_mod, window.graph)
+        qtbot.wait(1)
+        window.graph.clear_session()
+        qtbot.wait(1)
+        hit_mods.append(local_mod)
+        with open('test.log', 'w') as f:
+            f.writelines(hit_mods)
 
 def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up
     return

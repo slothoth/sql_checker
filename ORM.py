@@ -11,6 +11,7 @@ mapper_registry = registry()
 
 classes = {}
 failed_classes = []
+canonical_mapper = {}
 for table in SQLValidator.metadata.tables.values():
     clsname = "".join(part.capitalize() for part in table.name.split("_"))
     cls = type(clsname, (), {})
@@ -18,7 +19,9 @@ for table in SQLValidator.metadata.tables.values():
         table.append_constraint(PrimaryKeyConstraint(*table.c))
 
     mapper_registry.map_imperatively(cls, table)
-    classes[table.name] = cls
+    tbl_name = table.name
+    classes[tbl_name] = cls
+    canonical_mapper[tbl_name.lower()] = tbl_name
 
 
 def create_instances_from_sql(sql_text):
@@ -31,14 +34,16 @@ def create_instances_from_sql(sql_text):
 
     table_nodes = list(parsed.find_all(exp.Table))
     if len(table_nodes) != 1:
-        raise ValueError(f"statement had multiple Table mentions. it shouldnt: {sql_text}")
+        print(f"statement had multiple Table mentions. this is probably a INSERT:SELECT: {sql_text}")
+        return
 
     table_name = table_nodes[0].name
 
     try:
-        TargetClass = classes[table_name]
+        proper_tbl = canonical_mapper[table_name.lower()]
+        TargetClass = classes[proper_tbl]
     except KeyError:
-        raise ValueError(f"Table '{table_name}' found in SQL but not in the database schema.")
+        raise ValueError(f"Table '{proper_tbl}' found in SQL but not in the database schema.")
 
     sql_columns = [col.name for col in parsed.this.expressions]
 
@@ -53,7 +58,9 @@ def create_instances_from_sql(sql_text):
             else:
                 sql_values.append(val.name)
 
-        instance_list.append(TargetClass(**dict(zip(sql_columns, sql_values))))
+        colmap = {c.key.lower(): c.key for c in TargetClass.__table__.columns}
+        kwargs = {colmap[k.lower()]: v for k, v in zip(sql_columns, sql_values)}
+        instance_list.append(TargetClass(**kwargs))
 
     return instance_list
 

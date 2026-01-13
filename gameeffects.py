@@ -52,7 +52,8 @@ def game_effects(sql_statements, sql_commands_dict, xml_file, skips):
         for arg in sql_commands_dict['{GameEffects}Argument']:
             arg_cols, arg_vals = [i for i in arg], [j for j in arg.values()]
             arg_cols, arg_vals = ['ModifierId'] + arg_cols, [modifier_id] + arg_vals,
-            arg_cols = col_replacer(arg_cols, {'@name': 'Name', '#text': 'Value'})
+            arg_cols = col_replacer(arg_cols, {'@name': 'Name', '#text': 'Value', '@extra': 'Extra',
+                                               '@type': 'Type'})
 
             sql_statements.append(
                 {"type": "INSERT", "table": 'ModifierArguments', "columns": arg_cols, "values": arg_vals})

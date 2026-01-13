@@ -7,6 +7,7 @@ from itertools import product
 from collections import defaultdict
 
 from xml_handler import read_xml
+import xml.etree.ElementTree as ET
 from model import convert_xml_to_sql
 from ORM import create_instances_from_sql, get_table_and_key_vals, build_fk_index
 from graph.windows import get_combo_value
@@ -96,7 +97,7 @@ def parse_modinfo(modinfo_path, mod_folder_path):
                 action_group_id = action_group['@id']
                 action_groups_dict[action_group_id] = {'criteria': action_group.get('@criteria', 'always'),
                                                        'filepaths': []}
-                actions = action_group.get('{ModInfo}Actions', None)
+                actions = action_group.get('{ModInfo}Actions', {})
                 for action_type, action_dict in actions.items():
                     if 'UpdateDatabase' in action_type:
                         for item_name, file_path_list in action_dict.items():
@@ -128,11 +129,14 @@ def modinfo_into_jobs(mod_info_dict):
         for db_file_path in action_group_info['filepaths']:
             short_name = db_file_path.replace(f'{base_folder_path}/', '')
             if db_file_path.endswith('.xml'):
-                statements, xml_errors = convert_xml_to_sql(db_file_path)
-                if isinstance(statements, str):
-                    print(f'{db_file_path} was an empty file. Skipping it.')
-                    continue
-                mod_info_dict['sql'][short_name], xml_errors = convert_xml_to_sql(db_file_path)
+                try:
+                    statements, xml_errors = convert_xml_to_sql(db_file_path)
+                    if isinstance(statements, str):
+                        print(f'{db_file_path} was an empty file. Skipping it.')
+                        continue
+                    mod_info_dict['sql'][short_name], xml_errors = convert_xml_to_sql(db_file_path)
+                except ET.ParseError as e:
+                    print(f'could not parse file {db_file_path}.. skipping')
 
             elif db_file_path.endswith('.sql'):
                 try:
@@ -450,9 +454,9 @@ def build_graph_from_orm(graph, orm_list, age, custom_effects=True):
 
             # do modarg conversion
             mod_args = effects_info.get('Arguments', {})
+            effect_possible_args = db_spec.mod_type_arg_map[effect_type]
             for arg_name, arg_value in mod_args.items():        # currently only doing name value
-                param_name = db_spec.mod_type_arg_map[effect_type][arg_name]
-                new_props[param_name] = arg_value
+                new_props[arg_name] = arg_value
                 omitted_node_dict['ModifierArguments'][(modifier_info['ModifierId'], arg_name)] = node
 
             node.set_spec(new_props)

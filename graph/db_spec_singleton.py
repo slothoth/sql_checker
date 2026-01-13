@@ -85,12 +85,13 @@ class ResourceLoader:
             self.civ_install = self.metadata['civ_install']
             self.age = self.metadata['age']
             self.patch_time = self.metadata['patch_time']
-        new_patch_occurred = self.check_firaxis_patched()
+        new_patch_occurred, latest = self.check_firaxis_patched()
         if new_patch_occurred:
             self.update_database_spec()
             self.modifier_argument_info = self._read_file(self._files['modifier_argument_info'])
             self.requirement_argument_info = self._read_file(self._files['requirement_argument_info'])
-            self.remake_arg_map()
+            self.metadata['patch_time'] = latest
+            self._write_file(self._files['metadata'], self.metadata)
             print('new patch! rebuild all files')
         self.node_templates = self._read_file(self._files['node_templates'])
         self.possible_vals = self._read_file(self._files['possible_vals'])
@@ -161,13 +162,11 @@ class ResourceLoader:
         if current is None or latest > current:
             self.patch_change = True
             self.patch_time = latest
-            self.metadata['patch_time'] = latest
-            self._write_file(self._files['metadata'], self.metadata)
         if not self.patch_change:
             all_mined_files_exist = all(os.path.exists(v) for k, v in self._files.items())
             if not all_mined_files_exist:
                 self.patch_change = True
-        return self.patch_change
+        return self.patch_change, latest
 
     def update_database_spec(self):
         database_path = 'gameplay-copy-cached-base-content.sqlite'
