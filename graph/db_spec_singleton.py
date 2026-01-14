@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from collections import defaultdict
 from copy import deepcopy
 from threading import Lock
 import os

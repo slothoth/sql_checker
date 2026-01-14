@@ -1,3 +1,4 @@
+import sqlalchemy.exc
 from sqlalchemy.orm import registry
 import sqlglot
 from sqlglot import exp, TokenError
@@ -166,7 +167,7 @@ def _parse_update(sql: str, parsed=None):
     if parsed is None:
         try:
             parsed = sqlglot.parse_one(sql.strip(), dialect="sqlite")           # sanity check that it wont crash
-        except TokenError as e:
+        except (TokenError, sqlglot.ParseError) as e:
             raise TypeError(e)
     if not isinstance(parsed, (exp.Update, exp.Delete)):
         raise ValueError("Invalid Delete or Update statement")
@@ -218,8 +219,10 @@ def update_delete_transform(update_sql: str, parsed=None, age='AGE_ANTIQUITY'):
     with SQLValidator.engine_dict[age].begin() as conn:
         before_rows = conn.execute(text(sel_sql)).mappings().all()
         before = {tuple(r[pk] for pk in pk_columns): dict(r) for r in before_rows}
-
-        conn.execute(text(update_sql))
+        try:
+            conn.execute(text(update_sql))
+        except sqlalchemy.exc.OperationalError as e:
+            raise TypeError("\n".join(e.args))
 
         after_rows = conn.execute(text(sel_sql)).mappings().all()
         conn.rollback()

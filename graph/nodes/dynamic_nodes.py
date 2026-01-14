@@ -184,7 +184,6 @@ def create_table_node_class(table_name, graph):
         if fk_backlink is not None:
             self.output_port_tables[SQLValidator.pk_map[table_name][0]] = set_output_port_constraints(self, table_name,
                                                                                                       fk_backlink)
-
         self.view.setVisible(True)
 
     def set_defaults_method(self):

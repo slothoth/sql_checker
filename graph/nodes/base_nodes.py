@@ -128,7 +128,7 @@ def backlink_port_get(original_table, connect_table):
     return fk_ports[0]
 
 
-def set_output_port_constraints(node, table_name, fk_backlink):
+def set_output_port_constraints(node, table_name, fk_backlink):     # not actual constraints, handled on input
     pk = SQLValidator.pk_map[table_name][0]
     color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
     port = node.add_output(pk, color=color)

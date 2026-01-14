@@ -92,8 +92,8 @@ class WhereNode(BaseNode):
     def apply_and_populate(self):
         sql = self.get_widget("sql").get_value()
         try:
-            column_output_tuples = update_delete_transform(sql, self.graph.property('meta').get('Age', 'AGE_ANTIQUITY'))
-        except (TypeError, KeyError, sqlite3.Warning, ValueError) as e:
+            column_output_tuples = update_delete_transform(sql, age=self.graph.property('meta').get('Age', 'AGE_ANTIQUITY'))
+        except (TypeError, KeyError, ValueError, sqlite3.Warning) as e:
             self.sql_output_triggerable = False
             self.color_as_error()
             error_tuples = self.format_error_for_table(str(e))

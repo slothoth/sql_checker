@@ -16,28 +16,32 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Dialogs converted into toasts where possible [x]
 - ModifierArgs/RequirementArgs Value completions using Name   [x]
 - ModifierArgs/RequirementArgs Name completions using ModifierType, EffectType from DynamicModifier  [x]
+- autocompletes for Value on database [x]
 - Search highlights most used set (predefined/ user tracked?)     [ ]
 - Sort port topdown so required ones are at the top                 [ ]
 - Effect Attach Modifier, ModifierArgument Extra Connection             [ ]
-- refactor state validation to be threaded on start up, or at least only when graph planner opened []
+- refactor state validation to be threaded on start up, or at least only when graph planner opened [ ]
 - Make it so arg values are highlighted if they are set to the default one. [ ]
 - make it so fields that cannot be left default show red when unedited or empty string. []
 - colour combination logic for if red and blue because localised [ ]
 - Updates and Deletes get imported as a type of node of 2 columns, with the PK values on one side being updated/deleted and the values themselves being changed [x]
 - Updates and Deletes alter suggestible lists [ ]
 - Updates and Deletes have chronology, requiring separate engine state we throw away [ ]
-- autocompletes for Value on database [x]
 # Big Features TODO:
 - Image imports
 - Localisation entries (and displaying them as options in relevant gameplay graph) [x]
 - frontend modelling
 - VI port (ahhh)
-- Tabbed graphs, so you can see content in different criteria.
+- Tabbed graphs, so you can see content in different criteria, and frontend
 - Node connections can only happen between valid connectors (PK-FK), node.add_accept_port_type [x]
 - Big Graphs compress tables of the same type into one node.
+- Narrative Node
+- Unit Node
+- Constructible node?
 ## Known bugs
 - Can double click when making new node to get two
 - not a bug, but writing with shift toggles a mode in graph which is pain
 - xml handler needs to handle line by line xml, because of the Matts scotland example where 
 - gameeffects works but the tags are wrong on the String section. yet it parses everything else! fixed for gameeffects only
 - some types missing like UnitAbilities has no link to Types
+- redraw on breaking port connections from arg change looks weird

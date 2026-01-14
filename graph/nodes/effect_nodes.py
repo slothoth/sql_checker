@@ -1,9 +1,16 @@
-from NodeGraphQt.constants import NodePropWidgetEnum
+from NodeGraphQt.constants import NodePropWidgetEnum, PortTypeEnum
 
 from graph.db_spec_singleton import db_spec, effect_system_tables
 from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
+
+
+max_db_mod_arg = max(len([val for key, val in v.items() if val == 'database'])
+                     for k, v in db_spec.mod_type_arg_map.items())
+
+max_db_req_arg = max(len([val for key, val in v.items() if val == 'database'])
+                     for k, v in db_spec.req_type_arg_map.items())
 
 
 class BaseEffectNode(BasicDBNode):
@@ -12,6 +19,12 @@ class BaseEffectNode(BasicDBNode):
     argument_info_map = {}
     arg_prop_map = {}
     database_arg_map = {}
+    reserved_inputs = {}
+    arg_inputs_set = {}
+
+    def __init__(self):
+        super().__init__()
+        self.set_port_deletion_allowed(True)
 
     def set_property(self, name, value, push_undo=True):
         if name == self.arg_setter_prop:
@@ -56,6 +69,7 @@ class BaseEffectNode(BasicDBNode):
         elif hasattr(self.view, "update_size"):
             self.view.update_size()
         self.update_unnamed_cols(mode)
+        self._update_ports(mode)
         self.old_effect = mode
 
     def reapply_arg_params(self):
@@ -96,9 +110,8 @@ class BaseEffectNode(BasicDBNode):
             self.add_custom_widget(ExpandingLineEdit(parent=self.view, label=arg, name=arg), tab='fields')
         elif prop_type == 'database':
             # get db type and use dropdownlinedit database_arg_map
-            arg_table = self.database_arg_map.get(arg)
-            if arg_table is None:
-                arg_table = self.database_arg_map[arg.replace('_arg', '')]
+            arg_table = self.get_param_arg_table(arg)
+
 
             base_vals = db_spec.possible_vals[self.graph.property('meta')['Age']].get(arg_table, {}).get('_PK_VALS') or []
 
@@ -149,6 +162,33 @@ class BaseEffectNode(BasicDBNode):
         self.reapply_arg_params()
         if hasattr(self.view, "draw_node"):
             self.view.draw_node()
+
+    def get_param_arg_table(self, arg):
+        arg_table = self.database_arg_map.get(arg)
+        if arg_table is None:
+            arg_table = self.database_arg_map[arg.replace('_arg', '')]
+        return arg_table
+
+    def _update_ports(self, effect_type):
+        arg_table = self.arg_prop_map[effect_type]
+        new_ports = [k for k, v in arg_table.items() if v == 'database']
+        old_ports = {k: v for k, v in self.inputs().items() if k not in self.reserved_inputs}
+        remove_ports = {k: v for k, v in old_ports.items() if k not in new_ports}
+        add_ports = [name for name in new_ports if name not in old_ports]
+
+        for name, port in remove_ports.items():
+            port.clear_connections()  # clear connections so dont error as painter of line finds connection if no node
+            self.delete_input(name)
+        for name in add_ports:
+            made_port = self.add_input(name)
+            output_table = self.database_arg_map[name]
+            table_class = SQLValidator.table_name_class_map[output_table]
+            table_pk_output = SQLValidator.pk_map[output_table][0]
+            self.add_accept_port_type(made_port, {
+                'node_type': table_class,
+                'port_type': PortTypeEnum.OUT.value,
+                'port_name': table_pk_output,
+            })
 
 
 class GameEffectNode(BaseEffectNode):
@@ -233,6 +273,7 @@ class GameEffectNode(BaseEffectNode):
                                                     'OwnerReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []}})
         self.create_property('arg_params', {},  widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.view.setVisible(True)
+        self.reserved_inputs = self.inputs()
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
 
     def get_link_port(self, connect_table, connect_port):    # uses custom ReqCustom and all Modifier attachment tables
@@ -252,7 +293,6 @@ class GameEffectNode(BaseEffectNode):
         short_collection = collection_type.replace('COLLECTION_', '')
 
         modifier_id_widget = self.get_widget('ModifierId')
-        modifier_type_prop = self.get_property('ModifierType')
         subject_req_widget = self.get_widget('SubjectReq')
         owner_req_widget = self.get_widget('OwnerReq')
 
@@ -300,6 +340,7 @@ class RequirementEffectNode(BaseEffectNode):
         self.widget_props = [i for i in self.properties()['custom']]
         self.create_property('arg_params', {}, widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.view.setVisible(True)
+        self.reserved_inputs = self.inputs()
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
