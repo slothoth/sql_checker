@@ -72,14 +72,14 @@ def test_against_all_mods(qtbot):
     local_mods = [f'{local_folder}/{i}' for i in os.listdir(local_folder)]
     workshop_mods = [f'{db_spec.workshop}/{i}' for i in os.listdir(db_spec.workshop)]
     hit_mods = []
-    for idx, workshop_mod in enumerate(workshop_mods[23:]):
+    for idx, workshop_mod in enumerate(workshop_mods):
         mod_info_found = build_imported_mod(workshop_mod, window.graph)
         qtbot.wait(1)
         window.graph.clear_session()
         qtbot.wait(1)
         hit_mods.append(workshop_mod)
         with open('test.log', 'w') as f:
-            f.writelines(hit_mods)
+            f.writelines([i + '\n' for i in hit_mods])
 
     for local_mod in local_mods:
         mod_info_found = build_imported_mod(local_mod, window.graph)
