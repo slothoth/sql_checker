@@ -240,13 +240,9 @@ def gather_effects(db_dict):
     # first get requirements from modifier tables
     mine_requirements(manual_collection_classification, db_dict, mod_tables, TableOwnerObjectMap)
 
-    # get localization
-    conn = sqlite3.connect(f'{db_spec.civ_config}/Debug/localization-copy.sqlite')
-    cursor = conn.cursor()
-    cursor.execute("SELECT Tag FROM LocalizedText;")
-    localised = [i[0] for i in cursor.fetchall()]
-    with open('resources/LocalizedTags.json', 'w') as f:
-        json.dump(localised, f)
+    with open('resources/LocalizedTags.json') as f:
+        localised = json.load(f)
+
     localised = set(localised)
 
     localise_table_cols = defaultdict(list)
