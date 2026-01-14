@@ -172,11 +172,11 @@ def _parse_update(sql: str, parsed=None):
 
     where_exp = parsed.args.get("where")
     if not isinstance(where_exp, exp.Where) or where_exp.this is None:
-        raise ValueError("UPDATE must have a WHERE clause")
-    where_clause = where_exp.this.sql(dialect='sqlite')
-    set_cols = None
+        where_clause = None
+    else:
+        where_clause = where_exp.this.sql(dialect='sqlite')
+    set_cols = []
     if not isinstance(parsed, exp.Delete):
-        set_cols = []
         for assignment in (parsed.expressions or []):
             lhs = getattr(assignment, "this", None)
             if lhs is None:
@@ -196,17 +196,19 @@ def _parse_update(sql: str, parsed=None):
 
 
 def update_delete_transform(update_sql: str, parsed=None):
+    table_name, where_clause, set_cols = _parse_update(update_sql, parsed)
     try:
-        table_name, where_clause, set_cols = _parse_update(update_sql, parsed)
-    except ValueError as e:
-        print(e)
-    canon_table_name = SQLValidator.canonicalise_tables[table_name.lower()]
+        canon_table_name = SQLValidator.canonicalise_tables[table_name.lower()]
+    except KeyError:
+        raise (KeyError(f"Table '{table_name}' not found"))
     pk_columns = SQLValidator.pk_map[canon_table_name]
     cols = pk_columns + (set_cols or [])
     canon_cols = [SQLValidator.canonicalise_columns[canon_table_name].get(i.lower(), i) for i in cols]
 
     sel_cols = ", ".join(canon_cols)
-    sel_sql = f"SELECT {sel_cols} FROM {canon_table_name} WHERE {where_clause}"
+    sel_sql = f"SELECT {sel_cols} FROM {canon_table_name}"
+    if where_clause is not None:
+        sel_sql = f"{sel_sql}  WHERE {where_clause}"
     SQLValidator.state_validation_setup('AGE_ANTIQUITY')                            # TODO CHANGE to age
     with SQLValidator.engine_dict['AGE_ANTIQUITY'].begin() as conn:
         before_rows = conn.execute(text(sel_sql)).mappings().all()
@@ -216,7 +218,9 @@ def update_delete_transform(update_sql: str, parsed=None):
 
         after_rows = conn.execute(text(sel_sql)).mappings().all()
         conn.rollback()
-        out = []
+        columns_output_tuples = []
+        if len(set_cols) == 0:              # its a delete
+            return [(str(*(r[pk] for pk in pk_columns)), 'Deleted') for r in before_rows if r not in after_rows]
         for r in after_rows:
             pk = tuple(r[pk] for pk in pk_columns)
             before_row = before.get(pk, {})
@@ -234,5 +238,5 @@ def update_delete_transform(update_sql: str, parsed=None):
                         right = f'{col}: {val_tuple[0]} -> {val_tuple[1]}'
                 else:
                     right = "\n".join(f"{k}: {v[0]} -> {v[1]}" for k, v in changed.items())
-                out.append((str(*pk), right))
-        return out
+                columns_output_tuples.append((str(*pk), right))
+        return columns_output_tuples

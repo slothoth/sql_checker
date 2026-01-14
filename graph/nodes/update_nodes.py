@@ -1,9 +1,12 @@
+import sqlite3
+
 from PyQt5 import QtCore, QtWidgets
 
 
 from NodeGraphQt import BaseNode
 from NodeGraphQt.widgets.node_widgets import NodeBaseWidget
 from NodeGraphQt.constants import NodePropWidgetEnum
+from PyQt5.QtGui import QPalette, QColor, QFontMetrics
 
 from ORM import update_delete_transform
 
@@ -70,6 +73,7 @@ class WhereNode(BaseNode):
     __identifier__ = 'db.where'
     NODE_NAME = 'Where Node'
     sql_output_triggerable = False
+    sql_error = False
 
     def __init__(self):
         super(WhereNode, self).__init__()
@@ -78,6 +82,8 @@ class WhereNode(BaseNode):
                                widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.add_custom_widget(ReadOnlyTwoColTable(self.view, name="changes", label="Changes"),
                                widget_type=NodePropWidgetEnum.HIDDEN.value)
+        self.input_text_widget = self.get_widget('sql').get_custom_widget()
+        self.default_palette = self.input_text_widget.palette()
         self.sql_output_triggerable = True
 
     def set_sql(self, sql: str):
@@ -85,11 +91,61 @@ class WhereNode(BaseNode):
 
     def apply_and_populate(self):
         sql = self.get_widget("sql").get_value()
-        pairs = update_delete_transform(sql)
-        self.get_widget("changes").set_value(pairs)
+        try:
+            column_output_tuples = update_delete_transform(sql)
+        except (TypeError, KeyError, sqlite3.Warning) as e:
+            self.sql_output_triggerable = False
+            self.color_as_error()
+            error_tuples = self.format_error_for_table(str(e))
+            self.get_widget("changes").set_value(error_tuples)
+            self.sql_error = True
+            self.sql_output_triggerable = True
+            return
+        if self.sql_error:
+            self.sql_error = False
+            self.reset_color()
+        self.get_widget("changes").set_value(column_output_tuples)
 
     def set_property(self, name, value, push_undo=True):
         super().set_property(name=name, value=value, push_undo=True)
         if self.sql_output_triggerable:
             if name == 'sql':
                 self.apply_and_populate()
+
+    def color_as_error(self):
+        error_palette = self.input_text_widget.palette()
+        error_palette.setColor(QPalette.ColorRole.Base, QColor("#FDE8E8"))      # bg
+        error_palette.setColor(QPalette.ColorRole.Text, QColor("#9B1C1C"))      # text
+        error_palette.setColor(QPalette.ColorRole.Highlight, QColor("#F05252"))     # selectText
+        self.input_text_widget.setPalette(error_palette)
+
+    def reset_color(self):
+        self.input_text_widget.setPalette(self.default_palette)
+
+    def format_error_for_table(self, error_message):
+        column_widget = self.get_widget("changes").get_custom_widget()
+        widget_width = column_widget.width()
+        metrics = QFontMetrics(column_widget.font())
+        available_space = widget_width - 10
+        lines = self.split_text_to_fit(error_message, available_space, metrics)
+        return [(i, '') for i in lines]
+
+
+    @staticmethod
+    def split_text_to_fit(text, max_width, metrics):
+        words = text.split(' ')
+        lines = []
+        current_line = ""
+
+        for word in words:
+            test_line = current_line + (" " if current_line else "") + word
+            if metrics.horizontalAdvance(test_line) <= max_width:       # pixel width
+                current_line = test_line
+            else:
+                lines.append(current_line)
+                current_line = word
+
+        if current_line:
+            lines.append(current_line)
+
+        return lines
