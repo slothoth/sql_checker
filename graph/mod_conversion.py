@@ -38,11 +38,10 @@ def build_imported_mod(mod_folder_path, graph):
     age, mod_dict = get_combo_value(graph.viewer(), ages, list(mod_set))
     if age is None:
         return
-    age_dict = {i: False for i in ages if i != age}
-    age_dict[age] = True
+    age_dict = {i: False if i != age else True for i in ages }
     mod_dict.update(age_dict)
     file_list = get_files(possible_workloads, mod_dict)
-    orm_list, update_delete_list = mod_info_into_orm(sql_info_dict, file_list)
+    orm_list, update_delete_list = mod_info_into_orm(sql_info_dict, file_list, age=age)
     build_graph_from_orm(graph, orm_list, update_delete_list, age)
     return True
 
@@ -153,14 +152,14 @@ def modinfo_into_jobs(mod_info_dict):
     return mod_info_dict
 
 
-def mod_info_into_orm(sql_info_dict, file_path_list):
+def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY'):
     orm_list, update_delete_list = [], []
     for file_path in file_path_list:
         short_path = file_path.replace(f'{sql_info_dict["base_folder"]}/', '')
         sql_commands = sql_info_dict['sql'][short_path]
         for sql_text in sql_commands:
             try:
-                instance_list, list_type = create_instances_from_sql(sql_text)
+                instance_list, list_type = create_instances_from_sql(sql_text, age)
                 if list_type is None:
                     continue
                 elif list_type == 'insert':

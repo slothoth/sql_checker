@@ -3,6 +3,7 @@ import sqlglot
 from sqlglot import exp, TokenError
 from sqlalchemy import PrimaryKeyConstraint, text
 from sqlalchemy import inspect
+import sqlite3
 from collections import defaultdict
 from schema_generator import SQLValidator
 from graph.db_spec_singleton import db_spec
@@ -24,21 +25,25 @@ for table in SQLValidator.metadata.tables.values():
     canonical_mapper[tbl_name.lower()] = tbl_name
 
 
-def create_instances_from_sql(sql_text):
+def create_instances_from_sql(sql_text, age):
     cleaned_sql = clean_sql(sql_text)
     parsed = sqlglot.parse_one(cleaned_sql, dialect="sqlite")
 
     if isinstance(parsed, (exp.Update, exp.Delete)):
-        return (cleaned_sql, update_delete_transform(cleaned_sql, parsed)), 'update_delete'
+        try:
+            changed_entries = update_delete_transform(cleaned_sql, parsed, age)
+        except (TypeError, KeyError, sqlite3.Warning, ValueError) as e:
+            changed_entries = []
+        return (cleaned_sql, changed_entries), 'update_delete'
 
     if not isinstance(parsed, exp.Insert):
         print("SQL must be an INSERT statement, and is not UPDATE or DELETE")
-        return None, None
+        return (cleaned_sql, []), 'update_delete'         # TODO same as other weird sql
 
     table_nodes = list(parsed.find_all(exp.Table))
-    if len(table_nodes) != 1:
+    if len(table_nodes) != 1:               # TODO currently just sending other weird sql to update node, make new holder
         print(f"statement had multiple Table mentions. this is probably a INSERT:SELECT: {sql_text}")
-        return None, None
+        return (cleaned_sql, []), 'update_delete'
 
     table_name = table_nodes[0].name
 
@@ -164,10 +169,10 @@ def _parse_update(sql: str, parsed=None):
         except TokenError as e:
             raise TypeError(e)
     if not isinstance(parsed, (exp.Update, exp.Delete)):
-        raise ValueError("SQL not Delete or Update statement")
+        raise ValueError("Invalid Delete or Update statement")
     table_exp = parsed.this
     if table_exp is None:
-        raise ValueError('cannot find table name, poorly parsed SQL')
+        raise ValueError('cannot find table name')
     table = table_exp.sql(dialect='sqlite') if table_exp is not None else ""
 
     where_exp = parsed.args.get("where")
@@ -195,7 +200,7 @@ def _parse_update(sql: str, parsed=None):
     return table, where_clause, set_cols
 
 
-def update_delete_transform(update_sql: str, parsed=None):
+def update_delete_transform(update_sql: str, parsed=None, age='AGE_ANTIQUITY'):
     table_name, where_clause, set_cols = _parse_update(update_sql, parsed)
     try:
         canon_table_name = SQLValidator.canonicalise_tables[table_name.lower()]
@@ -209,8 +214,8 @@ def update_delete_transform(update_sql: str, parsed=None):
     sel_sql = f"SELECT {sel_cols} FROM {canon_table_name}"
     if where_clause is not None:
         sel_sql = f"{sel_sql}  WHERE {where_clause}"
-    SQLValidator.state_validation_setup('AGE_ANTIQUITY')                            # TODO CHANGE to age
-    with SQLValidator.engine_dict['AGE_ANTIQUITY'].begin() as conn:
+    SQLValidator.state_validation_setup(age)                            # TODO CHANGE to age
+    with SQLValidator.engine_dict[age].begin() as conn:
         before_rows = conn.execute(text(sel_sql)).mappings().all()
         before = {tuple(r[pk] for pk in pk_columns): dict(r) for r in before_rows}
 
