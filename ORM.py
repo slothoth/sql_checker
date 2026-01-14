@@ -214,7 +214,7 @@ def update_delete_transform(update_sql: str, parsed=None, age='AGE_ANTIQUITY'):
     sel_sql = f"SELECT {sel_cols} FROM {canon_table_name}"
     if where_clause is not None:
         sel_sql = f"{sel_sql}  WHERE {where_clause}"
-    SQLValidator.state_validation_setup(age)                            # TODO CHANGE to age
+    SQLValidator.state_validation_setup(age)
     with SQLValidator.engine_dict[age].begin() as conn:
         before_rows = conn.execute(text(sel_sql)).mappings().all()
         before = {tuple(r[pk] for pk in pk_columns): dict(r) for r in before_rows}

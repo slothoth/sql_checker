@@ -26,12 +26,8 @@ class ResourceLoader:
     node_templates = {}
     possible_vals = {}
     all_possible_vals = {}
-    game_effects_info = {}
     collection_effect_map = {}
     mod_type_arg_map = {}
-    all_param_arg_fields = []
-    effect_arg_defaults = {}
-    req_all_param_arg_fields = []
     req_type_arg_map = {}
     civ_config = ''
     workshop = ''
@@ -550,9 +546,3 @@ db_spec = ResourceLoader()
 attach_tables = [j for j in [i for i in db_spec.node_templates['Modifiers']['extra_backlinks']]
                  + db_spec.node_templates['Modifiers']['backlink_fk'] if j not in modifier_system_tables]
 attach_tables.append('NarrativeStory_Rewards')      # TODO find out why missed
-
-with open('resources/AllReqArgValues.json', 'r') as f:
-    req_arg_examples = json.load(f)
-
-with open('resources/AllModArgValues.json', 'r') as f:
-    mod_arg_examples = json.load(f)
