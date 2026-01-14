@@ -156,7 +156,7 @@ class ResourceLoader:
         latest = max(
             p.stat().st_mtime
             for p in root.rglob("*")
-            if p.is_file()
+            if p.is_file() and '/.' not in str(p)
         )
         current = self.metadata.get('patch_time')
         if current is None or latest > current:
