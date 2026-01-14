@@ -1,7 +1,7 @@
 from sqlalchemy.orm import registry
 import sqlglot
-from sqlglot import exp
-from sqlalchemy import PrimaryKeyConstraint
+from sqlglot import exp, TokenError
+from sqlalchemy import PrimaryKeyConstraint, text
 from sqlalchemy import inspect
 from collections import defaultdict
 from schema_generator import SQLValidator
@@ -28,14 +28,17 @@ def create_instances_from_sql(sql_text):
     cleaned_sql = clean_sql(sql_text)
     parsed = sqlglot.parse_one(cleaned_sql, dialect="sqlite")
 
+    if isinstance(parsed, (exp.Update, exp.Delete)):
+        return (cleaned_sql, update_delete_transform(cleaned_sql, parsed)), 'update_delete'
+
     if not isinstance(parsed, exp.Insert):
-        print("SQL must be an INSERT statement")
-        return
+        print("SQL must be an INSERT statement, and is not UPDATE or DELETE")
+        return None, None
 
     table_nodes = list(parsed.find_all(exp.Table))
     if len(table_nodes) != 1:
         print(f"statement had multiple Table mentions. this is probably a INSERT:SELECT: {sql_text}")
-        return
+        return None, None
 
     table_name = table_nodes[0].name
 
@@ -62,7 +65,7 @@ def create_instances_from_sql(sql_text):
         kwargs = {colmap[k.lower()]: v for k, v in zip(sql_columns, sql_values)}
         instance_list.append(TargetClass(**kwargs))
 
-    return instance_list
+    return instance_list, 'insert'
 
 
 def clean_sql(sql_text):
@@ -152,3 +155,84 @@ def mapped_attr(obj, table, col_name):
         return m.get_property_by_column(col).key
     except Exception:
         return col.key
+
+
+def _parse_update(sql: str, parsed=None):
+    if parsed is None:
+        try:
+            parsed = sqlglot.parse_one(sql.strip(), dialect="sqlite")           # sanity check that it wont crash
+        except TokenError as e:
+            raise TypeError(e)
+    if not isinstance(parsed, (exp.Update, exp.Delete)):
+        raise ValueError("SQL not Delete or Update statement")
+    table_exp = parsed.this
+    if table_exp is None:
+        raise ValueError('cannot find table name, poorly parsed SQL')
+    table = table_exp.sql(dialect='sqlite') if table_exp is not None else ""
+
+    where_exp = parsed.args.get("where")
+    if not isinstance(where_exp, exp.Where) or where_exp.this is None:
+        raise ValueError("UPDATE must have a WHERE clause")
+    where_clause = where_exp.this.sql(dialect='sqlite')
+    set_cols = None
+    if not isinstance(parsed, exp.Delete):
+        set_cols = []
+        for assignment in (parsed.expressions or []):
+            lhs = getattr(assignment, "this", None)
+            if lhs is None:
+                continue
+
+            if isinstance(lhs, exp.Column):
+                col = lhs.name
+            elif isinstance(lhs, exp.Identifier):
+                col = lhs.name
+            else:
+                col = lhs.sql(dialect='sqlite').split(".")[-1]
+
+            if col and col not in set_cols:
+                set_cols.append(col)
+
+    return table, where_clause, set_cols
+
+
+def update_delete_transform(update_sql: str, parsed=None):
+    try:
+        table_name, where_clause, set_cols = _parse_update(update_sql, parsed)
+    except ValueError as e:
+        print(e)
+    canon_table_name = SQLValidator.canonicalise_tables[table_name.lower()]
+    pk_columns = SQLValidator.pk_map[canon_table_name]
+    cols = pk_columns + (set_cols or [])
+    canon_cols = [SQLValidator.canonicalise_columns[canon_table_name].get(i.lower(), i) for i in cols]
+
+    sel_cols = ", ".join(canon_cols)
+    sel_sql = f"SELECT {sel_cols} FROM {canon_table_name} WHERE {where_clause}"
+    SQLValidator.state_validation_setup('AGE_ANTIQUITY')                            # TODO CHANGE to age
+    with SQLValidator.engine_dict['AGE_ANTIQUITY'].begin() as conn:
+        before_rows = conn.execute(text(sel_sql)).mappings().all()
+        before = {tuple(r[pk] for pk in pk_columns): dict(r) for r in before_rows}
+
+        conn.execute(text(update_sql))
+
+        after_rows = conn.execute(text(sel_sql)).mappings().all()
+        conn.rollback()
+        out = []
+        for r in after_rows:
+            pk = tuple(r[pk] for pk in pk_columns)
+            before_row = before.get(pk, {})
+            changed = {}
+            for col in set_cols:
+                old_val, new_val = before_row.get(col), r.get(col)
+                if old_val != new_val:
+                    changed[col] = [old_val, new_val]
+            if changed:
+                if len(changed) == 1:
+                    val_tuple = next(iter(changed.values()))
+                    if val_tuple is None:
+                        right = ""
+                    else:
+                        right = f'{col}: {val_tuple[0]} -> {val_tuple[1]}'
+                else:
+                    right = "\n".join(f"{k}: {v[0]} -> {v[1]}" for k, v in changed.items())
+                out.append((str(*pk), right))
+        return out

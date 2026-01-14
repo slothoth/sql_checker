@@ -13,6 +13,7 @@ from graph.db_node_support import NodeCreationDialog, set_nodes_visible_by_type
 from graph.set_hotkeys import set_hotkeys
 from graph.nodes.dynamic_nodes import generate_tables
 from graph.nodes.effect_nodes import GameEffectNode, RequirementEffectNode
+from graph.nodes.update_nodes import WhereNode
 from graph.port import port_connect_transmit, update_widget_or_prop
 from graph.node_state import SuggestionHub
 from schema_generator import SQLValidator
@@ -36,7 +37,7 @@ class NodeEditorWindow(QMainWindow):
         set_hotkeys(self, menubar)
         # custom SQL nodes
         table_nodes_list = generate_tables(self.graph)
-        self.graph.register_nodes(table_nodes_list + [GameEffectNode, RequirementEffectNode])
+        self.graph.register_nodes(table_nodes_list + [GameEffectNode, RequirementEffectNode, WhereNode])
 
         graph_widget = self.graph.widget             # show the node graph widget.
         graph_widget.setWindowTitle("Database Editor")

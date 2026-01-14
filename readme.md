@@ -23,7 +23,9 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Make it so arg values are highlighted if they are set to the default one. [ ]
 - make it so fields that cannot be left default show red when unedited or empty string. []
 - colour combination logic for if red and blue because localised [ ]
-- Updates and Deletes get imported as a type of node of 2 columns, with the PK values on one side being updated/deleted and the values themselves being changed [ ]
+- Updates and Deletes get imported as a type of node of 2 columns, with the PK values on one side being updated/deleted and the values themselves being changed [x]
+- Updates and Deletes alter suggestible lists [ ]
+- Updates and Deletes have chronology, requiring separate engine state we throw away [ ]
 - autocompletes for Value on database [x]
 # Big Features TODO:
 - Image imports
@@ -36,4 +38,6 @@ It also includes a graph GUI where you can package and plan your own mod.
 ## Known bugs
 - Can double click when making new node to get two
 - not a bug, but writing with shift toggles a mode in graph which is pain
-- xml handler needs to handle line by line xml, because of the Matts scotland example where gameeffects works but the tags are wrong on the String section. yet it parses everything else!
+- xml handler needs to handle line by line xml, because of the Matts scotland example where 
+- gameeffects works but the tags are wrong on the String section. yet it parses everything else! fixed for gameeffects only
+- some types missing like UnitAbilities has no link to Types

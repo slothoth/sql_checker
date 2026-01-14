@@ -457,6 +457,12 @@ def create_requirement_game_effects(graph):
     node = graph.create_node('db.game_effects.RequirementEffectNode', pos=[scene_pos.x(), scene_pos.y()])
 
 
+def create_update_node(graph):
+    viewer = graph.viewer()
+    pos = viewer.mapToGlobal(QtGui.QCursor.pos())
+    scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
+    node = graph.create_node('db.where.WhereNode', pos=[scene_pos.x(), scene_pos.y()])
+
 def test_session(graph):
     """
     Tests the given graph against the database by converting it to SQL. During this process,

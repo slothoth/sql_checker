@@ -42,8 +42,8 @@ def build_imported_mod(mod_folder_path, graph):
     age_dict[age] = True
     mod_dict.update(age_dict)
     file_list = get_files(possible_workloads, mod_dict)
-    orm_list = mod_info_into_orm(sql_info_dict, file_list)
-    build_graph_from_orm(graph, orm_list, age)
+    orm_list, update_delete_list = mod_info_into_orm(sql_info_dict, file_list)
+    build_graph_from_orm(graph, orm_list, update_delete_list, age)
     return True
 
 
@@ -154,19 +154,23 @@ def modinfo_into_jobs(mod_info_dict):
 
 
 def mod_info_into_orm(sql_info_dict, file_path_list):
-    orm_list = []
+    orm_list, update_delete_list = [], []
     for file_path in file_path_list:
         short_path = file_path.replace(f'{sql_info_dict["base_folder"]}/', '')
         sql_commands = sql_info_dict['sql'][short_path]
         for sql_text in sql_commands:
             try:
-                instance_list = create_instances_from_sql(sql_text)
-                if instance_list is not None:
+                instance_list, list_type = create_instances_from_sql(sql_text)
+                if list_type is None:
+                    continue
+                elif list_type == 'insert':
                     orm_list.extend(instance_list)
+                elif list_type == 'update_delete':
+                    update_delete_list.append(instance_list)
             except ParseError as e:
                 print(f'could not parse file {short_path}: {e}')
 
-    return orm_list
+    return orm_list, update_delete_list
 
 # technically we cant get the value of the child port with just fk_index. Consider
 # parent Types.Type and child DynamicModifiers. All 3 columns in DynamicModifiers could link to Types.
@@ -359,7 +363,7 @@ def get_files(tree, state):
     return out
 
 
-def build_graph_from_orm(graph, orm_list, age, custom_effects=True):
+def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
     fk_index = build_fk_index(orm_list)
     graph.blockSignals(True)
     graph.viewer().blockSignals(True)
@@ -462,6 +466,14 @@ def build_graph_from_orm(graph, orm_list, age, custom_effects=True):
             node.set_spec(new_props)
 
     connect_foreign_keys(fk_index, nodes_dict, omitted_node_dict)
+
+    # finally we do update nodes
+    for sql_command, change_strings in update_delete_list:
+        node = graph.create_node('db.where.WhereNode')
+        node.sql_output_triggerable = False
+        node.set_property('sql', sql_command)
+        node.set_property('changes', change_strings)
+        node.sql_output_triggerable = True
     graph.blockSignals(False)
     graph.viewer().blockSignals(False)
     return orm_list
