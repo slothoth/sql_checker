@@ -8,38 +8,19 @@ from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints, ind
 
 db_map = {'ModifierArguments': db_spec.mod_arg_database_types,
           'RequirementArguments': db_spec.req_arg_database_types}
+bonus_col_poss_map = {'Name': {'ModifierArguments': db_spec.modifier_argument_list},
+                                  'RequirementArguments': db_spec.req_argument_list}
 
 
 class DynamicNode(BasicDBNode):
     _validation_errors = {}  # Track validation errors for each field
+    can_validate = False
 
-    def _validate_field(self, field_name, field_value):
-        """
-        Validate a single field and update its visual state.
-
-        Args:
-            field_name: Name of the field to validate
-            field_value: Value to validate
-
-        Returns:
-            bool: True if valid, False otherwise
-        """
-        if not hasattr(self, 'NODE_NAME'):
-            return True
-
+    def _validate_field(self, field_name, field_value, all_data=None):
+        if all_data is None:
+            all_cols = self._initial_fields + self._extra_fields
+            all_data = {k: v for k, v in self.properties()['custom'].items() if k in all_cols}
         table_name = self.get_property('table_name')
-
-        # Get all current field values for context
-        all_data = {}
-        for col in self._initial_fields + self._extra_fields:
-            widget = self.get_widget(col)
-            if widget:
-                try:
-                    val = widget.get_value()
-                    if val is not None and val != '':
-                        all_data[col] = val
-                except:
-                    pass
 
         is_valid, error_msg = SQLValidator.validate_field(table_name, field_name, field_value, all_data)
 
@@ -53,48 +34,18 @@ class DynamicNode(BasicDBNode):
         return is_valid
 
     def _update_field_style(self, field_name, is_valid):
-        """
-        Update the visual style of a field widget based on validation state.
-
-        Args:
-            field_name: Name of the field
-            is_valid: Whether the field is valid
-        """
         widget = self.get_widget(field_name)
-        if not widget:
-            return
-
-        qt_widget = None
-        if hasattr(widget, 'get_custom_widget'):
-            qt_widget = widget.get_custom_widget()
-        elif hasattr(widget, 'widget'):
-            qt_widget = widget.widget
-
-        if qt_widget is None:
-            return
-
-        # Set background color based on validation state
-        if is_valid:
-            current_style = qt_widget.styleSheet() or ""         # Reset to default (white/transparent)
-            # Remove red background but keep other styles
-            new_style = current_style.replace("background-color: #ffcccc;", "").strip()
-            qt_widget.setStyleSheet(new_style if new_style else "")
-        else:
-            current_style = qt_widget.styleSheet() or ""        # Set red background for invalid fields
-            if "background-color: #ffcccc;" not in current_style:
-                new_style = current_style + ("; " if current_style else "") + "background-color: #ffcccc;"
-                qt_widget.setStyleSheet(new_style)
+        if widget:
+            widget.adjust_color(widget.get_custom_widget(), is_valid)
 
     def _validate_all_fields(self):
-        """Validate all fields in the node."""
-        for col in self._initial_fields + self._extra_fields:
+        all_cols = self._initial_fields + self._extra_fields
+        all_data = {k: v for k, v in self.properties()['custom'].items() if k in all_cols}
+        for col in self._initial_fields:
             widget = self.get_widget(col)
-            if widget:
-                try:
-                    value = widget.get_value()
-                    self._validate_field(col, value)
-                except:
-                    pass
+            if widget and widget.widget_string_type == 'QLineEdit':
+                value = widget.get_value()
+                self._validate_field(col, value, all_data)
 
     def _arguments_change(self, database_arg_map, old_name, new_name):
         new_table_class, new_pk_output = self.port_info(database_arg_map, new_name)
@@ -123,15 +74,19 @@ class DynamicNode(BasicDBNode):
         return table_class, table_pk_output
 
     def set_property(self, name, value, push_undo=True):
-        if name == 'Name':
-            old_value = self.get_property('Name')
+        old_value = self.get_property(name)
+        table_name = self.get_property('table_name')
+        if table_name in ('ModifierArguments', 'RequirementArguments'):
             super().set_property(name=name, value=value, push_undo=True)
-            table_name = self.get_property('table_name')
-            if table_name in ('ModifierArguments', 'RequirementArguments'):
+            if name == 'Name':
                 database_arg_map = db_map[table_name]
                 self._arguments_change(database_arg_map, old_name=old_value, new_name=value)
         else:
+            widget = self.get_widget(name)
+            if self.can_validate and old_value != value and widget and widget.widget_string_type == 'QLineEdit':
+                self._validate_field(name, value)
             super().set_property(name=name, value=value, push_undo=True)
+
 
 
 # had to auto generate classes rather then generate at node instantition because
@@ -173,21 +128,16 @@ def create_table_node_class(table_name, graph):
             default_val = default_map.get(col, None)
             fk_to_tbl_link = fk_to_tbl_map.get(col, None)
             fk_to_pk_link = fk_to_pk_map.get(col, None)
-            is_required = require_map.get(col, None)
+            is_required = require_map.get(col, False)
             if fk_to_pk_link is not None:
                 color = SQLValidator.port_color_map['input'].get(table_name, {}).get(col)
-                if is_required is not None:
+                if is_required:
                     port = self.add_input(col, color=color)
                 else:
                     port = self.add_input(col, painter_func=draw_square_port, color=color)
                 self.set_input_port_constraint(port, fk_to_tbl_link, fk_to_pk_link)
 
-            col_poss_vals = self._possible_vals.get(col, None)
-            if col == 'Name':
-                if table_name == 'ModifierArguments':
-                    col_poss_vals = db_spec.modifier_argument_list
-                elif table_name == 'RequirementArguments':
-                    col_poss_vals = db_spec.req_argument_list
+            col_poss_vals = bonus_col_poss_map.get(col, {}).get(table_name, self._possible_vals.get(col, None))
             col_type = SQLValidator.type_map[table_name][col]
             if isinstance(col_type, bool):
                 if col in self._extra_fields:
@@ -224,7 +174,7 @@ def create_table_node_class(table_name, graph):
                 self.set_text_input(col, idx, default_val, localise=is_localised)
 
         self.create_property('arg_params', lazy_params)
-
+        self.can_validate = True
         self._validate_all_fields()     # Validate all fields after initialization
 
         fk_backlink = SQLValidator.pk_ref_map.get(table_name)

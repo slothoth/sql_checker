@@ -190,15 +190,16 @@ class SchemaInspector:
         if all_data is None:
             all_data = {}
 
-        if field_value == '' or field_value is None:  # Convert empty strings to None for validation
+        if field_value == '':  # Convert empty strings to None for validation
             field_value = None
 
         data = {field_name: field_value}
         data.update(all_data)  # Merge with all_data for context
         data[field_name] = field_value  # Ensure our field value takes precedence
 
-        # Remove empty string values from all_data for cleaner validation
-        cleaned_data = {k: (None if v == '' else v) for k, v in data.items() if v is not None or v == ''}
+        # Remove empty string values from all_data for cleaner validation           # TODO remove the '' as sometimes valid, but need better solution
+        cleaned_data = {k: (None if v == '' else v) for k, v in data.items()
+                        if k==field_name or v is not None or v == ''}
         # deal with checkbox bools
         cleaned_data = {k: int(v) if isinstance(v, bool) else v for k, v in cleaned_data.items()}
         try:
@@ -208,25 +209,13 @@ class SchemaInspector:
                 field_errors = errors.get(field_name, [])
                 if field_errors:
                     return False, '; '.join(field_errors) if isinstance(field_errors, list) else str(field_errors)
-                return False, 'Validation failed'
+                return True, 'Validation failed for other columns'
 
             return True, None
         except Exception as e:
             return True, None  # If schema generation fails, don't block the user to avoid breaking UI
 
-    def validate_table_data(self, table_name, data, partial=True):
-        """
-        Validate data against a table's schema.
-
-        Args:
-            table_name: Name of the database table
-            data: Dictionary of field names to values
-            partial: If True, only validate provided fields (default: True)
-
-        Returns:
-            tuple: (is_valid: bool, errors: dict)
-            errors is a dictionary mapping field names to error messages
-        """
+    def validate_table_data(self, table_name, data, partial):
         try:
             schema = self.get_schema_for_table(table_name)
             schema_instance = schema(partial=partial)

@@ -1,0 +1,6 @@
+{
+  "basic": "QLineEdit {\n  background:rgba(35,35,35,20);\n  border:1px solid rgb(45,45,45);\n  border-radius:3px;\n  color:rgba(220,220,220,150);\n  selection-background-color:rgba(220,220,220,100);\n}\n",
+  "basic_error": "QLineEdit {\n  background:rgba(255,201,201,60);\n  border:1px solid rgb(45,45,45);\n  border-radius:3px;\n  color:rgba(220,220,220,150);\n  selection-background-color:rgba(220,220,220,140);\n}\n",
+  "localise": "QLineEdit {\n  background:rgba(35,35,235,80);\n  border:1px solid rgb(45,45,45);\n  border-radius:3px;\n  color:rgba(220,220,220,150);\n  selection-background-color:rgba(220,220,20,140);\n}\n",
+  "localise_error": "QLineEdit {\n  background:rgba(255,201,255,120);\n  border:1px solid rgb(45,45,45);\n  border-radius:3px;\n  color:rgba(220,220,220,150);\n  selection-background-color:rgba(220,220,220,140);\n}\n"
+}

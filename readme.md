@@ -19,14 +19,16 @@ It also includes a graph GUI where you can package and plan your own mod.
 - autocompletes for Value on database [x]
 - Search highlights most used set (predefined/ user tracked?)     [ ]
 - Sort port topdown so required ones are at the top                 [ ]
-- Effect Attach Modifier, ModifierArgument Extra Connection             [ ]
+- Effect Attach Modifier, ModifierArgument Extra Connection             [x]
+- ModifierArguments entry                                               [x]
 - refactor state validation to be threaded on start up, or at least only when graph planner opened [ ]
 - Make it so arg values are highlighted if they are set to the default one. [ ]
-- make it so fields that cannot be left default show red when unedited or empty string. []
-- colour combination logic for if red and blue because localised [ ]
+- make it so fields that cannot be left default show red when unedited or empty string. [x]
+- colour combination logic for if red and blue because localised [x]
 - Updates and Deletes get imported as a type of node of 2 columns, with the PK values on one side being updated/deleted and the values themselves being changed [x]
 - Updates and Deletes alter suggestible lists [ ]
 - Updates and Deletes have chronology, requiring separate engine state we throw away [ ]
+- custom effect node uses colour to display which args need filled, and which are optional (deal with no lineedit) and default
 # Big Features TODO:
 - Image imports
 - Localisation entries (and displaying them as options in relevant gameplay graph) [x]
@@ -35,6 +37,7 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Tabbed graphs, so you can see content in different criteria, and frontend
 - Node connections can only happen between valid connectors (PK-FK), node.add_accept_port_type [x]
 - Big Graphs compress tables of the same type into one node.
+- Object context with reqs/effects
 - Narrative Node
 - Unit Node
 - Constructible node?

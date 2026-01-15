@@ -1,13 +1,22 @@
+from PyQt5 import QtWidgets, QtCore, QtGui
+from PyQt5.QtGui import QPalette, QColor
+from collections import Counter
+import json
+
 from NodeGraphQt import NodeBaseWidget
 from NodeGraphQt.constants import Z_VAL_NODE_WIDGET, ViewerEnum
 
-from PyQt5 import QtWidgets, QtCore, QtGui
-import os
-from collections import Counter
+
+with open('resources/style_sheets.json') as f:
+    styles = json.load(f)
 
 
-class ArgReportNodeBaseWidget(NodeBaseWidget):
+class ArgReportWidget(NodeBaseWidget):
     val_accept = ''
+    style_dict = {}
+    default_style = {}
+    widget_string_type = ''
+    style_key = ''
 
     def update_args(self, text):
         arg_params = self.node.get_property('arg_params') or {}
@@ -15,9 +24,18 @@ class ArgReportNodeBaseWidget(NodeBaseWidget):
         if prop_name in arg_params:
             arg_params[prop_name] = text
 
+    def adjust_color(self, widget, is_valid=True):
+        style_key = 'localise' if self.localise else 'basic'
+        if not is_valid:
+            style_key += '_error'
+        if self.style_key != style_key:
+            self.style_key = style_key
+            widget.setStyleSheet(styles[style_key])
 
-class IntSpinNodeWidget(ArgReportNodeBaseWidget):
+
+class IntSpinNodeWidget(ArgReportWidget):
     val_accept = int
+    widget_string_type = 'QSpinBox'
 
     def __init__(self, prop, parent=None, minimum=0, maximum=100):
         super().__init__(parent)
@@ -29,13 +47,14 @@ class IntSpinNodeWidget(ArgReportNodeBaseWidget):
         self.spin.setRange(minimum, maximum)
         self.spin.valueChanged.connect(self._on_changed)
         # style sheet needed as otherwise arrows move based on zoom
+
         self.spin.setStyleSheet("""
                     QSpinBox {
                         background-color: #353535;
                         border: 1px solid #1a1a1a;
                         color: #eeeeee;
                         border-radius: 2px;
-                        padding-right: 15px; /* make room for buttons */
+                        padding-right: 15px;
                     }
                     QSpinBox::up-button {
                         subcontrol-origin: border;
@@ -64,11 +83,10 @@ class IntSpinNodeWidget(ArgReportNodeBaseWidget):
                         image: none;
                         border-left: 4px solid none;
                         border-right: 4px solid none;
-                        border-top: 5px solid #bbb; /* This creates a triangle */
+                        border-top: 5px solid #bbb; 
                         width: 0;
                         height: 0;
                     }
-                    /* Hover effects */
                     QSpinBox::up-button:hover, QSpinBox::down-button:hover {
                         background-color: #555555;
                     }
@@ -92,8 +110,9 @@ class IntSpinNodeWidget(ArgReportNodeBaseWidget):
         self.value_changed.emit(self.get_name(), int(v))
 
 
-class FloatSpinNodeWidget(ArgReportNodeBaseWidget):
+class FloatSpinNodeWidget(ArgReportWidget):
     val_accept = float
+    widget_string_type = 'QDoubleSpinBox'
 
     def __init__(self, prop, parent=None):
         super().__init__(parent)
@@ -122,8 +141,9 @@ class FloatSpinNodeWidget(ArgReportNodeBaseWidget):
         self.update_args(value)
 
 
-class BoolCheckNodeWidget(ArgReportNodeBaseWidget):
+class BoolCheckNodeWidget(ArgReportWidget):
     val_accept = bool
+    widget_string_type = 'QCheckBox'
 
     def __init__(self, prop, parent=None):
         super().__init__(parent)
@@ -150,7 +170,7 @@ class BoolCheckNodeWidget(ArgReportNodeBaseWidget):
         self.update_args(value)
 
 
-class SuggestorPopulatorWidget(ArgReportNodeBaseWidget):
+class SuggestorPopulatorWidget(ArgReportWidget):
     committed = QtCore.pyqtSignal(object)
 
     def _commit(self):
@@ -162,6 +182,9 @@ class SuggestorPopulatorWidget(ArgReportNodeBaseWidget):
 class ExpandingLineEdit(SuggestorPopulatorWidget):
     val_accept = str
     line_edit = None
+    style_dict = {}
+    default_style = {}
+    widget_string_type = 'QLineEdit'
 
     def __init__(self, parent=None, name='', label='', text='', check_if_edited=False, localise=False):
         super().__init__(parent, name, label)
@@ -169,8 +192,9 @@ class ExpandingLineEdit(SuggestorPopulatorWidget):
 
         self.line_edit = QtWidgets.QLineEdit()
         self.line_edit.setText(text)
-        text_input_style(self.line_edit, localise)
 
+        self.localise = localise
+        self.adjust_color(self.line_edit, True)
         self.line_edit.editingFinished.connect(self._commit)
 
         if check_if_edited:
@@ -331,37 +355,6 @@ class DropDownLineEdit(ExpandingLineEdit):
         view.setFixedWidth(w)
 
 
-def text_input_style(widget, localise):
-    bg_color = list((*ViewerEnum.BACKGROUND_COLOR.value, 20))
-    if localise:
-        bg_color[2] = bg_color[2] + 200
-        bg_color[3] = bg_color[3] + 60
-
-    text_color = tuple(map(lambda i, j: i - j, (255, 255, 255),
-                           bg_color))
-    text_sel_color = text_color
-    style_dict = {
-        'QLineEdit': {
-            'background': 'rgba({0},{1},{2},{3})'.format(*bg_color),
-            'border': '1px solid rgb({0},{1},{2})'
-            .format(*ViewerEnum.GRID_COLOR.value),
-            'border-radius': '3px',
-            'color': 'rgba({0},{1},{2},150)'.format(*text_color),
-            'selection-background-color': 'rgba({0},{1},{2},100)'
-            .format(*text_sel_color),
-        }
-    }
-    stylesheet = ''
-    for css_class, css in style_dict.items():
-        style = '{} {{\n'.format(css_class)
-        for elm_name, elm_val in css.items():
-            style += '  {}:{};\n'.format(elm_name, elm_val)
-        style += '}\n'
-        stylesheet += style
-    widget.setStyleSheet(stylesheet)
-    #widget.setAlignment(QtCore.Qt.AlignCenter)
-
-
 def _majority_prefix(values, min_ratio=0.8, require_delim='_', max_parts=2):
     vals = [str(v) for v in values if v]
     if not vals:
@@ -383,7 +376,6 @@ def _majority_prefix(values, min_ratio=0.8, require_delim='_', max_parts=2):
     if hits / len(vals) < float(min_ratio):
         return ''
     return prefix
-
 
 
 def _strip_prefix(s, prefix):
@@ -408,3 +400,54 @@ class _PrefixDisplayStringListModel(QtCore.QStringListModel):       # strip pref
             return full
         return super().data(index, role)
 
+
+# style sheets, migrate to json later?
+spin_styling = {
+            'QSpinBox': {
+                'background-color': '#353535',
+                'border': '1px solid #1a1a1a',
+                'color': '#eeeeee',
+                'border-radius': '2px',
+                'padding-right': '15px'
+            },
+            'QSpinBox::up-button': {
+                'subcontrol-origin': 'border',
+                'subcontrol-position': 'top right',
+                'width': '16px',
+                'border-left': '1px solid #1a1a1a',
+                'border-bottom': '1px solid #1a1a1a',
+                'background-color': '#444444'
+            },
+            'QSpinBox::down-button': {
+                'subcontrol-origin': 'border',
+                'subcontrol-position': 'bottom right',
+                'width': '16px',
+                'border-left': '1px solid #1a1a1a',
+                'background-color': '#444444'
+            },
+            'QSpinBox::up-arrow': {
+                'image': 'none',
+                'border-left': '4px solid none',
+                'border-right': '4px solid none',
+                'border-top': '5px solid #bbb',
+                'width': '0',
+                'height': '0'
+            },
+            'QSpinBox::down-arrow': {
+                'image': 'none',
+                'border-left': '4px solid none',
+                'border-right': '4px solid none',
+                'border-top': '5px solid #bbb',
+                'width': '0',
+                'height': '0'
+            },
+            'QSpinBox::up-button:hover, QSpinBox::down-button:hover': {
+                'background-color': '#555555'
+            },
+            'QSpinBox::up-arrow:hover': {
+                'border-bottom-color': '#ffffff'
+            },
+            'QSpinBox::down-arrow:hover': {
+                'border-top-color': '#ffffff'
+            }
+        }
