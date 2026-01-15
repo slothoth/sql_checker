@@ -1,7 +1,6 @@
 from collections import defaultdict
 from NodeGraphQt import BaseNode
-from NodeGraphQt.constants import PortTypeEnum
-from NodeGraphQt.constants import NodePropWidgetEnum
+from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
 
 
 from graph.db_spec_singleton import db_spec, effect_system_tables, requirement_system_tables
@@ -68,14 +67,6 @@ class BasicDBNode(BaseNode):
                         self.set_property(col_name, value)
                     else:
                         self.create_property(col_name, value)
-
-    def set_search_menu(self, col, idx, col_poss_vals, localise=False):
-        self.add_custom_widget(
-            DropDownLineEdit(parent=self.view, label=index_label(idx, col),
-                             name=col, text=col_poss_vals[0] if col_poss_vals else None,
-                             suggestions=col_poss_vals or [], localise=localise),
-            tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        return
 
     def set_bool_checkbox(self, col, idx=0, default_val=None, display_in_prop_bin=True):
         is_default_on = default_val is not None and int(default_val) == 1

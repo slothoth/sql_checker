@@ -217,14 +217,15 @@ def update_delete_transform(update_sql: str, parsed=None, age='AGE_ANTIQUITY'):
         sel_sql = f"{sel_sql}  WHERE {where_clause}"
     SQLValidator.state_validation_setup(age)
     with SQLValidator.engine_dict[age].begin() as conn:
-        before_rows = conn.execute(text(sel_sql)).mappings().all()
-        before = {tuple(r[pk] for pk in pk_columns): dict(r) for r in before_rows}
         try:
+            before_rows = conn.execute(text(sel_sql)).mappings().all()
+            before = {tuple(r[pk] for pk in pk_columns): dict(r) for r in before_rows}
             conn.execute(text(update_sql))
+            after_rows = conn.execute(text(sel_sql)).mappings().all()
         except sqlalchemy.exc.OperationalError as e:
+            conn.rollback()
             raise TypeError("\n".join(e.args))
 
-        after_rows = conn.execute(text(sel_sql)).mappings().all()
         conn.rollback()
         columns_output_tuples = []
         if len(set_cols) == 0:              # its a delete

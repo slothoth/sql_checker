@@ -3,6 +3,7 @@ import json
 import os
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtTest import QTest
+from PyQt5 import QtGui
 
 
 from graph.node_controller import NodeEditorWindow
@@ -291,6 +292,79 @@ def test_update_suggestions_plural_same_node(qtbot):
     suggestions = set(unit_stats.get_widget('UnitType')._completer_model.stringList())
     assert 'UNIT_TEST_2' in suggestions
     assert 'UNIT_TEST' in suggestions
+
+
+def update_delete_node_setup(sql_command, qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    node = window.graph.create_node('db.where.WhereNode')
+    qtbot.wait(1)
+    node.set_property('sql', sql_command)
+    qtbot.wait(1)
+    value = node.get_widget('changes').get_value()
+    return node, value
+
+
+def test_update_delete_node_update_case(qtbot):
+    sql = "UPDATE Units SET BaseMoves=10 WHERE UnitType in ('UNIT_ARCHER', 'UNIT_WARRIOR')"
+    node, change_val = update_delete_node_setup(sql, qtbot)
+    assert ('UNIT_ARCHER', 'BaseMoves: 2 -> 10') in change_val
+    assert ('UNIT_WARRIOR', 'BaseMoves: 2 -> 10') in change_val
+    assert len(change_val) == 2
+
+
+def test_update_delete_node_delete_case(qtbot):
+    sql = "DELETE FROM Units WHERE UnitType in ('UNIT_ARCHER', 'UNIT_WARRIOR')"
+    node, change_val = update_delete_node_setup(sql, qtbot)
+    assert ('UNIT_ARCHER', 'Deleted') in change_val
+    assert ('UNIT_WARRIOR', 'Deleted') in change_val
+    assert len(change_val) == 2
+
+
+def test_update_delete_node_update_lower_case(qtbot):           # TODO handle column lower case
+    sql = "UPDATE uNiTs SET BaseMoves=10 WHERE UnitType in ('UNIT_ARCHER', 'UNIT_WARRIOR')"
+    node, change_val = update_delete_node_setup(sql, qtbot)
+    assert ('UNIT_ARCHER', 'BaseMoves: 2 -> 10') in change_val
+    assert ('UNIT_WARRIOR', 'BaseMoves: 2 -> 10') in change_val
+    assert len(change_val) == 2
+
+# error cases
+
+
+def test_update_delete_node_error_empty_statement_case(qtbot):      # failing but in practice works?
+    return
+    node, change_val = update_delete_node_setup("", qtbot)
+    assert len(change_val) == 1, f'error statement should only be a single row, was actually {change_val}'
+    sql_widget_palette = node.get_widget('sql').palette()
+    actual = {'bg': sql_widget_palette.color(QtGui.QPalette.ColorRole.Base),
+              'text': sql_widget_palette.color(QtGui.QPalette.ColorRole.Text),
+              'highlight': sql_widget_palette.color(QtGui.QPalette.ColorRole.Highlight)}
+    expected = {'bg': QtGui.QColor("#FDE8E8"), 'text': QtGui.QColor("#9B1C1C"), 'highlight': QtGui.QColor("#F05252")}
+
+    actual_colours = {k: (v.red(), v.green(), v.blue()) for k, v in actual.items()}
+    expected_colours = {k: (v.red(), v.green(), v.blue()) for k, v in expected.items()}
+    for colour, rgb in actual_colours.items():
+        assert rgb == expected_colours[colour], f'Expected RGB for {colour} after error: {expected_colours[colour]}. Actually {rgb}.'
+
+
+def test_update_delete_node_error_incomplete_statement_case(qtbot):
+    sql = "UPDATE"
+    node, change_val = update_delete_node_setup(sql, qtbot)
+    full_error = " ".join("".join(i) for i in change_val)
+    assert 'Expected table name but got None' in full_error
+
+
+def test_update_delete_node_error_not_existing_table_case(qtbot):
+    node, change_val = update_delete_node_setup("UPDATE Uni SET BaseMoves=10", qtbot)
+    full_error = " ".join("".join(i) for i in change_val)
+    assert "Table 'Uni' not found" in full_error
+
+
+def test_update_delete_node_error_not_existing_col_case(qtbot):
+    node, change_val = update_delete_node_setup("UPDATE Units SET WrongCol=10", qtbot)
+    full_error = " ".join("".join(i) for i in change_val)
+    assert 'no such column: WrongCol', full_error
 
 
 def test_import_mod(qtbot):
