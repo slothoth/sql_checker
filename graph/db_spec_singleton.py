@@ -10,8 +10,6 @@ from pathlib import Path
 if sys.platform == 'win32':
     import winreg
 
-from graph.param_calcs import stats_find_arg_length, build_arg_type_list_map, build_param_map
-
 
 modifier_system_tables = ("Modifiers", "ModifierArguments", "DynamicModifiers", "ModifierStrings",
                           "Requirements", "RequirementArguments", "RequirementSets",
@@ -63,6 +61,7 @@ class ResourceLoader:
             'req_type_arg_map': self.resource_path('resources/RequirementArgumentTypes.json'),
             'req_arg_database_types': self.resource_path('resources/RequirementArgumentDatabaseTypes.json'),
             'localized_tags': self.resource_path('resources/LocalizedTags.json'),
+            'collections_list': self.resource_path('resources/CollectionsList.json'),
         }
         if not os.path.exists(self._files['metadata']):
             self.civ_config = find_civ_config()
@@ -104,6 +103,11 @@ class ResourceLoader:
         self.req_type_arg_map = self._read_file(self._files['req_type_arg_map'])
         self.req_arg_database_types = self._read_file(self._files['req_arg_database_types'])
         self.localized_tags = self._read_file(self._files['localized_tags'])
+        self.collections_list = self._read_file(self._files['collections_list'])
+        self.modifier_argument_list = set()
+        [self.modifier_argument_list.update(list(v.keys())) for k, v in self.mod_type_arg_map.items()]
+        self.req_argument_list = set()
+        [self.req_argument_list.update(list(v.keys())) for k, v in self.req_type_arg_map.items()]
 
     @staticmethod
     def _read_file(path):

@@ -1,10 +1,13 @@
-from NodeGraphQt.constants import NodePropWidgetEnum
+from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
 from PyQt5 import QtCore, QtGui
 
 from graph.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
-from graph.custom_widgets import IntSpinNodeWidget
-from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
+from graph.custom_widgets import IntSpinNodeWidget, DropDownLineEdit
+from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints, index_label
+
+db_map = {'ModifierArguments': db_spec.mod_arg_database_types,
+          'RequirementArguments': db_spec.req_arg_database_types}
 
 
 class DynamicNode(BasicDBNode):
@@ -67,7 +70,6 @@ class DynamicNode(BasicDBNode):
         elif hasattr(widget, 'widget'):
             qt_widget = widget.widget
 
-
         if qt_widget is None:
             return
 
@@ -93,6 +95,43 @@ class DynamicNode(BasicDBNode):
                     self._validate_field(col, value)
                 except:
                     pass
+
+    def _arguments_change(self, database_arg_map, old_name, new_name):
+        new_table_class, new_pk_output = self.port_info(database_arg_map, new_name)
+        if new_table_class is None:
+            return
+        old_table_class, old_pk_output = self.port_info(database_arg_map, old_name)
+        if old_table_class != new_table_class or old_table_class is None:
+            port = self.get_input('Value')
+            port.clear_connections()
+            if old_table_class is not None:
+                dict_key = [i for i in self._model._graph_model.accept_connection_types.keys()][0]
+                del self._model._graph_model.accept_connection_types[dict_key]          # must be a better way to do this
+
+            self.add_accept_port_type(port, {
+                'node_type': new_table_class,
+                'port_type': PortTypeEnum.OUT.value,
+                'port_name': new_pk_output,
+            })
+
+    def port_info(self, database_arg_map, name):
+        output_table = database_arg_map.get(name)
+        if output_table is None:
+            return None, None
+        table_class = SQLValidator.table_name_class_map[output_table]
+        table_pk_output = SQLValidator.pk_map[output_table][0]
+        return table_class, table_pk_output
+
+    def set_property(self, name, value, push_undo=True):
+        if name == 'Name':
+            old_value = self.get_property('Name')
+            super().set_property(name=name, value=value, push_undo=True)
+            table_name = self.get_property('table_name')
+            if table_name in ('ModifierArguments', 'RequirementArguments'):
+                database_arg_map = db_map[table_name]
+                self._arguments_change(database_arg_map, old_name=old_value, new_name=value)
+        else:
+            super().set_property(name=name, value=value, push_undo=True)
 
 
 # had to auto generate classes rather then generate at node instantition because
@@ -144,6 +183,11 @@ def create_table_node_class(table_name, graph):
                 self.set_input_port_constraint(port, fk_to_tbl_link, fk_to_pk_link)
 
             col_poss_vals = self._possible_vals.get(col, None)
+            if col == 'Name':
+                if table_name == 'ModifierArguments':
+                    col_poss_vals = db_spec.modifier_argument_list
+                elif table_name == 'RequirementArguments':
+                    col_poss_vals = db_spec.req_argument_list
             col_type = SQLValidator.type_map[table_name][col]
             if isinstance(col_type, bool):
                 if col in self._extra_fields:
@@ -166,7 +210,10 @@ def create_table_node_class(table_name, graph):
                     lazy_params[col] = default_val
                     self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
                     continue
-                self.set_search_menu(col=col, idx=idx, col_poss_vals=col_poss_vals['vals'])
+                self.add_custom_widget(
+                    DropDownLineEdit(parent=self.view, label=index_label(idx, col), name=col, text='',
+                                     suggestions=col_poss_vals or []),
+                    tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
             else:
                 is_localised = col in localised_cols
                 if col in self._extra_fields:
@@ -184,6 +231,8 @@ def create_table_node_class(table_name, graph):
         if fk_backlink is not None:
             self.output_port_tables[SQLValidator.pk_map[table_name][0]] = set_output_port_constraints(self, table_name,
                                                                                                       fk_backlink)
+        if table_name in ('ModifierArguments', 'RequirementArguments'):
+            self.add_input('Value')
         self.view.setVisible(True)
 
     def set_defaults_method(self):

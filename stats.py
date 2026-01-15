@@ -21,6 +21,11 @@ def gather_effects(db_dict):
     combined_df, combined_collection_objects_df, combined_collection_attach_df, comb_collection_attach_df = None, None, None, None
     agg_collection_effect_map_combined, modifier_arguments_name_df = None, None
 
+    collection_types = pd.read_sql("SELECT Type FROM Types WHERE Kind='KIND_COLLECTION'", db_dict['AGE_ANTIQUITY'])
+    collection_types = list(collection_types['Type'])
+    with open('resources/CollectionsList.json', 'w') as f:
+        json.dump(collection_types, f, indent=2)
+
     with open('resources/CollectionObjectManualAssignment.json') as f:
         manual_collection_classification = json.load(f)
 
@@ -476,8 +481,6 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
     # this final all_OWNER_reqs is all requirementTypes used in both Subject and Owner reqset Ids that have
     # COLLECTION_OWNER and mapped that collection to its modifier owner table and thus object
 
-
-
     # now lets do this same process for non COLLECTION_OWNER reqs
     owner_reqs_no_OWNER['object'] = owner_reqs_no_OWNER['CollectionType'].apply(
         lambda x: manual_collection_classification[x]['Owner'])
@@ -500,12 +503,6 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
     complete_full_reqs = pd.concat([complete_full_reqs, final_attach_mod_reqs], ignore_index=True)
     complete_full_reqs = complete_full_reqs.groupby("RequirementType", as_index=False)["object"].agg(
         lambda s: set().union(*[x if isinstance(x, set) else {x} for x in s]))
-    # TODO see if we have all RequirementTypes now
-    # hang on. Do we need to separate COLLECTION_OWNER for OwnerRequirementSetIds? The collection
-    # is for the modifier, and the owner will always just be the owner table for that req. oh well, should
-    # not be a problem
-    # should be 232 according to SELECT DISTINCT RequirementType, but is actually like 71. because of no arg reqs?
-    # find the requirements without arguments, was exactly 100. so quite a lot of missing reqs, 132.
 
     req_all_types = None
     for db, engine in db_dict.items():

@@ -224,7 +224,11 @@ class GameEffectNode(BaseEffectNode):
                              name="EffectType", text='',
                              suggestions=modifier_arguments),
             tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        self.set_search_menu(col='CollectionType', idx=0, col_poss_vals=['COLLECTION_PLAYER_CITIES', 'COLLECTION_OWNER'])
+        self.add_custom_widget(
+            DropDownLineEdit(parent=self.view, label="CollectionType",
+                             name="CollectionType", text='',
+                             suggestions=db_spec.collections_list),
+            tab='fields', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.create_property('ModifierType', '', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.output_port_tables['ModifierId'] = set_output_port_constraints(self, 'Modifiers',
                                                               SQLValidator.pk_ref_map.get('Modifiers'))
