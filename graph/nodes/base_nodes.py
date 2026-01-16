@@ -5,7 +5,11 @@ from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
 
 from graph.db_spec_singleton import db_spec, effect_system_tables, requirement_system_tables
 from schema_generator import SQLValidator
-from graph.custom_widgets import ExpandingLineEdit, DropDownLineEdit, BoolCheckNodeWidget
+from graph.custom_widgets import ExpandingLineEdit, BoolCheckNodeWidget
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 class BasicDBNode(BaseNode):
@@ -70,8 +74,6 @@ class BasicDBNode(BaseNode):
 
     def set_bool_checkbox(self, col, idx=0, default_val=None, display_in_prop_bin=True):
         is_default_on = default_val is not None and int(default_val) == 1
-        if is_default_on:
-            print(f'default True for {col}')
         self.add_custom_widget(BoolCheckNodeWidget(parent=self.view, prop=col), tab='fields',
                                widget_type=NodePropWidgetEnum.QCHECK_BOX.value if display_in_prop_bin else None)
 
@@ -113,9 +115,8 @@ def backlink_port_get(original_table, connect_table):
     fk_ports = [key for key, val in combined_fks.items() if
                 val == connect_table or (isinstance(val, dict) and val.get('ref_table') == connect_table)]
     if len(fk_ports) > 1:
-        print(f'error multiple ports possible for connect!'
-              f' the connection was: {connect_table} -> {original_table}.'
-              f' defaulting to first option')
+        log.error(f'when connecting backlink ports (for mod import): there were multiple ports possible for connection:'
+                  f' {connect_table} -> {original_table}. possible ports: {fk_ports}')
     return fk_ports[0]
 
 

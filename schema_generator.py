@@ -534,7 +534,8 @@ def explain_errors(error_info_list, session):
         indices_string = ", ".join([str(i) for i in indices_list])
         rows = session.execute(sqla_text(f"SELECT {pk_string} FROM {insertion_table} WHERE rowid IN ({indices_string});")).fetchall()
         bad_rows_dict[error_tuple].append(rows)
-        explained_error_dict[error_tuple] = f"FOREIGN KEY missing on {insertion_table}.{fk_col}. It needs a corresponding primary key on table {primary_key_table}."
+        explained_error_dict[error_tuple] = (f"FOREIGN KEY missing on {insertion_table}.{fk_col}. "
+                                             f"It needs a corresponding primary key on table {primary_key_table}.")
     return explained_error_dict, bad_rows_dict
 
 

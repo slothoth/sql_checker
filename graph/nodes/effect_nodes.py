@@ -5,6 +5,9 @@ from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
 
+import logging
+
+log = logging.getLogger(__name__)
 
 max_db_mod_arg = max(len([val for key, val in v.items() if val == 'database'])
                      for k, v in db_spec.mod_type_arg_map.items())
@@ -287,9 +290,8 @@ class GameEffectNode(BaseEffectNode):
                     backlink_spec = db_spec.node_templates[backlink_table]
                     fk_ports = [key for key, val in backlink_spec['foreign_keys'].items() if val == connect_table]
                     if len(fk_ports) > 1:
-                        print(f'error multiple ports possible for connect!'
-                              f' the connection was: {connect_table} -> {backlink_table}.'
-                              f' defaulting to first option')
+                        log.error(f'when connecting backlink ports (for mod import): there were multiple ports possible'
+                                  f' for connection: {connect_table} -> {backlink_table}. possible ports: {fk_ports}')
                     return fk_ports[0]
 
     def update_unnamed_cols(self, mode):        # change default names if not already named

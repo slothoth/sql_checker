@@ -104,7 +104,6 @@ def effect_custom_transform(custom_properties, sql_code, error_string):
             for req in reqset_object_info['reqs']:
                 req_id = req
                 if isinstance(req, dict):
-                    # print('nesting req')
                     nested_reqset = req['reqset']
                     req_name = f'REQ_IS_MET_{nested_reqset}'
 
@@ -161,7 +160,7 @@ def transform_localisation(ui_dict, table_name):
     if loc_cols is None:
         return []
     loc_entries = []
-    pk_string = '_'.join([ui_dict[i] for i in info['primary_keys']])
+    pk_string = '_'.join([str(ui_dict[i]) for i in info['primary_keys']])
     for col in loc_cols:
         loc_string = f'LOC_{table_name}_{pk_string}_{col}'
         loc_entry = {'Language': 'en_US', 'Tag': loc_string, 'Text': ui_dict[col]}

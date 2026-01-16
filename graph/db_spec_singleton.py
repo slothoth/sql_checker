@@ -1,6 +1,5 @@
 import json
 import sqlite3
-from collections import defaultdict
 from copy import deepcopy
 from threading import Lock
 import os
@@ -9,6 +8,10 @@ from pathlib import Path
 
 if sys.platform == 'win32':
     import winreg
+
+import logging
+
+log = logging.getLogger(__name__)
 
 
 modifier_system_tables = ("Modifiers", "ModifierArguments", "DynamicModifiers", "ModifierStrings",
@@ -88,7 +91,7 @@ class ResourceLoader:
             self.requirement_argument_info = self._read_file(self._files['requirement_argument_info'])
             self.metadata['patch_time'] = latest
             self._write_file(self._files['metadata'], self.metadata)
-            print('new patch! rebuild all files')
+            log.info('new patch! rebuild all files')
         self.node_templates = self._read_file(self._files['node_templates'])
         self.possible_vals = self._read_file(self._files['possible_vals'])
         self.all_possible_vals = self._read_file(self._files['all_possible_vals'])
@@ -377,10 +380,10 @@ class BaseDB:
                                 potential_fks[col] = []
                             potential_fks[col].append({'table': pk_tbl, 'col': pk_col})
                             count_potential_fks += 1
-                            print(
-                                f'Table {table} has added foreign key reference on col {col}: referencing table {pk_tbl}.{pk_col}')
+                            log.debug(f'Table {table} has added foreign key reference on col {col}: referencing'
+                                      f' table {pk_tbl}.{pk_col}')
 
-            self.table_data[table]['possible_fks'] = potential_fks
+            self.table_data[table]['possible_fks'] = potential_fks      # still misses a few, like Ability -> Type
 
         # THEN we need to recursively work back to deal with "origin" PK that arent actually origin
         # for example Unit_TransitionShadows has Tag as a Primary Key. and no foreign key.

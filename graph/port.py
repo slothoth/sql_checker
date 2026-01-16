@@ -1,6 +1,10 @@
 from graph.db_node_support import sync_node_options
 from graph.db_spec_singleton import db_spec
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 def port_connect_transmit(input_port, output_port):
     input_name, output_name = input_port.name(), output_port.name()
@@ -22,7 +26,7 @@ def port_connect_transmit(input_port, output_port):
             changing_name = output_name
             new_value = current_input_value
         else:                               # ideally whichever was connected first?
-            print('when connecting nodes and changing vals, both had values, so default change input')
+            log.info('when connecting nodes and changing vals, both had values, so default to input change')
             changing_node, changing_name, new_value = input_node, input_name, current_output_value
         if changing_node is not None and new_value is not None:
             update_widget_or_prop(changing_node, changing_name, new_value)
@@ -40,7 +44,8 @@ def port_connect_transmit(input_port, output_port):
                 reqset_id = input_node.get_widget('RequirementSetId').get_value()
                 current_reqset['reqs'].append({'reqset': reqset_id})
             else:
-                print(f'oh no! wrong input table: {input_node_name}')
+                log.warning(f'wrong input table when building connection between CustomGameEffect'
+                            f' and {input_node_name}')
 
 
 def update_widget_or_prop(node, widget_name, new_val):

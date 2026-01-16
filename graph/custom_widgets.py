@@ -247,7 +247,6 @@ class DropDownLineEdit(ExpandingLineEdit):
             self._completer.setCompletionRole(QtCore.Qt.UserRole)
         else:
             self._completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
-            print()
 
         popup = QtWidgets.QListView()
         popup.setTextElideMode(QtCore.Qt.ElideNone)

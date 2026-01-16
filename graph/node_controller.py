@@ -19,6 +19,10 @@ from graph.node_state import SuggestionHub
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
 
+import logging
+
+log = logging.getLogger(__name__)
+
 
 with open('resources/mod_metadata.json') as f:
     default_meta = json.load(f)
@@ -48,7 +52,6 @@ class NodeEditorWindow(QMainWindow):
         # custom pullout
         self.enable_auto_node_creation()
 
-        self.graph.property_changed.connect(on_property_changed)
         self.graph.port_connected.connect(port_connect_transmit)
         self.graph.suggest_hub = SuggestionHub(self.graph)
 
@@ -119,7 +122,9 @@ class NodeEditorWindow(QMainWindow):
                     elif len(accepted_ports) == 1:
                         name = SQLValidator.class_table_name_map.get(next(iter(accepted_ports.keys())), '')
                     else:
-                        print('failed node creation on drop!')
+                        log.error(f'When pulling out a node connection, failed node creation on drop! Could not find a'
+                                  f'valid port for node {src_node.get_property("table_name")} with port {src_port_name}'
+                                  f'on the {source_port_item.port_type} side.')
                         return
 
                     node_name = SQLValidator.table_name_class_map.get(name, name)
@@ -167,14 +172,8 @@ class NodeEditorWindow(QMainWindow):
         return name
 
 
-def on_property_changed(node, property_name, property_value):           # unreliable, syncs on graph property not node
-    print('')
-    #sync_nodes_check(node, property_name)
-    #propogate_port_check(node, property_name)
-
-
 ###############################################################################################
-########################### Patches to NodeGraphQt ###########################################
+# Patches to NodeGraphQt ######################################################################
 ###############################################################################################
 
 _NodeGroupBox.sizeHint = _patched_size_hint

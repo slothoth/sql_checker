@@ -9,6 +9,10 @@ from collections import defaultdict
 from schema_generator import SQLValidator
 from graph.db_spec_singleton import db_spec
 
+import logging
+
+log = logging.getLogger(__name__)
+
 mapper_registry = registry()
 
 classes = {}
@@ -38,12 +42,13 @@ def create_instances_from_sql(sql_text, age):
         return (cleaned_sql, changed_entries), 'update_delete'
 
     if not isinstance(parsed, exp.Insert):
-        print("SQL must be an INSERT statement, and is not UPDATE or DELETE")
+        log.info(f"Weird SQL that isnt INSERT, UPDATE or DELETE, treating like update delete node: {cleaned_sql}")
         return (cleaned_sql, []), 'update_delete'         # TODO same as other weird sql
 
     table_nodes = list(parsed.find_all(exp.Table))
     if len(table_nodes) != 1:               # TODO currently just sending other weird sql to update node, make new holder
-        print(f"statement had multiple Table mentions. this is probably a INSERT:SELECT: {sql_text}")
+        log.info(f"statement had multiple Table mentions. this is probably a INSERT:SELECT. "
+                 f"treating like update delete: {sql_text}")
         return (cleaned_sql, []), 'update_delete'
 
     table_name = table_nodes[0].name

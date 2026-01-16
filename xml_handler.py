@@ -3,6 +3,9 @@ from xml.dom import minidom
 from lxml import etree
 from collections import defaultdict
 import tempfile
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def dict_to_etree(d, root):
@@ -77,11 +80,10 @@ def read_xml(filepath):
                 test = ET.XML(pretty_file)
             except ET.ParseError as e:
                 new_error = e
-                print(f'on file: {filepath}')
-                print(e)
+                log.debug(f'on file: {filepath}\n {e}')
                 line, position = e.position
         if test is None:
-            print('couldnt find a way to parse xml')
+            log.error('couldnt find a way to parse xml')
             raise new_error
         try:
             with tempfile.TemporaryFile() as fp:
@@ -89,11 +91,10 @@ def read_xml(filepath):
                 fp.seek(0)
                 tree = ET.parse(fp)
         except ET.ParseError as e:
-            print(f'poorly formed xml {filepath}, doing smart parse skipping malformed tags, jesus take the wheel,'
-                  f' hopefully its gameeffects. Full file:')
-            print(pretty_file)
+            log.info(f'poorly formed xml {filepath}, doing smart parse skipping malformed tags, jesus take the wheel,'
+                     f' hopefully its gameeffects. Full file:')
+            log.info(pretty_file)
             parse_gameeffects_to_dict(fp)
-
 
     t = tree.getroot()
     return etree_to_dict(t)

@@ -175,7 +175,10 @@ def create_table_node_class(table_name, graph):
 
         self.create_property('arg_params', lazy_params)
         self.can_validate = True
-        self._validate_all_fields()     # Validate all fields after initialization
+        for col in self._initial_fields:            # dont validate on start, takes like 0.2s
+            widget = self.get_widget(col)
+            if widget is not None and widget.widget_string_type == 'QLineEdit' and widget.get_value() == '':
+                self._update_field_style(col, False)
 
         fk_backlink = SQLValidator.pk_ref_map.get(table_name)
         if fk_backlink is not None:

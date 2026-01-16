@@ -13,10 +13,12 @@ from ORM import create_instances_from_sql, get_table_and_key_vals, build_fk_inde
 from graph.windows import get_combo_value
 from graph.db_spec_singleton import db_spec, modifier_system_tables, ages
 
+import logging
+
+log = logging.getLogger(__name__)
+
 # handles extracting a mod from a folder and converting it into our graph format
-# this is a bitch because it needs to parse the .modinfo
-# unsure if how this will deal with different ages. Possibly our main graph model
-# needs to be updated to have 3 separate tabs for each different age.
+# this is a mare because it needs to parse the .modinfo
 
 
 def build_imported_mod(mod_folder_path, graph):
@@ -75,7 +77,7 @@ def parse_modinfo(modinfo_path, mod_folder_path):
 
             if 'AgeInUse' in key:
                 if isinstance(val, dict):
-                    print('uhhh, no idea parsing xml as Age in Use but is dict')
+                    log.warning('skipping xml dict while parsing criteria as Age in Use but is dict')
                 elif isinstance(val, str):
                     if 'AgeOn' in specific_criteria:
                         specific_criteria['AgeOn'].append(val)
@@ -131,18 +133,18 @@ def modinfo_into_jobs(mod_info_dict):
                 try:
                     statements, xml_errors = convert_xml_to_sql(db_file_path)
                     if isinstance(statements, str):
-                        print(f'{db_file_path} was an empty file. Skipping it.')
+                        log.info(f'{db_file_path} was an empty file. Skipping it.')
                         continue
                     mod_info_dict['sql'][short_name], xml_errors = convert_xml_to_sql(db_file_path)
                 except ET.ParseError as e:
-                    print(f'could not parse file {db_file_path}.. skipping')
+                    log.error(f'could not parse file {db_file_path}.. skipping')
 
             elif db_file_path.endswith('.sql'):
                 try:
                     with open(db_file_path, 'r') as file:
                         sql_contents = file.read()
                 except UnicodeDecodeError as e:
-                    print(f'Bad unicode, trying windows-1252: {e}')
+                    log.debug(f'Bad unicode, trying windows-1252: {e}')
                     with open(db_file_path, 'r', encoding='windows-1252') as file:
                         sql_contents = file.read()
                 comment_cleaned = re.sub(r'--.*?\n', '', sql_contents, flags=re.DOTALL)
@@ -167,12 +169,13 @@ def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY'):
                 elif list_type == 'update_delete':
                     update_delete_list.append(instance_list)
             except ParseError as e:
-                print(f'could not parse file {short_path}: {e}')
+                log.error(f'while importing mod could not parse sql file text from {short_path}: {e}')
 
     return orm_list, update_delete_list
 
 # technically we cant get the value of the child port with just fk_index. Consider
 # parent Types.Type and child DynamicModifiers. All 3 columns in DynamicModifiers could link to Types.
+
 
 effect_skip = {('Types', 'DynamicModifiers'), ('DynamicModifiers', 'Modifiers'), ('Modifiers', 'ModifierArguments'),
                ('Modifiers', 'ModifierStrings')}
@@ -184,8 +187,8 @@ def connect_foreign_keys(fk_index, nodes_dict, effect_dict):
         if parent_node is None:
             parent_node = effect_dict.get(parent_table, {}).get(parent_pk)
             if parent_node is None:
-                print(f'could not find node entry {parent_table} with primary key {parent_pk} which should have '
-                      f'{len(children)} children connections')
+                log.warning(f'When building graph connections for mod import, could not find node entry {parent_table}'
+                            f' with primary key {parent_pk} which should have {len(children)} children connections')
                 continue
 
         for child_table, child_pk in children:
@@ -195,14 +198,15 @@ def connect_foreign_keys(fk_index, nodes_dict, effect_dict):
                 if len(effect_dict) > 1 and (parent_table, child_table) in effect_skip:
                     continue
                 if child_node is None:
-                    print(f'when making connections for {parent_table} with primary key {",".join(parent_pk)}'
-                          f' could not find child connection {child_table}, {",".join(child_pk)}')
+                    log.warning(f'When building graph connections for mod import, {parent_table} with primary key'
+                                f' {",".join(parent_pk)}'
+                                f' could not find child connection {child_table}, {",".join(child_pk)}')
                     continue
 
             primary_key = parent_pk[0]   # technically multiple pks possible, but ports system means just connect one
             src_ports = [i for i in parent_node.output_ports() if i.name() == parent_col]
             if len(src_ports) != 1:
-                raise Exception('plural pk col somehow when trying to build graph of loaded mod foreign keys')
+                raise Exception('plural primay key col somehow when trying to build graph of loaded mod foreign keys')
             src_port = src_ports[0]
             connect_port_name = child_node.get_link_port(parent_node.get_property('table_name'), primary_key)
             if connect_port_name:
@@ -418,7 +422,7 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
             node = graph.create_node(f'db.table.{table_name.lower()}.{class_name}')
             node.set_spec(col_dicts)
             nodes_dict[table_name][pk_tuple] = node
-            print(f'there are now {count} nodes')
+            log.debug(f'there are now {count} imported nodes')
     nodes_dict = dict(nodes_dict)
 
     omitted_node_dict = {'Modifiers': {}, 'DynamicModifiers': {}, 'Types': {}, 'ModifierStrings': {},
