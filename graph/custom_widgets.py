@@ -338,20 +338,15 @@ class DropDownLineEdit(ExpandingLineEdit):
         self.line_edit.setText(short_text)
 
     def _on_text_edited(self, text):
-        """
-        Update internal value while typing.
-        Since user is typing with focus, 'text' is the full value.
-        """
         self._full_value = text
         self.value_changed.emit(self.get_name(), self._full_value)
+        QtCore.QTimer.singleShot(0, self._force_completion_update)
 
     def on_item_selected(self, index):
         """Handle selection from the autocomplete dropdown."""
         full_val = index.data(QtCore.Qt.UserRole)
         self._full_value = full_val
 
-        # Because selecting an item might not shift focus immediately,
-        # but we want to see what we selected:
         self.line_edit.setText(self._full_value)
         self.value_changed.emit(self.get_name(), self._full_value)
 
@@ -372,6 +367,14 @@ class DropDownLineEdit(ExpandingLineEdit):
         self._full_value = text
         self.line_edit.setText(self._format_display_text(text))
         self._commit()          # important?
+
+    def _force_completion_update(self):
+        if not self._full_value:
+            return
+        completer = self.line_edit.completer()
+        if completer:
+            completer.setCompletionPrefix(self._full_value)
+            completer.complete()
 
     # --------- suggestions ----------------
 
