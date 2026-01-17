@@ -37,7 +37,7 @@ class IntSpinNodeWidget(ArgReportWidget):
     val_accept = int
     widget_string_type = 'QSpinBox'
 
-    def __init__(self, prop, parent=None, minimum=0, maximum=100):
+    def __init__(self, prop, parent=None, minimum=-100, maximum=100):
         super().__init__(parent)
 
         self.set_name(prop)
@@ -114,7 +114,7 @@ class FloatSpinNodeWidget(ArgReportWidget):
     val_accept = float
     widget_string_type = 'QDoubleSpinBox'
 
-    def __init__(self, prop, parent=None):
+    def __init__(self, prop, parent=None, minimum=-100, maximum=100):
         super().__init__(parent)
 
         self.set_name(prop)
@@ -123,7 +123,54 @@ class FloatSpinNodeWidget(ArgReportWidget):
         self.spin = QtWidgets.QDoubleSpinBox()
         self.spin.setDecimals(3)
         self.spin.setSingleStep(0.01)
+        self.spin.setRange(minimum, maximum)
         self.spin.valueChanged.connect(self._on_changed)
+
+        self.spin.setStyleSheet("""
+                            QDoubleSpinBox {
+                                background-color: #353535;
+                                border: 1px solid #1a1a1a;
+                                color: #eeeeee;
+                                border-radius: 2px;
+                                padding-right: 15px;
+                            }
+                            QDoubleSpinBox::up-button {
+                                subcontrol-origin: border;
+                                subcontrol-position: top right;
+                                width: 16px;
+                                border-left: 1px solid #1a1a1a;
+                                border-bottom: 1px solid #1a1a1a;
+                                background-color: #444444;
+                            }
+                            QDoubleSpinBox::down-button {
+                                subcontrol-origin: border;
+                                subcontrol-position: bottom right;
+                                width: 16px;
+                                border-left: 1px solid #1a1a1a;
+                                background-color: #444444;
+                            }
+                            QDoubleSpinBox::up-arrow {
+                                image: none;
+                                border-left: 4px solid none;
+                                border-right: 4px solid none;
+                                border-bottom: 5px solid #bbb;
+                                width: 0;
+                                height: 0;
+                            }
+                            QDoubleSpinBox::down-arrow {
+                                image: none;
+                                border-left: 4px solid none;
+                                border-right: 4px solid none;
+                                border-top: 5px solid #bbb; 
+                                width: 0;
+                                height: 0;
+                            }
+                            QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+                                background-color: #555555;
+                            }
+                            QDoubleSpinBox::up-arrow:hover { border-bottom-color: #ffffff; }
+                            QDoubleSpinBox::down-arrow:hover { border-top-color: #ffffff; }
+                        """)
 
         self.set_custom_widget(self.spin)
 

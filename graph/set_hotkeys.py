@@ -463,21 +463,19 @@ def create_update_node(graph):
     scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
     node = graph.create_node('db.where.WhereNode', pos=[scene_pos.x(), scene_pos.y()])
 
-def test_session(graph):
+
+def mod_test_session(graph):
     """
     Tests the given graph against the database by converting it to SQL. During this process,
     we save it to serialise to JSON, so we can use that structure to build SQL form.
     """
     current = graph.current_session() or 'resources/graph.json'
     graph.save_session(current)
-    sql_lines, loc_lines = transform_json(current)
-    # save SQL, then trigger main run model
-    write_sql(sql_lines)
-    write_loc_sql(loc_lines)
+    sql_lines, dict_form_list, loc_lines = transform_json(current)
     age = graph.property('meta').get('Age')
     push_to_log(graph, f'Testing mod for: {age}')
-    data = check_valid_sql_against_db(age, sql_lines)
-    extract_state_test(graph, data)
+    result = check_valid_sql_against_db(age, sql_lines, dict_form_list)           # need to do loc test too
+    extract_state_test(graph, result)
     # make the collapsible panel be shown
 
 
@@ -492,7 +490,7 @@ def save_session_to_mod(graph, parent=None):
         current = 'resources/graph.json'
 
     graph.save_session(current)
-    sql_lines, loc_lines = transform_json(current)
+    sql_lines, dict_form_list, loc_lines = transform_json(current)
     write_sql(sql_lines)
     write_loc_sql(loc_lines)
 
@@ -559,8 +557,9 @@ def open_settings(graph):
         return None
 
 
-def write_sql(sql_lines):
+def write_sql(sql_dict_list):
     # save SQL, then trigger main run model
+    sql_lines = [i['sql'] + '\n' for i in sql_dict_list]
     with open('resources/main.sql', 'w') as f:
         f.writelines(sql_lines)
 
@@ -571,18 +570,31 @@ def write_loc_sql(loc_lines):
 
 
 def extract_state_test(graph, data):
-    if data.get('fk_error_explanations') is not None:
+    no_errors = True
+    if data.get('insert_error_explanations') is not None:
+        no_errors = False
+        insert_error_length = len([j for i in data['insert_error_explanations'].values() for j in i])
+        push_to_log(graph, f"There were {insert_error_length} failed Insertions:")
+        for table_name, errors in data['insert_error_explanations'].items():
+            push_to_log(graph, f'Missed Inserts for {table_name}:')
+            for pk_tuple, error_string in errors.items():
+                push_to_log(graph, error_string)
+    num_fk_errors = len(data.get('fk_error_explanations', {}).get('title_errors', {}))
+    if num_fk_errors > 0:
+        no_errors = False
+        push_to_log(graph, f"There were {num_fk_errors}"
+                           f" Foreign Key Errors:")
         for tuple_key, val in data['fk_error_explanations']['title_errors'].items():
             push_to_log(graph, val)
             for error_list in data['fk_error_explanations']['bad_commands'][tuple_key]:
                 for error in error_list:
                     push_to_log(graph, error)            # instead we should use red highlight on bad entries and cols
-    else:
+    if no_errors:
         push_to_log(graph, 'Valid mod setup')
 
 
 def push_to_log(graph, message):
     log_display = graph.side_panel.log_display
-    log_display.appendPlainText(str(message))  # ensure plain text insertion so the highlighter can run
+    log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
     cursor = log_display.textCursor()  # keep view scrolled to bottom
     log_display.setTextCursor(cursor)

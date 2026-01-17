@@ -3,7 +3,7 @@ from PyQt5 import QtCore, QtGui
 
 from graph.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
-from graph.custom_widgets import IntSpinNodeWidget, DropDownLineEdit
+from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints, index_label
 
 db_map = {'ModifierArguments': db_spec.mod_arg_database_types,
@@ -101,7 +101,13 @@ def create_table_node_class(table_name, graph):
         prim_texts = [i for i in SQLValidator.required_map[table_name] if i not in primary_keys]
         second_texts = SQLValidator.less_important_map[table_name]
 
-        self._initial_fields = primary_keys + prim_texts
+        if table_name in SQLValidator.incremental_pk:
+            self._initial_fields = prim_texts
+            cols_ordered = prim_texts + second_texts
+        else:
+            self._initial_fields = primary_keys + prim_texts
+            cols_ordered = primary_keys + prim_texts + second_texts
+
         self._extra_fields = second_texts
         self.create_property('table_name', value=table_name)
 
@@ -117,7 +123,6 @@ def create_table_node_class(table_name, graph):
         if len(primary_keys) == 1:
             self.create_property('primary_key', primary_keys[0])
 
-        cols_ordered = primary_keys + prim_texts + second_texts
         default_map = SQLValidator.default_map.get(table_name, {})
         fk_to_tbl_map = SQLValidator.fk_to_tbl_map.get(table_name, {})
         fk_to_pk_map = SQLValidator.fk_to_pk_map.get(table_name, {})
@@ -155,6 +160,15 @@ def create_table_node_class(table_name, graph):
                 custom_widget = IntSpinNodeWidget(col, self.view)
                 self.add_custom_widget(custom_widget,
                                        widget_type=NodePropWidgetEnum.QSPIN_BOX.value, tab='fields')
+            elif isinstance(col_type, float):
+                if col in self._extra_fields:
+                    default_val = float(default_val) if default_val is not None else 0.0
+                    lazy_params[col] = default_val
+                    self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QDOUBLESPIN_BOX.value)
+                    continue
+                custom_widget = FloatSpinNodeWidget(col, self.view)
+                self.add_custom_widget(custom_widget,
+                                       widget_type=NodePropWidgetEnum.QDOUBLESPIN_BOX.value, tab='fields')
             elif col_poss_vals is not None:
                 if col in self._extra_fields:
                     lazy_params[col] = default_val
