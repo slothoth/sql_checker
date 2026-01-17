@@ -84,7 +84,6 @@ class MetadataDialog(QtWidgets.QDialog):
         MetaStore.set(self.graph, "Hide Types", self.hide_types.isChecked())
 
         if old_age != self.mod_age.currentText():
-            db_spec.update_age                      # TODO what this doing?
             sync_node_options_all(self.graph)
             SQLValidator.state_validation_setup(self.mod_age.currentText())
             # SQLValidator.state_validation_mod_setup(self.mod_age.currentText())

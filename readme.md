@@ -29,6 +29,9 @@ It also includes a graph GUI where you can package and plan your own mod.
 - Updates and Deletes alter suggestible lists [ ]
 - Updates and Deletes have chronology, requiring separate engine state we throw away [ ]
 - custom effect node uses colour to display which args need filled, and which are optional (deal with no lineedit) and default
+- harvest all possible values and store if the number of values is under 30. Use as suggestions for dynamic nodes
+- About window.
+- Clump graph closer together
 # Big Features TODO:
 - Image imports
 - Localisation entries (and displaying them as options in relevant gameplay graph) [x]

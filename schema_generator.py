@@ -4,25 +4,35 @@ import sqlite3
 from collections import defaultdict
 import json
 import colorsys
+import logging
 
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow import EXCLUDE
 from marshmallow import pre_load
-from sqlalchemy import create_engine, insert, Integer, Boolean, inspect
+from sqlalchemy import create_engine, insert, Integer, Boolean, inspect, text, event, Table, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.sql.schema import UniqueConstraint
 from sqlalchemy.sql.elements import TextClause, ClauseElement
-from sqlalchemy import text as sqla_text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects import sqlite
+
+import sqlglot
 
 from model import query_mod_db, organise_entries, load_files, make_hash
 from graph.db_spec_singleton import db_spec, ages
 from stats import gather_effects
 
+log = logging.getLogger(__name__)
+
 with open('resources/PreBuiltData.json', 'r') as f:
     prebuilt = json.load(f)
+
+
+@event.listens_for(Table, "column_reflect")
+def force_sqlite_autoincrement(inspector, table, column_info):
+    if isinstance(column_info.get('type'), Integer) and column_info.get('primary_key', False):
+        column_info['autoincrement'] = True
 
 
 class BaseSchema(SQLAlchemyAutoSchema):
@@ -151,7 +161,11 @@ class SchemaInspector:
                                 for table_name in self.Base.metadata.tables}
 
         self.table_name_class_map.update({'GameEffectCustom': 'db.game_effects.GameEffectNode',
-                                          'ReqEffectCustom': 'db.game_effects.RequirementEffectNode' })
+                                          'ReqEffectCustom': 'db.game_effects.RequirementEffectNode'})
+
+        self.incremental_pk = {k: v.primary_key.columns[0].autoincrement for k, v in self.Base.metadata.tables.items()
+                               if hasattr(v, 'primary_key')
+                               and len(v.primary_key.columns) == 1 and v.primary_key.columns[0].autoincrement != 'auto'}
 
         self.class_table_name_map = {v: k for k, v in self.table_name_class_map.items()}
 
@@ -197,7 +211,7 @@ class SchemaInspector:
         data.update(all_data)  # Merge with all_data for context
         data[field_name] = field_value  # Ensure our field value takes precedence
 
-        # Remove empty string values from all_data for cleaner validation           # TODO remove the '' as sometimes valid, but need better solution
+        # Remove empty string values from all_data for cleaner validation  # TODO remove the '' as sometimes valid, but need better solution
         cleaned_data = {k: (None if v == '' else v) for k, v in data.items()
                         if k==field_name or v is not None or v == ''}
         # deal with checkbox bools
@@ -311,7 +325,6 @@ class SchemaInspector:
 
     def filter_columns(self, table_name, data, skip_defaults=False):
         cols = {c.key: c for c in self.metadata.tables[table_name].columns}
-
         non_default_entries = {}
         for k, v in data.items():
             if k not in cols:
@@ -353,7 +366,7 @@ class SchemaInspector:
 
         stmt = insert(self.Base.metadata.tables[table_name]).values(**filtered)
         sql = stmt.compile(dialect=sqlite.dialect(), compile_kwargs={"literal_binds": True})
-        return str(sql)
+        return str(sql), filtered
 
     def normalize_node_bools(self, entry, table_name):
         table = self.metadata.tables.get(table_name)
@@ -444,7 +457,7 @@ class SchemaInspector:
                 # anyways causes problems with GameEffects table since its PK is Type
                 columns = ", ".join(table_entries[0].keys())
                 params = ", ".join(f":{k}" for k in table_entries[0].keys())
-                sql = sqla_text(f"""
+                sql = text(f"""
                 INSERT INTO {table_name}
                 ({columns})
                 VALUES
@@ -479,7 +492,7 @@ def extract_server_default(col, engine_default):
     return arg
 
 
-def lint_database(engine, sql_command_dict, keep_changes=False):
+def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=None):
     Session = sessionmaker(bind=engine)
 
     with engine.connect() as conn:
@@ -488,34 +501,87 @@ def lint_database(engine, sql_command_dict, keep_changes=False):
         session = Session(bind=conn)
         try:
             results = defaultdict(list)
-            for file_name, sql_command_list in sql_command_dict.items():
-                for sql in sql_command_list:
+            for file_name, sql_dict_list in sql_command_dict.items():
+                for sql_info in sql_dict_list:
                     try:
-                        session.execute(sqla_text(sql))
-                        results[file_name].append((sql, None))
+                        result_info = sql_info.copy()
+                        result_info['passed'] = True
+                        session.execute(text(sql_info['sql']))
+                        results[file_name].append(result_info)
                     except SQLAlchemyError as e:
-                        results[file_name].append((sql, str(e)))
+                        result_info['passed'] = False
+                        result_info['error'] = str(e)
+                        result_info['error_type'] = e
+                        results[file_name].append(result_info)
 
-            session.execute(sqla_text("PRAGMA foreign_keys = ON"))
+            session.execute(text("PRAGMA foreign_keys = ON"))
+            fk_errors = session.execute(text("PRAGMA foreign_key_check")).all()
+            integrity = session.execute(text("PRAGMA integrity_check")).scalar()
 
-            fk_errors = session.execute(sqla_text("PRAGMA foreign_key_check")).all()
-
-            integrity = session.execute(sqla_text("PRAGMA integrity_check")).scalar()
-            lint_info = {"results": results, "foreign_key_errors": fk_errors,"integrity": integrity}
+            lint_info = {"results": results, "foreign_key_errors": fk_errors, "integrity": integrity}
             return lint_info
 
         finally:
             session.close()
+            bad_inserts = {k: {idx: i for idx, i in enumerate(v) if not i['passed']} for k, v in results.items()}
+            insert_errors = defaultdict(dict)
+            if any(len(i) > 0 for i in bad_inserts.values()):
+                mark_errors = []                                # TODO
+                for file_name, errors in bad_inserts.items():
+                    for idx, error_info in errors.items():
+                        mark_errors.append(error_info['node_source'])
+                        if dict_form_list is not None:
+                            dict_info = dict_form_list[idx]['sql']
+                            table_name = dict_info['table_name']
+                            primary_key_cols = db_spec.node_templates[table_name].get("primary_keys")
+                            pk_dict = {k: v for k, v in dict_info['columns'].items() if k in primary_key_cols}
+                            pk_string = ", ".join([f'{k}: {v}' for k, v in pk_dict.items()])
+                            pk_tuple = tuple([v for k, v in pk_dict.items()])
+                        else:       # LAST resort sqlglot
+                            parsed = sqlglot.parse_one(error_info['sql'], dialect="sqlite")
+                            table_name = parsed.this.this.sql().strip('"')
+                            primary_key_cols = db_spec.node_templates[table_name].get("primary_keys")
+                            columns = [col.name for col in parsed.args['columns']]
+                            rows = list(parsed.expression.find_all(sqlglot.exp.Tuple))
+                            primary_keys = 'TODOO'
+                            pk_string = ", ".join(primary_keys)
+                        error_string = f'Entry {table_name} with primary key: {pk_string}'
+                        if isinstance(error_info['error_type'].orig, sqlite3.IntegrityError):
+                            simple_error = str(error_info['error_type'].orig)
+                            if 'UNIQUE constraint failed' in simple_error:
+                                error_string += (f' could not be inserted as that primary key {pk_string} was already'
+                                                 f' present.')
+                            elif 'NOT NULL constraint failed' in simple_error:
+                                col = simple_error.replace('NOT NULL constraint failed: ', '')
+                                col = col.replace(f'{table_name}.', '')
+                                error_string += f' could not be inserted as {col} was not specified.'
+                            elif 'CHECK constraint' in simple_error:
+                                uh = 'd'
+                                error_string += f' could not be inserted as column {uh}: {uh} is outside constraints.'
+                            else:
+                                error_string += 'weird error not covered.'
+                        else:
+                            error_string += f'Some cursed error that is likely not your fault: {str(error_info["error_type"].orig)}'
+                            log.error(f"non-user error on running sql statement: {error_info['sql']}\n"
+                                        f"{str(error_info['error_type'].orig)}")
+
+                        insert_errors[table_name][pk_tuple] = error_string
+
+                lint_info['insert_error_explanations'] = dict(insert_errors)
+
             if len(lint_info['foreign_key_errors']) > 0 or lint_info['integrity'] != 'ok':
-                explained_error_dict, bad_rows_dict = explain_errors(lint_info['foreign_key_errors'], session)
-                lint_info['fk_error_explanations'] = {'title_errors': explained_error_dict, 'bad_commands': bad_rows_dict}
+                explained_error_dict, bad_rows_dict = explain_errors(lint_info, session)
+                lint_info['fk_error_explanations'] = {'title_errors': explained_error_dict,
+                                                      'bad_commands': bad_rows_dict}
+
             if keep_changes:
                 trans.commit()
             else:
                 trans.rollback()
 
 
-def explain_errors(error_info_list, session):
+def explain_errors(lint_info, session):
+    error_info_list = lint_info['foreign_key_errors']
     error_table_indices = defaultdict(list)
     for i in error_info_list:
         info_list = list(i)
@@ -528,14 +594,33 @@ def explain_errors(error_info_list, session):
     explained_error_dict = {}
     bad_rows_dict = defaultdict(list)
     for error_tuple, indices_list in error_table_indices.items():
-        insertion_table, primary_key_table, fk_col = error_tuple[0], error_tuple[1], error_tuple[2]
+        insertion_table, primary_key_table, fk_col = error_tuple
         primary_keys = db_spec.node_templates[insertion_table].get("primary_keys")
-        pk_string = ", ".join(primary_keys)
+        foreign_table_pk_list = db_spec.node_templates[primary_key_table]['primary_keys']
         indices_string = ", ".join([str(i) for i in indices_list])
-        rows = session.execute(sqla_text(f"SELECT {pk_string} FROM {insertion_table} WHERE rowid IN ({indices_string});")).fetchall()
-        bad_rows_dict[error_tuple].append(rows)
-        explained_error_dict[error_tuple] = (f"FOREIGN KEY missing on {insertion_table}.{fk_col}. "
-                                             f"It needs a corresponding primary key on table {primary_key_table}.")
+        rows = session.execute(text(f"SELECT * FROM {insertion_table} WHERE rowid IN ({indices_string});")).mappings().fetchall()
+        if len(rows) > 1:
+            log.warning(f"Multiple rows obtained from explaining foreign key error. Shouldnt be possible."
+                        f"Rows:\n {rows}")
+        row = dict(rows[0])
+
+        pk_entry = {k: v for k, v in row.items() if k in primary_keys}
+        formatted_entry = "".join([f'{k}: {v}\n' for k, v in pk_entry.items()])
+        if primary_key_table in lint_info.get('insert_error_explanations', {}):
+            pk_tuple = tuple([row[fk_col]])
+            insertion_fail = lint_info['insert_error_explanations'][primary_key_table].get(pk_tuple)
+            if insertion_fail is not None:
+                fk_error_title = '\nAlso causes FOREIGN KEY errors on entries:'
+                if fk_error_title not in insertion_fail:
+                    lint_info['insert_error_explanations'][primary_key_table][pk_tuple] += fk_error_title
+                fk_addition = f'\nINSERT into {insertion_table}: {formatted_entry}'
+                lint_info['insert_error_explanations'][primary_key_table][pk_tuple] += fk_addition
+            continue
+        bad_rows_dict[error_tuple].append(pk_entry)
+
+        explained_error_dict[error_tuple] = (f"FOREIGN KEY missing:\nINSERT into {insertion_table}:\n{formatted_entry}"
+                                             f"\nThere wasn't a reference entry in {primary_key_table} that had"
+                                             f" {foreign_table_pk_list} = {row[fk_col]}.")
     return explained_error_dict, bad_rows_dict
 
 
@@ -561,9 +646,10 @@ def constraint_color(index, total,                  # living here as used for in
     return int(r * 255), int(g * 255), int(b * 255)
 
 
-def check_valid_sql_against_db(age, sql_commands):
+def check_valid_sql_against_db(age, sql_dict_list, dict_form_list=None):
     SQLValidator.state_validation_setup(age)
-    result_info = lint_database(SQLValidator.engine_dict[age], {'main.sql': sql_commands}, keep_changes=False)
+    result_info = lint_database(SQLValidator.engine_dict[age], {'main.sql': sql_dict_list},
+                                keep_changes=False, dict_form_list=dict_form_list)
     return result_info
 
 

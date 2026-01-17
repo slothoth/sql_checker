@@ -22,7 +22,7 @@ from utils import check_test_against_expected_sql, save
 def test_all_table_nodes(qtbot):
     window = NodeEditorWindow()
     qtbot.addWidget(window)
-    sql_commands, loc_lines = transform_json('test/test_data/perf_test_fin.json')
+    sql_commands, dict_form_list, loc_lines = transform_json('test/test_data/perf_test_fin.json')
     write_sql(sql_commands)
     write_loc_sql(loc_lines)
     check_test_against_expected_sql('all_table_nodes.sql')
@@ -40,7 +40,7 @@ def test_all_effect_args(qtbot):
         effect_node.set_property('EffectType', effect)
         qtbot.wait(1)
         current = save(window)
-        sql_lines, loc_lines = transform_json(current)
+        sql_lines, dict_form_list, loc_lines = transform_json(current)
         write_sql(sql_lines)
         write_loc_sql(loc_lines)
         qtbot.wait(1)
@@ -57,7 +57,7 @@ def test_all_req_args(qtbot):
         req_node.set_property('RequirementType', effect)
         qtbot.wait(1)
         current = save(window)
-        sql_lines, loc_lines = transform_json(current)
+        sql_lines, dict_form_list, loc_lines = transform_json(current)
         write_sql(sql_lines)
         write_loc_sql(loc_lines)
         qtbot.wait(1)
@@ -91,7 +91,6 @@ def test_against_all_mods(qtbot):
             f.writelines(hit_mods)
 
 def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up
-    return
     from schema_generator import SQLValidator
     window = NodeEditorWindow()
     qtbot.addWidget(window)

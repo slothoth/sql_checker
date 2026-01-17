@@ -4,6 +4,13 @@ from graph.set_hotkeys import write_sql, save_session, write_loc_sql
 from graph.db_spec_singleton import db_spec
 
 
+def make_window(qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    return window
+
+
 def create_node(window, name):
     class_name = f"{name.title().replace('_', '')}Node"
     node = window.graph.create_node(f'db.table.{name.lower()}.{class_name}')
@@ -30,7 +37,7 @@ def save(window):
 
 def mod_output_check(window, test_sql_path):
     current = save(window)
-    sql_lines, loc_lines = transform_json(current)
+    sql_lines, dict_form_list, loc_lines = transform_json(current)
     write_sql(sql_lines)
     write_loc_sql(loc_lines)
     check_test_against_expected_sql(test_sql_path, 'resources/main.sql')
@@ -65,6 +72,18 @@ def cast_test_input(arg, value, node):
     else:
         raise Exception(f'unhandled arg {arg} with prop {prop_type}')
     node.set_widget_and_prop(arg, casted_val)
+
+
+def update_delete_node_setup(sql_command, qtbot):
+    window = NodeEditorWindow()
+    qtbot.addWidget(window)
+    qtbot.waitExposed(window)
+    node = window.graph.create_node('db.where.WhereNode')
+    qtbot.wait(1)
+    node.set_property('sql', sql_command)
+    qtbot.wait(1)
+    value = node.get_widget('changes').get_value()
+    return node, value
 
 
 def check_test_against_expected_sql(test_sql_path, expected_sql_path):
