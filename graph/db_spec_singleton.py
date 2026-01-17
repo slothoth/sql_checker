@@ -273,6 +273,9 @@ class BaseDB:
             cursor.execute(f"PRAGMA foreign_key_list({table})")
             self.table_data[table]['foreign_keys'] = {}
             fk_list = cursor.fetchall()
+            self.table_data[table]['foreign_key_list'] = [{'foreign_table': ref[2],
+                                                           'foreign_key': ref[3],
+                                                           'foreign_table_key': ref[4]} for ref in fk_list]
             for ref in fk_list:
                 ref_table, table_col, og_col = ref[2], ref[3], ref[4]
                 if ref_table in self.tables:

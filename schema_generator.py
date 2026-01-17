@@ -526,7 +526,7 @@ def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=N
             bad_inserts = {k: {idx: i for idx, i in enumerate(v) if not i['passed']} for k, v in results.items()}
             insert_errors = defaultdict(dict)
             if any(len(i) > 0 for i in bad_inserts.values()):
-                mark_errors = []                                # TODO
+                mark_errors = []
                 for file_name, errors in bad_inserts.items():
                     for idx, error_info in errors.items():
                         mark_errors.append(error_info['node_source'])
@@ -537,14 +537,9 @@ def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=N
                             pk_dict = {k: v for k, v in dict_info['columns'].items() if k in primary_key_cols}
                             pk_string = ", ".join([f'{k}: {v}' for k, v in pk_dict.items()])
                             pk_tuple = tuple([v for k, v in pk_dict.items()])
-                        else:       # LAST resort sqlglot
-                            parsed = sqlglot.parse_one(error_info['sql'], dialect="sqlite")
-                            table_name = parsed.this.this.sql().strip('"')
-                            primary_key_cols = db_spec.node_templates[table_name].get("primary_keys")
-                            columns = [col.name for col in parsed.args['columns']]
-                            rows = list(parsed.expression.find_all(sqlglot.exp.Tuple))
-                            primary_keys = 'TODOO'
-                            pk_string = ", ".join(primary_keys)
+                        else:
+                            print('todo')       # LAST resort sqlglot
+                            continue
                         error_string = f'Entry {table_name} with primary key: {pk_string}'
                         if isinstance(error_info['error_type'].orig, sqlite3.IntegrityError):
                             simple_error = str(error_info['error_type'].orig)
@@ -563,16 +558,16 @@ def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=N
                         else:
                             error_string += f'Some cursed error that is likely not your fault: {str(error_info["error_type"].orig)}'
                             log.error(f"non-user error on running sql statement: {error_info['sql']}\n"
-                                        f"{str(error_info['error_type'].orig)}")
+                                      f"{str(error_info['error_type'].orig)}")
 
                         insert_errors[table_name][pk_tuple] = error_string
 
                 lint_info['insert_error_explanations'] = dict(insert_errors)
+                lint_info['marked_nodes'] = mark_errors
 
             if len(lint_info['foreign_key_errors']) > 0 or lint_info['integrity'] != 'ok':
-                explained_error_dict, bad_rows_dict = explain_errors(lint_info, session)
-                lint_info['fk_error_explanations'] = {'title_errors': explained_error_dict,
-                                                      'bad_commands': bad_rows_dict}
+                explained_error_dict = explain_errors(lint_info, session)
+                lint_info['fk_error_explanations'] = {'title_errors': explained_error_dict}
 
             if keep_changes:
                 trans.commit()
@@ -588,15 +583,15 @@ def explain_errors(lint_info, session):
         insertion_table, insertion_index = info_list[0], info_list[1]
         primary_key_table = info_list[2]
         fk_column_index = info_list[3]
-        fk_col = db_spec.node_templates[insertion_table]['all_cols'][fk_column_index]
+        fk_col = db_spec.node_templates[insertion_table]['foreign_key_list'][fk_column_index]['foreign_key']
         error_table_indices[(insertion_table, primary_key_table, fk_col)].append(insertion_index)
 
     explained_error_dict = {}
-    bad_rows_dict = defaultdict(list)
     for error_tuple, indices_list in error_table_indices.items():
         insertion_table, primary_key_table, fk_col = error_tuple
         primary_keys = db_spec.node_templates[insertion_table].get("primary_keys")
         foreign_table_pk_list = db_spec.node_templates[primary_key_table]['primary_keys']
+        foreign_table_pk = foreign_table_pk_list[0]
         indices_string = ", ".join([str(i) for i in indices_list])
         rows = session.execute(text(f"SELECT * FROM {insertion_table} WHERE rowid IN ({indices_string});")).mappings().fetchall()
         if len(rows) > 1:
@@ -616,12 +611,11 @@ def explain_errors(lint_info, session):
                 fk_addition = f'\nINSERT into {insertion_table}: {formatted_entry}'
                 lint_info['insert_error_explanations'][primary_key_table][pk_tuple] += fk_addition
             continue
-        bad_rows_dict[error_tuple].append(pk_entry)
 
         explained_error_dict[error_tuple] = (f"FOREIGN KEY missing:\nINSERT into {insertion_table}:\n{formatted_entry}"
                                              f"\nThere wasn't a reference entry in {primary_key_table} that had"
-                                             f" {foreign_table_pk_list} = {row[fk_col]}.")
-    return explained_error_dict, bad_rows_dict
+                                             f" {foreign_table_pk} = {row[fk_col]}.")
+    return explained_error_dict
 
 
 def constraint_color(index, total,                  # living here as used for init setup so ports dont

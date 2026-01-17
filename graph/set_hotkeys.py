@@ -9,6 +9,8 @@ from graph.transform_json_to_sql import transform_json, make_modinfo
 from schema_generator import check_valid_sql_against_db
 from graph.db_spec_singleton import db_spec
 from graph.nodes.effect_nodes import BaseEffectNode
+from graph.mod_conversion import build_imported_mod, extract_state_test, push_to_log, error_node_tracker
+from graph.windows import Toast
 
 # This file exists because the convenience method for doing hotkeys dies in packaged executables
 
@@ -522,16 +524,11 @@ def import_mod(graph):
     """
     Prompts a file open dialog to load an existing mod folder.
     """
-    from PyQt5.QtWidgets import QFileDialog
-    from PyQt5.QtCore import QUrl
-    from graph.mod_conversion import build_imported_mod
-    from graph.windows import Toast
-
-    dlg = QFileDialog(graph.viewer(), "Select Folder")
-    dlg.setFileMode(QFileDialog.Directory)
-    dlg.setOption(QFileDialog.ShowDirsOnly, True)
+    dlg = QtWidgets.QFileDialog(graph.viewer(), "Select Folder")
+    dlg.setFileMode(QtWidgets.QFileDialog.Directory)
+    dlg.setOption(QtWidgets.QFileDialog.ShowDirsOnly, True)
     mod_dir = db_spec.civ_config + '/Mods'
-    dlg.setDirectoryUrl(QUrl.fromLocalFile(mod_dir))
+    dlg.setDirectoryUrl(QtCore.QUrl.fromLocalFile(mod_dir))
     dlg.exec()
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
     if path is not None:
@@ -557,11 +554,32 @@ def open_settings(graph):
         return None
 
 
-def write_sql(sql_dict_list):
-    # save SQL, then trigger main run model
+def get_next_error_node(graph):
+    error_node_id = error_node_tracker.get_next_node()
+    if error_node_id is not None:
+        error_node = graph.get_node_by_id(error_node_id)
+        graph.clear_selection()
+        error_node.set_selected(True)
+        graph.fit_to_selection()
+        graph.clear_selection()
+
+
+def get_previous_error_node(graph):
+    error_node_id = error_node_tracker.get_prev_node()
+    if error_node_id is not None:
+        error_node = graph.get_node_by_id(error_node_id)
+        graph.clear_selection()
+        error_node.set_selected(True)
+        graph.fit_to_selection()
+        graph.clear_selection()
+
+
+
+def write_sql(sql_dict_list):                               # save SQL, then trigger main run model
     sql_lines = [i['sql'] + '\n' for i in sql_dict_list]
     with open('resources/main.sql', 'w') as f:
         f.writelines(sql_lines)
+
 
 def write_loc_sql(loc_lines):
     if loc_lines is not None:
@@ -569,32 +587,3 @@ def write_loc_sql(loc_lines):
             f.writelines(loc_lines)
 
 
-def extract_state_test(graph, data):
-    no_errors = True
-    if data.get('insert_error_explanations') is not None:
-        no_errors = False
-        insert_error_length = len([j for i in data['insert_error_explanations'].values() for j in i])
-        push_to_log(graph, f"There were {insert_error_length} failed Insertions:")
-        for table_name, errors in data['insert_error_explanations'].items():
-            push_to_log(graph, f'Missed Inserts for {table_name}:')
-            for pk_tuple, error_string in errors.items():
-                push_to_log(graph, error_string)
-    num_fk_errors = len(data.get('fk_error_explanations', {}).get('title_errors', {}))
-    if num_fk_errors > 0:
-        no_errors = False
-        push_to_log(graph, f"There were {num_fk_errors}"
-                           f" Foreign Key Errors:")
-        for tuple_key, val in data['fk_error_explanations']['title_errors'].items():
-            push_to_log(graph, val)
-            for error_list in data['fk_error_explanations']['bad_commands'][tuple_key]:
-                for error in error_list:
-                    push_to_log(graph, error)            # instead we should use red highlight on bad entries and cols
-    if no_errors:
-        push_to_log(graph, 'Valid mod setup')
-
-
-def push_to_log(graph, message):
-    log_display = graph.side_panel.log_display
-    log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
-    cursor = log_display.textCursor()  # keep view scrolled to bottom
-    log_display.setTextCursor(cursor)

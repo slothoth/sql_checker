@@ -4,7 +4,8 @@ import sqlparse
 from sqlglot.errors import ParseError
 import itertools
 from itertools import product
-from collections import defaultdict
+from collections import defaultdict, deque
+
 
 from xml_handler import read_xml
 import xml.etree.ElementTree as ET
@@ -495,7 +496,83 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
     graph.viewer().blockSignals(False)
     return orm_list
 
+
 def xml_ensure_list_of_dicts(data):
     if not isinstance(data, list):
         return [data]
     return data
+
+
+class ErrorNodeTracker:
+    def __init__(self):
+        self.nodes = deque()
+
+    def empty_node_list(self):
+        self.nodes.clear()
+
+    def add_node(self, node_id):
+        if node_id not in self.nodes:
+            self.nodes.append(node_id)
+
+    def remove_node(self, node_id):
+        try:
+            self.nodes.remove(node_id)
+        except ValueError:
+            pass
+
+    def get_next_node(self):
+        if not self.nodes:
+            return None
+        self.nodes.rotate(-1)
+        return self.nodes[0]
+
+    def get_prev_node(self):
+        if not self.nodes:
+            return None
+        self.nodes.rotate(1)
+        return self.nodes[0]
+
+
+error_node_tracker = ErrorNodeTracker()
+
+
+def extract_state_test(graph, data):
+    no_errors = True
+    if data.get('insert_error_explanations') is not None:
+        no_errors = False
+        insert_error_length = len([j for i in data['insert_error_explanations'].values() for j in i])
+        push_to_log(graph, f"There were {insert_error_length} failed Insertions:")
+        for table_name, errors in data['insert_error_explanations'].items():
+            push_to_log(graph, f'Missed Inserts for {table_name}:')
+            for pk_tuple, error_string in errors.items():
+                push_to_log(graph, error_string)
+    num_fk_errors = len(data.get('fk_error_explanations', {}).get('title_errors', {}))
+    if num_fk_errors > 0:
+        no_errors = False
+        push_to_log(graph, f"There were {num_fk_errors}"
+                           f" Foreign Key Errors:")
+        for tuple_key, val in data['fk_error_explanations']['title_errors'].items():
+            push_to_log(graph, val)
+    if no_errors:
+        push_to_log(graph, 'Valid mod setup')
+    error_node_tracker.empty_node_list()
+    for node in graph.all_nodes():
+        if node.id in data.get('marked_nodes', []):
+            error_node_tracker.add_node(node.id)
+            if node.test_error:
+                continue
+            else:
+                node.error_color(True)
+        else:
+            if node.test_error:
+                node.error_color(False)
+                error_node_tracker.remove_node(node.id)
+            else:
+                continue
+
+
+def push_to_log(graph, message):
+    log_display = graph.side_panel.log_display
+    log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
+    cursor = log_display.textCursor()  # keep view scrolled to bottom
+    log_display.setTextCursor(cursor)
