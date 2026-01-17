@@ -221,7 +221,6 @@ class SuggestorPopulatorWidget(ArgReportWidget):
     committed = QtCore.pyqtSignal(object)
 
     def _commit(self):
-        v = self.get_value()
         self.on_value_changed()
         self.committed.emit(self)
 
@@ -237,7 +236,7 @@ class ExpandingLineEdit(SuggestorPopulatorWidget):
         super().__init__(parent, name, label)
         self.set_name(name)
 
-        self.line_edit = QtWidgets.QLineEdit()
+        self.line_edit = FocusAwareLineEdit()
         self.line_edit.setText(text)
 
         self.localise = localise
@@ -257,7 +256,6 @@ class ExpandingLineEdit(SuggestorPopulatorWidget):
     def set_value(self, text):
         if text != self.get_value():
             self.get_custom_widget().setText(text)
-            self.on_value_changed()
             self._commit()
 
     def get_value(self):
@@ -276,9 +274,13 @@ class ExpandingLineEdit(SuggestorPopulatorWidget):
 class DropDownLineEdit(ExpandingLineEdit):
     current_suggestions = []
     _static_suggestions = []
+    value_changed = QtCore.pyqtSignal(str, str)  # name, value
 
     def __init__(self, parent=None, name='', label='', text='', suggestions=None, check_if_edited=False, localise=False):
         super().__init__(parent, name, label)
+
+        self._name = name
+        self._label = label
 
         self._base_suggestions = list(suggestions or [])
         self._prefix = _majority_prefix(self._base_suggestions)
@@ -292,14 +294,13 @@ class DropDownLineEdit(ExpandingLineEdit):
 
         if hasattr(self._completer, "setCompletionRole"):
             self._completer.setCompletionRole(QtCore.Qt.UserRole)
-        else:
-            self._completer.setCompletionMode(QtWidgets.QCompleter.PopupCompletion)
+
+        self._completer.activated[QtCore.QModelIndex].connect(self.on_item_selected)
 
         popup = QtWidgets.QListView()
         popup.setTextElideMode(QtCore.Qt.ElideNone)
         popup.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self._completer.setPopup(popup)
-
         self.line_edit.setCompleter(self._completer)
 
         m = self._completer_model
@@ -308,45 +309,71 @@ class DropDownLineEdit(ExpandingLineEdit):
         m.rowsInserted.connect(self._resize_completer_popup)
         m.rowsRemoved.connect(self._resize_completer_popup)
 
-        self.line_edit.installEventFilter(self)
         self.line_edit.textEdited.connect(self._on_text_edited)
 
+        # 2. Handle Focus events for Text Swapping
+        self.line_edit.focus_in.connect(self._on_focus_gained)
+        self.line_edit.focus_out.connect(self._on_focus_lost)
+
         self.set_static_suggestions(self._base_suggestions)
-        self._apply_display_text()
 
-    def eventFilter(self, obj, event):
-        if obj is self.line_edit:
-            t = event.type()
-            if t == QtCore.QEvent.FocusIn:
-                self.line_edit.setText(self._full_value)
-            elif t == QtCore.QEvent.FocusOut:
-                self._full_value = self.line_edit.text()
-                self._apply_display_text()
-        return super().eventFilter(obj, event)
-
-    def _on_text_edited(self, txt):
-        self._full_value = txt
-
-    def _apply_display_text(self):
+    def _format_display_text(self, text):
+        """Returns the text to display based on current focus state."""
         if self.line_edit.hasFocus():
-            self.line_edit.setText(self._full_value)
-        else:
-            self.line_edit.setText(_strip_prefix(self._full_value, self._prefix))
+            return text
+        return _strip_prefix(text, self._prefix)
+
+    def amend_display_text(self, val):
+        val = val if self.line_edit.hasFocus() else _strip_prefix(val, self._prefix)
+        return val
+
+        # --- Events ---
+    def _on_focus_gained(self):
+        """Expand to full value for editing."""
+        self.line_edit.setText(self._full_value)
+
+    def _on_focus_lost(self):
+        """Shrink to short value for display."""
+        short_text = _strip_prefix(self._full_value, self._prefix)
+        self.line_edit.setText(short_text)
+
+    def _on_text_edited(self, text):
+        """
+        Update internal value while typing.
+        Since user is typing with focus, 'text' is the full value.
+        """
+        self._full_value = text
+        self.value_changed.emit(self.get_name(), self._full_value)
+
+    def on_item_selected(self, index):
+        """Handle selection from the autocomplete dropdown."""
+        full_val = index.data(QtCore.Qt.UserRole)
+        self._full_value = full_val
+
+        # Because selecting an item might not shift focus immediately,
+        # but we want to see what we selected:
+        self.line_edit.setText(self._full_value)
+        self.value_changed.emit(self.get_name(), self._full_value)
+
+    # ------------ public methods ---------------
 
     @property
     def type_(self):
         return 'DropDownLineEdit'
 
-    def set_value(self, text):
-        text = '' if text is None else str(text)
-        if text != self._full_value:
-            self._full_value = text
-            self._apply_display_text()
-            self.on_value_changed()
-            self._commit()
+    def get_name(self):
+        return self._name
 
     def get_value(self):
         return self._full_value
+
+    def set_value(self, text):
+        text = str(text or '')
+        self._full_value = text
+        self.line_edit.setText(self._format_display_text(text))
+        self._commit()          # important?
+
+    # --------- suggestions ----------------
 
     def set_static_suggestions(self, suggestions):
         self._static_suggestions = list(suggestions or [])
@@ -354,7 +381,6 @@ class DropDownLineEdit(ExpandingLineEdit):
         self._completer_model.prefix = self._prefix
         self.set_dynamic_suggestions([])
         self._resize_completer_popup()
-        self._apply_display_text()
 
     def set_dynamic_suggestions(self, dynamic):
         seen = set()
@@ -429,6 +455,22 @@ def _strip_prefix(s, prefix):
     if prefix and s.startswith(prefix):
         return s[len(prefix):]
     return s
+
+
+class FocusAwareLineEdit(QtWidgets.QLineEdit):
+    """
+    A LineEdit override to emit signals on focus in and out.
+    """
+    focus_in = QtCore.pyqtSignal()
+    focus_out = QtCore.pyqtSignal()
+
+    def focusInEvent(self, event):
+        self.focus_in.emit()
+        super(FocusAwareLineEdit, self).focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        self.focus_out.emit()
+        super(FocusAwareLineEdit, self).focusOutEvent(event)
 
 
 class _PrefixDisplayStringListModel(QtCore.QStringListModel):       # strip prefix if present in all suggestions
