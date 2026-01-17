@@ -6,6 +6,8 @@ from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints, index_label
 
+from graph.transform_json_to_sql import transform_localisation, transform_to_sql
+
 db_map = {'ModifierArguments': db_spec.mod_arg_database_types,
           'RequirementArguments': db_spec.req_arg_database_types}
 bonus_col_poss_map = {'Name': {'ModifierArguments': db_spec.modifier_argument_list},
@@ -13,8 +15,6 @@ bonus_col_poss_map = {'Name': {'ModifierArguments': db_spec.modifier_argument_li
 
 
 class DynamicNode(BasicDBNode):
-    _validation_errors = {}  # Track validation errors for each field
-    can_validate = False
 
     def _validate_field(self, field_name, field_value, all_data=None):
         if all_data is None:
@@ -86,8 +86,21 @@ class DynamicNode(BasicDBNode):
             if self.can_validate and old_value != value and widget and widget.widget_string_type == 'QLineEdit':
                 self._validate_field(name, value)
             super().set_property(name=name, value=value, push_undo=True)
+        if self.can_validate and name not in {'sql_form', 'loc_sql_form'}:      # prevents looping
+            self.convert_to_sql()
 
+    def set_spec(self, col_dict):
+        super().set_spec(col_dict=col_dict)
+        self._validate_all_fields()
 
+    def convert_to_sql(self):
+        custom_properties = self.get_properties_to_sql()
+        table_name = self.get_property('table_name')
+        loc_entries = transform_localisation(custom_properties, table_name)
+        error_string = ''
+        sql, dict_form, error_string = transform_to_sql(custom_properties, table_name, error_string)
+        self.set_property('sql_form', sql)
+        self.set_property('loc_sql_form', "\n".join([i for i in loc_entries]))
 
 # had to auto generate classes rather then generate at node instantition because
 # on save they werent storing their properties in such a way they could be loaded again
@@ -96,6 +109,7 @@ def create_table_node_class(table_name, graph):
 
     def init_method(self):
         super(type(self), self).__init__()
+        self._validation_errors = {}  # Track validation errors for each field
         self.view.setVisible(False)
         primary_keys = SQLValidator.pk_map[table_name]
         prim_texts = [i for i in SQLValidator.required_map[table_name] if i not in primary_keys]
@@ -188,7 +202,6 @@ def create_table_node_class(table_name, graph):
                 self.set_text_input(col, idx, default_val, localise=is_localised)
 
         self.create_property('arg_params', lazy_params)
-        self.can_validate = True
         for col in self._initial_fields:            # dont validate on start, takes like 0.2s
             widget = self.get_widget(col)
             if widget is not None and widget.widget_string_type == 'QLineEdit' and widget.get_value() == '':
@@ -200,6 +213,7 @@ def create_table_node_class(table_name, graph):
                                                                                                       fk_backlink)
         if table_name in ('ModifierArguments', 'RequirementArguments'):
             self.add_input('Value')
+        self.can_validate = True
         self.view.setVisible(True)
 
     def set_defaults_method(self):

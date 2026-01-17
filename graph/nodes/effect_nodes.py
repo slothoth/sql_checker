@@ -5,6 +5,9 @@ from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
 
+from graph.transform_json_to_sql import effect_custom_transform, req_custom_transform
+
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -42,6 +45,8 @@ class BaseEffectNode(BasicDBNode):
             self.get_property('arg_params')[name] = value
 
         super().set_property(name, value, push_undo=push_undo)
+        if self.can_validate and name not in {'sql_form', 'loc_sql_form'}:      # prevents looping
+            self.convert_to_sql()
 
     def update(self):
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
@@ -134,9 +139,6 @@ class BaseEffectNode(BasicDBNode):
             self.get_property('arg_params')[arg] = None
         return self.get_widget(arg)
 
-    def update_unnamed_cols(self, mode):      # will be overridden
-        return
-
     def migrate_extra_params(self):             # we should technically cover this anyways
         lazy_params = self.get_property('arg_params')
         custom_properties = self.model._custom_prop
@@ -193,19 +195,24 @@ class BaseEffectNode(BasicDBNode):
                 'port_name': table_pk_output,
             })
 
+    def update_unnamed_cols(self, mode):      # will be overridden
+        return
+
+    def convert_to_sql(self):
+        return
 
 class GameEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
     NODE_NAME = 'CustomGameEffect'
-    old_effect = None
-    arg_setter_prop = 'EffectType'
-    output_port_tables = {}
     argument_info_map = db_spec.modifier_argument_info
     arg_prop_map = db_spec.mod_type_arg_map
     database_arg_map = db_spec.mod_arg_database_types
 
     def __init__(self):
         super().__init__()
+        self.old_effect = None
+        self.arg_setter_prop = 'EffectType'
+        self.output_port_tables = {}
         self.view.setVisible(False)
         self.create_property('table_name', value='GameEffectCustom')
         # fixed fields
@@ -248,12 +255,10 @@ class GameEffectNode(BaseEffectNode):
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='SubjectRequirementSetId', name='SubjectReq',
                                                  check_if_edited=True), tab='fields',
                                widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        # self.set_search_menu(col='SubjectReq', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['SubjectRequirementSetId']['vals'], validate=False)
         self.add_output('OwnerReq')
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='OwnerRequirementSetId', name='OwnerReq',
                                                  check_if_edited=True), tab='fields',
                                widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        #self.set_search_menu(col='OwnerRequirementSetId', idx=0, col_poss_vals=[''] + db_possible_vals.get('Modifiers', {})['OwnerRequirementSetId']['vals'], validate=False)
 
         for col in show_even_with_defaults:
             default_val = bool(int(mod_spec['default_values'].get(col, '0')))
@@ -273,7 +278,7 @@ class GameEffectNode(BaseEffectNode):
         # ModifierStrings
         self.create_property('Text', value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.create_property('Context', value='', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        # ModifierMetadata. Only used for resource modifiers.
+        # skipping ModifierMetadata. Only used for resource modifiers.
 
         self.widget_props = [i for i in self.properties()['custom']]
         self.create_property('RequirementSetDict', {'SubjectReq': {'type': 'REQUIREMENTSET_TEST_ALL', 'reqs': []},
@@ -282,6 +287,7 @@ class GameEffectNode(BaseEffectNode):
         self.view.setVisible(True)
         self.reserved_inputs = self.inputs()
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
+        self.can_validate = True
 
     def get_link_port(self, connect_table, connect_port):    # uses custom ReqCustom and all Modifier attachment tables
         if connect_port is not None:
@@ -312,20 +318,32 @@ class GameEffectNode(BaseEffectNode):
             subject_req_widget.update_from_state(new_subject)
             owner_req_widget.update_from_state(new_owner)
 
+    def convert_to_sql(self):
+        custom_properties = self.get_properties_to_sql()
+        sql_code, dict_form_list, error_string = [], [], ''
+        node_id = self.id
+        try:
+            sql_code, dict_form_list, error_string = effect_custom_transform(custom_properties, node_id,
+                                                                         sql_code, dict_form_list, error_string)
+        except Exception as e:
+            log.warning(f'missed converting sql code, due to {e}')
+            return
+        self.set_property('sql_form', sql_code)
+
 
 class RequirementEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
     NODE_NAME = 'CustomRequirement'
-    old_effect = None
-
-    arg_setter_prop = 'RequirementType'
-    output_port_tables = {}
     argument_info_map = db_spec.requirement_argument_info
     arg_prop_map = db_spec.req_type_arg_map
     database_arg_map = db_spec.req_arg_database_types
 
     def __init__(self):
         super().__init__()
+        self.old_effect = None
+        self.arg_setter_prop = 'RequirementType'
+        self.output_port_tables = {}
+
         self.view.setVisible(False)
         self.create_property('table_name', value='ReqEffectCustom')
 
@@ -348,6 +366,7 @@ class RequirementEffectNode(BaseEffectNode):
         self.view.setVisible(True)
         self.reserved_inputs = self.inputs()
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
+        self.can_validate = True
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
         if connect_port is not None:
@@ -365,3 +384,11 @@ class RequirementEffectNode(BaseEffectNode):
             else:                                                           # if not, name based on requirementType
                 new_req_id = f'{mode}_{unique_req_type_count}'
             req_id_widget.set_value(new_req_id)
+
+    def convert_to_sql(self):
+        custom_properties = self.get_properties_to_sql()
+        sql_code, dict_form_list, error_string = [], [], ''
+        node_id = self.id
+        sql_code, dict_form_list, error_string = req_custom_transform(custom_properties, node_id,
+                                                                      sql_code, dict_form_list, error_string)
+        self.set_property('sql_form', sql_code)

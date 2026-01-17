@@ -13,10 +13,19 @@ log = logging.getLogger(__name__)
 
 
 class BasicDBNode(BaseNode):
-    _extra_visible = False
-    _initial_fields = []
-    _extra_fields = []
-    output_port_tables = {}
+
+    def __init__(self):
+        super().__init__()
+        self._extra_visible = False
+        self._initial_fields = []
+        self._extra_fields = []
+        self.output_port_tables = {}
+        self._default_color = None
+        self.test_error = False
+        self.can_validate = False
+        self._default_color = self.color()
+        self.create_property('sql_form', '', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+        self.create_property('loc_sql_form', '', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
         connection_spec = db_spec.node_templates.get(connect_table, {})
@@ -106,6 +115,22 @@ class BasicDBNode(BaseNode):
             else:
                 if name in arg_params:
                     arg_params[name] = widget.get_value()
+
+    def error_color(self, is_error=True):
+        if is_error:
+            error_color = (200, 30, 30)        # Set to an error color (e.g., Red: R, G, B, A)
+            self.set_color(*error_color)
+            self.test_error = True
+        else:
+            self.set_color(*self._default_color)        # Restore original color
+            self.test_error = False
+       # self.update()        # Force the graph UI to redraw the node            is this needed?
+
+    def get_properties_to_sql(self):
+        custom_properties = {k: v for k, v in self.properties()['custom'].items() if k != 'sql_form'}
+        custom_properties = SQLValidator.normalize_node_bools(custom_properties, self.get_property('table_name'))
+        custom_properties = {k: v for k, v in custom_properties.items() if v is not None}
+        return custom_properties
 
 
 def backlink_port_get(original_table, connect_table):
