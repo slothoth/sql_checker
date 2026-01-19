@@ -86,20 +86,54 @@ def update_delete_node_setup(sql_command, qtbot):
     return node, value
 
 
-def check_test_against_expected_sql(test_sql_path, expected_sql_path):
-    with open(expected_sql_path, 'r') as f:
-        test_sql = f.readlines()
+def setup_effect_req(window, qtbot):
+    effect_node = window.graph.create_node('db.game_effects.GameEffectNode')
+    qtbot.wait(1)
+    effect_node.set_property('EffectType', 'EFFECT_ADJUST_PLAYER_YIELD_FOR_RESOURCE')
+    qtbot.wait(1)
+    effect_node.set_property('CollectionType', 'COLLECTION_ALL_PLAYERS')
+    qtbot.wait(1)
+    cast_test_input('Amount', '2', effect_node)
+    qtbot.wait(1)
+    cast_test_input('YieldType', 'YIELD_FOOD',  effect_node)
+    qtbot.wait(1)
+    effect_node.set_property('EffectType', 'EFFECT_ADJUST_UNIT_RESOURCE_DAMAGE')
+    qtbot.wait(1)
+    cast_test_input('Amount', '6', effect_node)
+    qtbot.wait(1)
+    cast_test_input('ResourceClassType', 'RESOURCECLASS_EMPIRE', effect_node)
+    qtbot.wait(1)
 
-    with open(expected_sql_path, 'r') as f:
+    req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')
+    qtbot.wait(1)
+    req_node.set_property('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE')
+    qtbot.wait(1)
+    cast_test_input('Amount', '4', req_node)
+    qtbot.wait(1)
+    cast_test_input('UnitType', 'UNIT_TEST', req_node)
+    qtbot.wait(1)
+
+    req_node.set_property('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS')
+    qtbot.wait(1)
+    cast_test_input('BuildingType', 'BUILDING_TEST', req_node)
+    qtbot.wait(1)
+    return effect_node, req_node
+
+
+def check_test_against_expected_sql(test_sql_path, generated_sql_path):
+    with open(generated_sql_path, 'r') as f:
+        generated_sql = f.readlines()
+
+    with open(generated_sql_path, 'r') as f:
         ref_sql = f.read()
 
     with open(f'test/test_data/{test_sql_path}', 'r') as f:
         expected_sql = f.readlines()
 
-    test_set = set(test_sql)
+    generated_set = set(generated_sql)
     expected_set = set(expected_sql)
-    if test_set != expected_set:
-        missing_sql = expected_set - test_set
-        extra_sql = test_set - expected_set
+    if generated_set != expected_set:
+        missing_sql = expected_set - generated_set
+        extra_sql = generated_set - expected_set
         assert len(missing_sql) == 0, f'Missed lines {missing_sql}'
         assert len(extra_sql) == 0, f'extra lines {extra_sql}'

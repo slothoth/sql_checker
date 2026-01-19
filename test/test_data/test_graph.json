@@ -5,182 +5,14 @@
     "pipe_collision":false,
     "pipe_slicing":true,
     "pipe_style":1,
-    "accept_connection_types":"{}",
+    "accept_connection_types":"{\"db.table.traitmodifiers.TraitmodifiersNode\": {\"in\": {\"ModifierId\": {\"db.table.modifiers.ModifiersNode\": {\"out\": [\"ModifierId\"]}, \"db.game_effects.GameEffectNode\": {\"out\": [\"ModifierId\"]}}, \"TraitType\": {\"db.table.traits.TraitsNode\": {\"out\": [\"TraitType\"]}}}}, \"db.table.traits.TraitsNode\": {\"in\": {\"TraitType\": {\"db.table.types.TypesNode\": {\"out\": [\"Type\"]}}}}, \"db.table.unitabilitymodifiers.UnitabilitymodifiersNode\": {\"in\": {\"ModifierId\": {\"db.table.modifiers.ModifiersNode\": {\"out\": [\"ModifierId\"]}, \"db.game_effects.GameEffectNode\": {\"out\": [\"ModifierId\"]}}, \"UnitAbilityType\": {\"db.table.unitabilities.UnitabilitiesNode\": {\"out\": [\"UnitAbilityType\"]}}}}, \"db.table.unitabilities.UnitabilitiesNode\": {\"in\": {\"CommandType\": {\"db.table.unitcommands.UnitcommandsNode\": {\"out\": [\"CommandType\"]}}, \"KeywordAbilityType\": {\"db.table.keywordabilities.KeywordabilitiesNode\": {\"out\": [\"KeywordAbilityType\"]}}, \"OperationType\": {\"db.table.unitoperations.UnitoperationsNode\": {\"out\": [\"OperationType\"]}}}}, \"db.table.types.TypesNode\": {\"in\": {\"Kind\": {\"db.table.kinds.KindsNode\": {\"out\": [\"Kind\"]}}}}}",
     "reject_connection_types":"{}"
   },
   "nodes":{
-    "0x13ae0d6d0":{
-      "type_":"db.table.types.TypesNode",
+    "0x146ec4f70":{
+      "type_":"db.table.traitmodifiers.TraitmodifiersNode",
       "icon":null,
-      "name":"Types",
-      "color":[
-        13,
-        18,
-        23,
-        255
-      ],
-      "border_color":[
-        74,
-        84,
-        85,
-        255
-      ],
-      "text_color":[
-        255,
-        255,
-        255,
-        180
-      ],
-      "disabled":false,
-      "selected":true,
-      "visible":true,
-      "width":309.96875,
-      "height":152.95,
-      "pos":[
-        -660.5078125,
-        -599.2624999999998
-      ],
-      "layout_direction":0,
-      "port_deletion_allowed":false,
-      "subgraph_session":{},
-      "custom":{
-        "table_name":"Types",
-        "toggle_extra":"",
-        "Type":"TRAIT_MOD_GREAT_WORK_COMMENDATION_ABILITY_TYPE",
-        "Kind":"KIND_MODIFIER",
-        "Hash":"0"
-      }
-    },
-    "0x13b433f40":{
-      "type_":"db.table.types.TypesNode",
-      "icon":null,
-      "name":"Types 1",
-      "color":[
-        13,
-        18,
-        23,
-        255
-      ],
-      "border_color":[
-        74,
-        84,
-        85,
-        255
-      ],
-      "text_color":[
-        255,
-        255,
-        255,
-        180
-      ],
-      "disabled":false,
-      "selected":true,
-      "visible":true,
-      "width":309.96875,
-      "height":152.95,
-      "pos":[
-        -660.5078125,
-        -359.83749999999986
-      ],
-      "layout_direction":0,
-      "port_deletion_allowed":false,
-      "subgraph_session":{},
-      "custom":{
-        "table_name":"Types",
-        "toggle_extra":"",
-        "Type":"MOD_GREAT_WORK_COMMENDATION_TYPE",
-        "Kind":"KIND_MODIFIER",
-        "Hash":"0"
-      }
-    },
-    "0x13b43d550":{
-      "type_":"db.table.types.TypesNode",
-      "icon":null,
-      "name":"Types 2",
-      "color":[
-        13,
-        18,
-        23,
-        255
-      ],
-      "border_color":[
-        74,
-        84,
-        85,
-        255
-      ],
-      "text_color":[
-        255,
-        255,
-        255,
-        180
-      ],
-      "disabled":false,
-      "selected":true,
-      "visible":true,
-      "width":309.96875,
-      "height":152.95,
-      "pos":[
-        -660.5078125,
-        -120.41249999999985
-      ],
-      "layout_direction":0,
-      "port_deletion_allowed":false,
-      "subgraph_session":{},
-      "custom":{
-        "table_name":"Types",
-        "toggle_extra":"",
-        "Type":"ABILITY_GREAT_WORK_COMMENDATION",
-        "Kind":"KIND_ABILITY",
-        "Hash":"0"
-      }
-    },
-    "0x13b4465b0":{
-      "type_":"db.table.types.TypesNode",
-      "icon":null,
-      "name":"Types 3",
-      "color":[
-        13,
-        18,
-        23,
-        255
-      ],
-      "border_color":[
-        74,
-        84,
-        85,
-        255
-      ],
-      "text_color":[
-        255,
-        255,
-        255,
-        180
-      ],
-      "disabled":false,
-      "selected":true,
-      "visible":true,
-      "width":309.96875,
-      "height":152.95,
-      "pos":[
-        -660.5078125,
-        119.01250000000005
-      ],
-      "layout_direction":0,
-      "port_deletion_allowed":false,
-      "subgraph_session":{},
-      "custom":{
-        "table_name":"Types",
-        "toggle_extra":"",
-        "Type":"KEYWORD_ABILITY_GREAT_WORK_COMMENDATION",
-        "Kind":"KIND_KEYWORD_ABILITY",
-        "Hash":"0"
-      }
-    },
-    "0x13b44e2e0":{
-      "type_":"db.table.unitabilities.UnitabilitiesNode",
-      "icon":null,
-      "name":"UnitAbilities",
+      "name":"TraitModifiers",
       "color":[
         13,
         18,
@@ -202,39 +34,35 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":424.46875,
-      "height":101.5,
+      "width":336.8125,
+      "height":130.9,
       "pos":[
-        32.3671875,
-        -599.2624999999998
+        280.34254158163515,
+        141.5062352745396
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
       "subgraph_session":{},
       "custom":{
-        "table_name":"UnitAbilities",
-        "toggle_extra":"",
-        "UnitAbilityType":"ABILITY_GREAT_WORK_COMMENDATION",
-        "AbilityData":"",
-        "AbilityValue":false,
-        "CommandType":"",
-        "DamageAmount":"10",
-        "Description":"LOC_KEYWORD_ABILITY_GREAT_WORK_COMMENDATION_DESCRIPTION",
-        "Inactive":true,
-        "KeywordAbilityDuration":"5",
-        "KeywordAbilityType":"KEYWORD_ABILITY_GREAT_WORK_COMMENDATION",
-        "KeywordAbilityValue":"2",
-        "Name":"LOC_KEYWORD_ABILITY_GREAT_WORK_COMMENDATION",
-        "OperationType":"",
-        "Permanent":true,
-        "ShareWithChildren":false,
-        "ShowFloatTextWhenEarned":false
+        "sql_form":"INSERT INTO \"TraitModifiers\" (\"ModifierId\", \"TraitType\") VALUES ('MISSING_MOD_TRAIT', 'TRAIT_TEST');",
+        "loc_sql_form":"",
+        "dict_sql":{
+          "table_name":"TraitModifiers",
+          "columns":{
+            "ModifierId":"MISSING_MOD_TRAIT",
+            "TraitType":"TRAIT_TEST"
+          }
+        },
+        "table_name":"TraitModifiers",
+        "ModifierId":"MISSING_MOD_TRAIT",
+        "TraitType":"TRAIT_TEST",
+        "arg_params":{}
       }
     },
-    "0x13b466250":{
-      "type_":"db.table.keywordabilities.KeywordabilitiesNode",
+    "0x148f57c70":{
+      "type_":"db.table.traits.TraitsNode",
       "icon":null,
-      "name":"KeywordAbilities",
+      "name":"Traits",
       "color":[
         13,
         18,
@@ -256,27 +84,38 @@
       "disabled":false,
       "selected":false,
       "visible":true,
-      "width":310.734375,
-      "height":247.45000000000002,
+      "width":360.8125,
+      "height":81.55000000000001,
       "pos":[
-        -660.5078125,
-        452.9375
+        -138.87703775917802,
+        213.50832275587237
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
       "subgraph_session":{},
       "custom":{
-        "table_name":"KeywordAbilities",
-        "toggle_extra":"",
-        "KeywordAbilityType":"KEYWORD_ABILITY_GREAT_WORK_COMMENDATION",
-        "FullDescription":"LOC_KEYWORD_ABILITY_GREAT_WORK_COMMENDATION_DESCRIPTION",
-        "Name":"LOC_KEYWORD_ABILITY_GREAT_WORK_COMMENDATION",
-        "Summary":"LOC_KEYWORD_ABILITY_GREAT_WORK_COMMENDATION_SUMMARY",
-        "CivilopediaKey":"",
-        "IconString":""
+        "sql_form":"INSERT INTO \"Traits\" (\"TraitType\") VALUES ('TRAIT_TEST');",
+        "loc_sql_form":"",
+        "dict_sql":{
+          "table_name":"Traits",
+          "columns":{
+            "TraitType":"TRAIT_TEST"
+          }
+        },
+        "table_name":"Traits",
+        "primary_key":"TraitType",
+        "TraitType":"TRAIT_TEST",
+        "Description":"",
+        "InternalOnly":false,
+        "Name":"",
+        "arg_params":{
+          "Description":"",
+          "InternalOnly":false,
+          "Name":""
+        }
       }
     },
-    "0x13b45f910":{
+    "0x148f57af0":{
       "type_":"db.table.unitabilitymodifiers.UnitabilitymodifiersNode",
       "icon":null,
       "name":"UnitAbilityModifiers",
@@ -302,25 +141,34 @@
       "selected":false,
       "visible":true,
       "width":372.4375,
-      "height":139.3,
+      "height":130.9,
       "pos":[
-        717.0390625,
-        -599.2624999999998
+        370.2301501522548,
+        474.3573798825764
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
       "subgraph_session":{},
       "custom":{
+        "sql_form":"INSERT INTO \"UnitAbilityModifiers\" (\"ModifierId\", \"UnitAbilityType\") VALUES ('MISSING_MOD_ABILITY', 'ABILITY_UH');",
+        "loc_sql_form":"",
+        "dict_sql":{
+          "table_name":"UnitAbilityModifiers",
+          "columns":{
+            "ModifierId":"MISSING_MOD_ABILITY",
+            "UnitAbilityType":"ABILITY_UH"
+          }
+        },
         "table_name":"UnitAbilityModifiers",
-        "toggle_extra":"",
-        "ModifierId":"MOD_GREAT_WORK_COMMENDATION",
-        "UnitAbilityType":"ABILITY_GREAT_WORK_COMMENDATION"
+        "ModifierId":"MISSING_MOD_ABILITY",
+        "UnitAbilityType":"ABILITY_UH",
+        "arg_params":{}
       }
     },
-    "0x13b466df0":{
-      "type_":"db.table.traitmodifiers.TraitmodifiersNode",
+    "0x1479244f0":{
+      "type_":"db.table.unitabilities.UnitabilitiesNode",
       "icon":null,
-      "name":"TraitModifiers",
+      "name":"UnitAbilities",
       "color":[
         13,
         18,
@@ -340,43 +188,148 @@
         180
       ],
       "disabled":false,
-      "selected":true,
+      "selected":false,
       "visible":true,
-      "width":336.8125,
-      "height":139.3,
+      "width":484.46875,
+      "height":101.5,
       "pos":[
-        -660.5078125,
-        725.9624999999999
+        -169.98547759394387,
+        448.54806653061615
       ],
       "layout_direction":0,
       "port_deletion_allowed":false,
       "subgraph_session":{},
       "custom":{
-        "table_name":"TraitModifiers",
-        "toggle_extra":"",
-        "ModifierId":"TRAIT_MOD_GREAT_WORK_COMMENDATION_ABILITY",
-        "TraitType":"TRAIT_LEADER_MAJOR_CIV"
+        "sql_form":"INSERT INTO \"UnitAbilities\" (\"UnitAbilityType\", \"AbilityValue\", \"DamageAmount\", \"KeywordAbilityDuration\", \"KeywordAbilityValue\") VALUES ('ABILITY_UH', 0, 0, 0, 0);",
+        "loc_sql_form":"",
+        "dict_sql":{
+          "table_name":"UnitAbilities",
+          "columns":{
+            "UnitAbilityType":"ABILITY_UH",
+            "AbilityValue":0,
+            "DamageAmount":0,
+            "KeywordAbilityDuration":0,
+            "KeywordAbilityValue":0
+          }
+        },
+        "table_name":"UnitAbilities",
+        "primary_key":"UnitAbilityType",
+        "UnitAbilityType":"ABILITY_UH",
+        "AbilityData":"",
+        "AbilityValue":0,
+        "CommandType":null,
+        "DamageAmount":0,
+        "Description":"",
+        "Inactive":false,
+        "KeywordAbilityDuration":0,
+        "KeywordAbilityType":null,
+        "KeywordAbilityValue":0,
+        "Name":"",
+        "OperationType":null,
+        "Permanent":true,
+        "ShareWithChildren":false,
+        "ShowFloatTextWhenEarned":false,
+        "arg_params":{
+          "AbilityData":"",
+          "AbilityValue":0,
+          "CommandType":null,
+          "DamageAmount":0,
+          "Description":"",
+          "Inactive":false,
+          "KeywordAbilityDuration":0,
+          "KeywordAbilityType":null,
+          "KeywordAbilityValue":0,
+          "Name":"",
+          "OperationType":null,
+          "Permanent":true,
+          "ShareWithChildren":false,
+          "ShowFloatTextWhenEarned":false
+        }
+      }
+    },
+    "0x147924d90":{
+      "type_":"db.table.types.TypesNode",
+      "icon":null,
+      "name":"Types",
+      "color":[
+        13,
+        18,
+        23,
+        255
+      ],
+      "border_color":[
+        74,
+        84,
+        85,
+        255
+      ],
+      "text_color":[
+        255,
+        255,
+        255,
+        180
+      ],
+      "disabled":false,
+      "selected":false,
+      "visible":true,
+      "width":309.96875,
+      "height":130.9,
+      "pos":[
+        -357.6367667274731,
+        1.1426094783625445
+      ],
+      "layout_direction":0,
+      "port_deletion_allowed":false,
+      "subgraph_session":{},
+      "custom":{
+        "sql_form":"INSERT INTO \"Types\" (\"Type\", \"Kind\") VALUES ('TRAIT_TEST', 'KIND_TRAIT');",
+        "loc_sql_form":"",
+        "dict_sql":{
+          "table_name":"Types",
+          "columns":{
+            "Type":"TRAIT_TEST",
+            "Kind":"KIND_TRAIT"
+          }
+        },
+        "table_name":"Types",
+        "primary_key":"Type",
+        "Type":"TRAIT_TEST",
+        "Kind":"KIND_TRAIT",
+        "Hash":0,
+        "arg_params":{
+          "Hash":0
+        }
       }
     }
   },
   "connections":[
     {
       "in":[
-        "0x13b44e2e0",
-        "KeywordAbilityType"
+        "0x146ec4f70",
+        "TraitType"
       ],
       "out":[
-        "0x13b466250",
-        "KeywordAbilityType"
+        "0x148f57c70",
+        "TraitType"
       ]
     },
     {
+      "in":[
+        "0x148f57c70",
+        "TraitType"
+      ],
       "out":[
-        "0x13b44e2e0",
+        "0x147924d90",
+        "Type"
+      ]
+    },
+    {
+      "in":[
+        "0x148f57af0",
         "UnitAbilityType"
       ],
-      "in":[
-        "0x13b45f910",
+      "out":[
+        "0x1479244f0",
         "UnitAbilityType"
       ]
     }

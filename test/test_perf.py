@@ -3,29 +3,31 @@ from collections import defaultdict
 import os
 
 import graph.windows
-def new_combo_value(parent, age_list, mod_list):
+def new_combo_value(parent, age_list, mod_list):            # TODO override to stop me havng to choose age, dont work
     return 'AGE_ANTIQUITY', {}
 
 graph.windows.get_combo_value = new_combo_value
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
-from graph.set_hotkeys import write_sql, write_loc_sql
+from graph.set_hotkeys import write_sql, write_loc_sql, save_session_to_mod
 from graph.db_spec_singleton import db_spec
 from graph.mod_conversion import build_imported_mod
 
 from utils import check_test_against_expected_sql, save
 
 
-
-
 def test_all_table_nodes(qtbot):
     window = NodeEditorWindow()
     qtbot.addWidget(window)
-    sql_commands, dict_form_list, loc_lines = transform_json('test/test_data/perf_test_fin.json')
-    write_sql(sql_commands)
-    write_loc_sql(loc_lines)
-    check_test_against_expected_sql('all_table_nodes.sql')
+    for i in window.graph.registered_nodes():
+        if i == 'nodeGraphQt.nodes.BackdropNode':
+            continue
+        window.graph.create_node(i)
+        qtbot.wait(1)
+    save_session_to_mod(window.graph)
+    qtbot.wait(1)
+    check_test_against_expected_sql(qtbot, 'resources/main.sql')
 
 
 def test_all_effect_args(qtbot):
@@ -40,7 +42,7 @@ def test_all_effect_args(qtbot):
         effect_node.set_property('EffectType', effect)
         qtbot.wait(1)
         current = save(window)
-        sql_lines, dict_form_list, loc_lines = transform_json(current)
+        sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
         write_sql(sql_lines)
         write_loc_sql(loc_lines)
         qtbot.wait(1)
@@ -57,7 +59,7 @@ def test_all_req_args(qtbot):
         req_node.set_property('RequirementType', effect)
         qtbot.wait(1)
         current = save(window)
-        sql_lines, dict_form_list, loc_lines = transform_json(current)
+        sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
         write_sql(sql_lines)
         write_loc_sql(loc_lines)
         qtbot.wait(1)
