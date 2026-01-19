@@ -86,12 +86,12 @@ class ResourceLoader:
             self.patch_time = self.metadata['patch_time']
         new_patch_occurred, latest = self.check_firaxis_patched()
         if new_patch_occurred:
+            log.info('new patch! rebuild all files')                        # TODO show toast for user
             self.update_database_spec()
             self.modifier_argument_info = self._read_file(self._files['modifier_argument_info'])
             self.requirement_argument_info = self._read_file(self._files['requirement_argument_info'])
             self.metadata['patch_time'] = latest
             self._write_file(self._files['metadata'], self.metadata)
-            log.info('new patch! rebuild all files')
         self.node_templates = self._read_file(self._files['node_templates'])
         self.possible_vals = self._read_file(self._files['possible_vals'])
         self.all_possible_vals = self._read_file(self._files['all_possible_vals'])
@@ -296,8 +296,8 @@ class BaseDB:
             conn = sqlite3.connect(full_path)
             cursor = conn.cursor()
             for table in self.tables:
-                if table in ['IPropertyTypes', 'ReportingEvents', 'GameCoreEvents']:  # weird extra tables
-                    continue
+                #if table in ['IPropertyTypes', 'ReportingEvents', 'GameCoreEvents']:  # weird extra tables
+                #    continue       # TODO skipping
                 primary_keys = self.table_data[table]['primary_keys']
                 if len(primary_keys) == 1:
                     pk = primary_keys[0]

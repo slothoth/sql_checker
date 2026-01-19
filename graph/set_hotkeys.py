@@ -574,7 +574,6 @@ def get_previous_error_node(graph):
         graph.clear_selection()
 
 
-
 def write_sql(sql_dict_list):                               # save SQL, then trigger main run model
     sql_lines = [i['sql'] + '\n' for i in sql_dict_list]
     with open('resources/main.sql', 'w') as f:

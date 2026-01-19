@@ -112,7 +112,7 @@ class SchemaInspector:
             for ref_tbl, fk_refs in internal_fk_map.items():
                 for fk_col, pk_info in fk_refs.items():
                     if len(pk_info) > 1:
-                        print('plural pk info?')
+                        log.warning('plural pk info?')
                     pk_tbl = list(pk_info.keys())[0]
                     pk_col = pk_info[pk_tbl]
                     if pk_tbl == model_name:
@@ -360,9 +360,14 @@ class SchemaInspector:
         bad = self.find_literal_mismatches(table, filtered, sqlite.dialect())
 
         if len(bad) > 0:
-            print(f'fails for table {table_name}')
+            log.error(f'fails for {table_name} when converting from dict to sql: {ui_dict}')
         for name, coltype, value, err in bad:
-            print(name, coltype, repr(value))
+            log.error(name, coltype, repr(value))
+
+        if not filtered:
+            return 'CUSTOM_ERROR_CODE', filtered
+
+        # TODO now check that not nullables + no default present (we have map) and that primary key is present
 
         stmt = insert(self.Base.metadata.tables[table_name]).values(**filtered)
         sql = stmt.compile(dialect=sqlite.dialect(), compile_kwargs={"literal_binds": True})
@@ -388,7 +393,6 @@ class SchemaInspector:
                 entry[name] = False
 
         return entry
-
 
     @staticmethod
     def find_literal_mismatches(table, values, dialect):
@@ -537,8 +541,8 @@ def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=N
                             pk_dict = {k: v for k, v in dict_info['columns'].items() if k in primary_key_cols}
                             pk_string = ", ".join([f'{k}: {v}' for k, v in pk_dict.items()])
                             pk_tuple = tuple([v for k, v in pk_dict.items()])
-                        else:
-                            print('todo')       # LAST resort sqlglot
+                        else:       # planned last resort sqlglot
+                            log.error('insert error, but we havent handled parsing yet, skipping error')
                             continue
                         error_string = f'Entry {table_name} with primary key: {pk_string}'
                         if isinstance(error_info['error_type'].orig, sqlite3.IntegrityError):

@@ -188,7 +188,7 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
 def transform_to_sql(ui_dict, table_name, error_string):
     if table_name == 'Types':  # deal with Hashed default
         if 'Hash' in ui_dict:
-            del ui_dict['Hash']
+            del ui_dict['Hash']                                         # TODO we should change this table
     if table_name in ['ModifierArguments', 'RequirementArguments']:
         ui_dict['Value'] = str(ui_dict['Value'])
     sql_command, dict_info = SQLValidator.convert_ui_dict_to_text_sql(ui_dict, table_name)

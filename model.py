@@ -633,10 +633,9 @@ def load_files(jobs, job_type, log_queue=None):
             if isinstance(statements, str):
                 missed_files.append(short_name)
                 if job_type in ['DLC', 'vanilla']:
-                    logger.info('ignore as its just firaxis')
+                    logger.debug('ignore as its just firaxis')
                 else:
-                    logger.info('ignore as its just modders having empty files')
-                    # log_message(statements, log_queue)
+                    logger.debug('ignore as its just modders having empty files')
                 continue
             sql_statements[short_name], xml_errors = convert_xml_to_sql(db_file, job_type, log_queue=log_queue)
             ensure_ordered_sql.append((short_name, sql_statements[short_name]))

@@ -67,7 +67,7 @@ def gather_effects(db_dict):
                     localise_table_cols[table_name].append(column_name)
                 else:
                     if column_name in ['Name', 'Description']:
-                        print(f'missed localisation on these rows for {table_name}.{column_name}:', rows)
+                        log.info(f'missed localisation on these rows for {table_name}.{column_name}:', rows)
     for table_name, table_cols in localise_table_cols.items():
         db_spec.node_templates[table_name]['localised'] = []
         for col in table_cols:
@@ -435,7 +435,7 @@ def derive_owner_attach_modifier_reqset(db_dict, both_owners):
                 if tbl == 'NarrativeStory_Rewards':
                     col = 'NarrativeRewardType'
                 else:
-                    print(f'missed table {tbl} for doing modifier attachments')
+                    log.info(f'missed table {tbl} for doing modifier attachments')
                     continue
             for age, engine in db_dict.items():
                 df = pd.read_sql(
@@ -887,7 +887,7 @@ def deal_with_defaults(info_map, type_map):
                             if casted_val is not None:
                                 info_map[k]['Arguments'][key]['DefaultValue'] = casted_val
                     else:
-                        print(f'oh no, when converting arg {key} default value {default_val} to correct type, had '
+                        log.warning(f'oh no, when converting arg {key} default value {default_val} to correct type, had '
                               f'unhandled argument {arg_type}, skipping')
     for k, key in delete_refs:
         del info_map[k]['Arguments'][key]

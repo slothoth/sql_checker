@@ -1,5 +1,9 @@
 import sqlparse
 
+import logging
+
+log = logging.getLogger(__name__)
+
 def get_query_details(script):
     table_name_pattern = r'\b(\w+)\s*\('
     columns_pattern = r'\(([^)]+)\)'
@@ -125,5 +129,5 @@ def foreign_key_pretty_notify(cursor, table_name, row_id, constraint, table_pk, 
                f"{record_[constraint['from']]} but parent table {constraint['table']} lacks {constraint['to']} = "
                f"{record_[constraint['from']]}. Likely cause: {culprits}")
     if 'YieldChangeId' not in record_col_names:         # the yieldAdjacency issues
-        print(message)
+        log.info(message)
     return message, constraint['table'], constraint['to'], record_[constraint['from']]

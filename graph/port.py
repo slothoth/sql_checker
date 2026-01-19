@@ -46,6 +46,9 @@ def port_connect_transmit(input_port, output_port):
             else:
                 log.warning(f'wrong input table when building connection between CustomGameEffect'
                             f' and {input_node_name}')
+        else:
+            log.error(f'GameEffects node had no custom reqSet Dict')
+
 
 
 def update_widget_or_prop(node, widget_name, new_val):

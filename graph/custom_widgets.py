@@ -1,10 +1,8 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtGui import QPalette, QColor
 from collections import Counter
 import json
 
 from NodeGraphQt import NodeBaseWidget
-from NodeGraphQt.constants import Z_VAL_NODE_WIDGET, ViewerEnum
 
 
 with open('resources/style_sheets.json') as f:
@@ -366,9 +364,9 @@ class DropDownLineEdit(ExpandingLineEdit):
         text = str(text or '')
         self._full_value = text
         self.line_edit.setText(self._format_display_text(text))
-        self._commit()          # important?
+        self._commit()
 
-    def _force_completion_update(self):
+    def _force_completion_update(self):             # we need to reopen popup as focus is stolen on typing
         if not self._full_value:
             return
         completer = self.line_edit.completer()
