@@ -31,7 +31,7 @@ with open('resources/mined/PreBuiltData.json', 'r') as f:
 
 @event.listens_for(Table, "column_reflect")
 def force_sqlite_autoincrement(inspector, table, column_info):
-    if isinstance(column_info.get('type'), Integer) and column_info.get('primary_key', False):
+    if isinstance(column_info.get('type'), Integer) and column_info.get('primary_key', 0) == 1:
         column_info['autoincrement'] = True
 
 
