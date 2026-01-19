@@ -50,21 +50,21 @@ class ResourceLoader:
 
     def _load_resources(self):
         self._files = {
-            'node_templates': self.resource_path("resources/db_spec.json"),
-            'possible_vals': self.resource_path('resources/db_possible_vals.json'),
-            'all_possible_vals': self.resource_path('resources/all_possible_vals.json'),
-            'collection_effect_map': self.resource_path('resources/CollectionEffectMap.json'),
-            'modifier_argument_info': self.resource_path('resources/ModArgInfo.json'),
-            'requirement_argument_info': self.resource_path('resources/RequirementInfo.json'),
-            'dynamic_mod_info': self.resource_path('resources/DynamicModifierMap.json'),
-            'metadata': self.resource_path('resources/metadata.json'),
-            'arg_param_map': self.resource_path('resources/arg_param_map.json'),
-            'mod_arg_type_list_map': self.resource_path('resources/ModifierArgumentTypes.json'),
-            'mod_arg_database_types': self.resource_path('resources/ModifierArgumentDatabaseTypes.json'),
-            'req_type_arg_map': self.resource_path('resources/RequirementArgumentTypes.json'),
-            'req_arg_database_types': self.resource_path('resources/RequirementArgumentDatabaseTypes.json'),
-            'localized_tags': self.resource_path('resources/LocalizedTags.json'),
-            'collections_list': self.resource_path('resources/CollectionsList.json'),
+            'all_possible_vals': self.resource_path('all_possible_vals.json'),
+            'arg_param_map': self.resource_path('arg_param_map.json'),
+            'collection_effect_map': self.resource_path('CollectionEffectMap.json'),
+            'collections_list': self.resource_path('CollectionsList.json'),
+            'dynamic_mod_info': self.resource_path('DynamicModifierMap.json'),
+            'localized_tags': self.resource_path('LocalizedTags.json'),
+            'metadata': self.resource_path('metadata.json'),
+            'mod_arg_type_list_map': self.resource_path('ModifierArgumentTypes.json'),
+            'mod_arg_database_types': self.resource_path('ModifierArgumentDatabaseTypes.json'),
+            'modifier_argument_info': self.resource_path('ModArgInfo.json'),
+            'node_templates': self.resource_path("db_spec.json"),
+            'possible_vals': self.resource_path('db_possible_vals.json'),
+            'requirement_argument_info': self.resource_path('RequirementInfo.json'),
+            'req_type_arg_map': self.resource_path('RequirementArgumentTypes.json'),
+            'req_arg_database_types': self.resource_path('RequirementArgumentDatabaseTypes.json'),
         }
         if not os.path.exists(self._files['metadata']):
             self.civ_config = find_civ_config()
@@ -189,7 +189,8 @@ class ResourceLoader:
     @staticmethod
     def resource_path(relative_path):
         base_path = getattr(sys, "_MEIPASS", os.path.abspath("."))
-        return os.path.join(base_path, relative_path)
+        rsc_path = os.path.join(base_path, 'resources/db_spec')
+        return os.path.join(rsc_path, relative_path)
 
 
 def find_steam_install():

@@ -25,7 +25,7 @@ from stats import gather_effects
 
 log = logging.getLogger(__name__)
 
-with open('resources/PreBuiltData.json', 'r') as f:
+with open('resources/mined/PreBuiltData.json', 'r') as f:
     prebuilt = json.load(f)
 
 

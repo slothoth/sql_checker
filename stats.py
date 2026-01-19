@@ -8,6 +8,9 @@ from sqlalchemy import create_engine, text
 from graph.db_spec_singleton import db_spec, attach_tables
 from graph.utils import flatten, flatten_avoid_string, to_number
 
+import logging
+
+log = logging.getLogger(__name__)
 
 def combine_db_df(df_combined, df_to_add):
     if df_combined is None:
@@ -18,234 +21,28 @@ def combine_db_df(df_combined, df_to_add):
 
 
 def gather_effects(db_dict):
-    combined_df, combined_collection_objects_df, combined_collection_attach_df, comb_collection_attach_df = None, None, None, None
-    agg_collection_effect_map_combined, modifier_arguments_name_df = None, None
-
     collection_types = pd.read_sql("SELECT Type FROM Types WHERE Kind='KIND_COLLECTION'", db_dict['AGE_ANTIQUITY'])
     collection_types = list(collection_types['Type'])
-    with open('resources/CollectionsList.json', 'w') as f:
+    with open('resources/db_spec/CollectionsList.json', 'w') as f:
         json.dump(collection_types, f, indent=2)
 
-    with open('resources/CollectionObjectManualAssignment.json') as f:
+    with open('resources/manual_assigned/CollectionObjectManualAssignment.json') as f:
         manual_collection_classification = json.load(f)
 
-    with open('resources/CollectionOwnerMap.json') as f:
+    with open('resources/manual_assigned/CollectionOwnerMap.json') as f:
         TableOwnerObjectMap = json.load(f)
 
-    for db, engine in db_dict.items():
-        df = pd.read_sql(
-            """
-            SELECT dm.EffectType, dm.CollectionType, m.ModifierId, ma.Name, ma.Value, ma.Type,
-             ma.Extra, ma.SecondExtra,
-             ga.Required, ga.Description, ga.ArgumentType, ga.DatabaseKind, ga.DefaultValue, ga.MinValue, 
-             ga.MaxValue, ga.Type as GameEffectType
-            FROM DynamicModifiers dm
-            JOIN Modifiers m
-            ON m.ModifierType = dm.ModifierType
-            LEFT JOIN ModifierArguments ma
-            ON ma.ModifierId = m.ModifierId
-            LEFT JOIN GameEffectArguments ga ON dm.EffectType = ga.Type AND ma.Name = ga.Name;
-            """,
-                engine
-            )
-        if combined_df is None:
-            combined_df = df
-        else:
-            combined_df = pd.concat([combined_df, df], ignore_index=True)
-            gameEffectArgs = pd.read_sql(
-        """
-            SELECT ga.Type, ga.Name, ga.ArgumentType, ga.DatabaseKind, ga.DefaultValue, ga.Required
-            FROM GameEffectArguments ga;
-            """,
-            engine
-        )
-        modifier_arguments_name_df = combine_db_df(modifier_arguments_name_df, df)
+    with open('resources/manual_assigned/modifier_tables.json') as f:
+        mod_tables = json.load(f)
 
-    ########################################################################################
-    modifier_arguments_name_df[['EffectType', 'Name', 'Value', 'Type', 'Extra', 'SecondExtra', 'CollectionType']].to_csv('resources/AllModArgValues')
-
-    mod_arg_dict = defaultdict(lambda: defaultdict(list))
-    for a, b, c in modifier_arguments_name_df[['EffectType', 'Name', 'Value']].itertuples(index=False):
-        mod_arg_dict[a][b].append(c)
-    for key, val in mod_arg_dict.items():
-        for k, v in val.items():
-            mod_arg_dict[key][k] = list(set(mod_arg_dict[key][k]))
-
-    mod_arg_dict = dict(mod_arg_dict)
-    with open('resources/AllModArgValues.json', 'w') as f:
-        json.dump(mod_arg_dict, f, indent=2, default=convert)
-    modifier_arguments_name_df = modifier_arguments_name_df.drop_duplicates(['EffectType', 'Name'])
-
-    modifiers_and_args_agg = (
-        modifier_arguments_name_df
-        .groupby(
-            ['EffectType', 'Name', 'Description', 'Required', 'ArgumentType',
-             'DatabaseKind', 'DefaultValue', 'MinValue', 'MaxValue'],
-            as_index=False, dropna=False,
-        )
-        .apply(lambda g: pd.Series({
-            "Value": set(g["Value"]),
-            "Type,Extra,SecondExtra": set(zip(g["Type"], g["Extra"], g["SecondExtra"], ))
-        }))
-        .reset_index(drop=True)
-    )
-
-    cols = [c for c in modifiers_and_args_agg.columns if c not in ("EffectType", "Name")]
-
-    mid_df = modifiers_and_args_agg.set_index(["EffectType", "Name"])[cols].to_dict(orient="index")
-
-    mod_arg_map = {
-        rt: {
-            name: data
-            for (rt2, name), data in mid_df.items()
-            if rt2 == rt
-        }
-        for rt in modifiers_and_args_agg["EffectType"].unique()
-    }
-
-    mod_arg_map = {key: {} if all(is_nan(i) for i in val.keys()) else val for key, val in mod_arg_map.items()}
-
-    ########################################################################################
-
-    df = combined_df.drop_duplicates()
-    counts = df.groupby(['EffectType', 'Name']).size().reset_index(name='count')
-    gameEffectArgs = gameEffectArgs.rename(columns={'Type': 'EffectType'})
-    df_effect_args = counts.merge(gameEffectArgs, on=['EffectType', 'Name'], how='left')
-    df_effect_args.to_csv('resources/ModifierEffectArguments.csv')
-
-    simple_collection_map = {key: val['Subject'] for key, val in manual_collection_classification.items()}
-    mod_tables = ['EnterStageModifiers', 'EnvoysInActionModifiers', 'EnvoysInStageModifiers',
-                  'GovernmentModifiers', 'MementoModifiers', 'TraditionModifiers', 'TraitModifiers',
-                  'UnitAbilityModifiers', 'UnitPromotionModifiers', 'BeliefModifiers', 'CityStateBonusModifiers',
-                  'ConstructibleModifiers', 'GameModifiers', 'GoldenAgeModifiers', 'MetaprogressionModifiers',
-                  'NarrativeRewards', 'PlayerModifiers', 'ProjectModifiers']
-
-    comb_df, comb_df_simple = None, None # for doing the attachment tables
-    for db, engine in db_dict.items():
-        for tbl in mod_tables:
-            df = pd.read_sql(
-                f"""
-                       SELECT dm.CollectionType, m.ModifierId, dm.EffectType
-                       FROM {tbl} aa
-                       JOIN Modifiers m
-                       ON m.ModifierId = aa.ModifierId
-                       JOIN DynamicModifiers dm
-                       ON m.ModifierType = dm.ModifierType;
-                       """,
-                engine
-            )
-            df['AttachTable'] = tbl
-            comb_df = combine_db_df(comb_df, df)
-
-        comb_df_simple = combine_db_df(comb_df_simple, comb_df)
-        agg_df = comb_df.groupby(['CollectionType', 'AttachTable'], as_index=False)['EffectType'].agg(list)
-        combined_collection_attach_df = combine_db_df(combined_collection_attach_df, agg_df)
-
-        agg_collection_attach = comb_df.groupby(['AttachTable'], as_index=False)['CollectionType'].agg(set)
-        comb_collection_attach_df = combine_db_df(comb_collection_attach_df, agg_collection_attach)
-
-        agg_collection_effect_map = comb_df.groupby(['CollectionType'], as_index=False)['EffectType'].agg(set)
-        agg_collection_effect_map_combined = combine_db_df(agg_collection_effect_map_combined,
-                                                           agg_collection_effect_map)
-
-
-        agg_df['CollectionType'] = agg_df['CollectionType'].map(simple_collection_map)
-        agg_obj_df = (
-            agg_df
-            .groupby(['AttachTable', 'CollectionType'], as_index=False)
-            .agg(EffectType=('EffectType', lambda x: set().union(*x)))
-        )
-        combined_collection_objects_df = combine_db_df(combined_collection_objects_df, agg_obj_df)
-
-    # do a version for objects to bypass COLLECTION_OWNER issues
-    comb_df_simple["object"] = comb_df_simple["CollectionType"].map(simple_collection_map)
-
-    comb_df_simple.loc[comb_df_simple["CollectionType"] == "COLLECTION_OWNER", "object",] = comb_df_simple.loc[
-        comb_df_simple["CollectionType"] == "COLLECTION_OWNER",
-        "AttachTable",
-    ].map(TableOwnerObjectMap)
-
-    # comb_df_simple['object'] = comb_df_simple['AttachTable'].apply(lambda x: TableOwnerObjectMap[x])
-    comb_df_simple = comb_df_simple[['object', 'EffectType']]
-    comb_df_simple['object'] = comb_df_simple["object"].apply(lambda x: x if isinstance(x, list) else [x])
-    comb_df_simple['object'] = comb_df_simple['object'].apply(lambda x: tuple(x))
-    comb_df_simple = comb_df_simple.groupby(['EffectType']).agg(object=('object', lambda x: set().union(*x)))
-    comb_df_simple['object'] = comb_df_simple['object'].apply(lambda x: list(x))
-    effect_object_mapper = comb_df_simple.to_dict()['object']
-    # count values of each modifier attachment table and map the collections they use for modifiers to Objects, manual
-    # classification we then want to ascertain what object an attach table is, or at the very least what context it has.
-
-    df_collection_object_table = (
-        combined_collection_objects_df
-        .groupby(['AttachTable', 'CollectionType'], as_index=False)
-        .agg(EffectType=('EffectType', lambda x: set().union(*x)))
-    )
-    df_collection_attach_table = (
-        combined_collection_attach_df
-        .groupby(['AttachTable', 'CollectionType'], as_index=False)
-        .agg(EffectType=('EffectType', lambda x: set().union(*x)))
-    )
-
-    df_collection_object_table.to_csv('resources/CollectionObjectAttach.csv')
-    df_collection_attach_table.to_csv('resources/CollectionAttach.csv')
-
-    # attachment collections
-    df_dict = comb_collection_attach_df.T.to_dict()
-    dict_d = {val['AttachTable']: list(val['CollectionType'])for key, val in df_dict.items()}
-    with open('resources/CollectionAttachMap.json', 'w') as f:
-        json.dump(dict_d, f, indent=2)
-
-    #  collections effects
-    df_dict = agg_collection_effect_map_combined.T.to_dict()
-    dict_d = {val['CollectionType']: list(val['EffectType']) for key, val in df_dict.items()}
-    with open('resources/CollectionEffectMap.json', 'w') as f:
-        json.dump(dict_d, f, indent=2)
-
-
-    mod_map = {key: {'Arguments': val, 'Object': effect_object_mapper.get(key, [])} for key, val in
-               mod_arg_map.items()}
-
-    mod_map = {key: {k: v if k == 'Object' else {k_: {k_a: None if is_nan(v_a) else v_a for k_a, v_a in v_.items()}
-                                                 for k_, v_ in v.items()} for k, v in val.items()}
-               for key, val in mod_map.items()}
-
-    for key, modifier_info in mod_map.items():
-        for mod_arg, mod_arg_info in modifier_info['Arguments'].items():
-            for mod_arg_col, mod_arg_value in mod_arg_info.items():
-                if isinstance(mod_arg_value, set):
-                    if len(mod_arg_value) == 1:
-                        mod_map[key]['Arguments'][mod_arg][mod_arg_col] = list(mod_arg_value)[0]
-
-    dynamic_mods = mine_sql_per_age(db_dict, f"""
-                       SELECT m.ModifierId, m.ModifierType, dm.CollectionType, dm.EffectType
-                       FROM Modifiers m
-                       JOIN DynamicModifiers dm
-                       ON m.ModifierType = dm.ModifierType;
-                       """)
-    dynamicModifiers = dynamic_mods.groupby("ModifierType", as_index=True).first()[[
-                                            "CollectionType", "EffectType"]].to_dict("index")
-    with open('resources/DynamicModifierMap.json', 'w') as f:
-        json.dump(dynamicModifiers, f, indent=2)
-
-    mod_examples = process_arg_examples(mod_arg_dict)
-    mod_type_map, mod_database_references, mod_undiagnosible, mod_missed_database = mine_type_arg_map(mod_examples,
-                                                                                                      mod_map)
-    with open('resources/ModifierArgumentTypes.json', 'w') as f:
-        json.dump(mod_type_map, f, indent=2, default=convert)
-    with open('resources/ModifierArgumentDatabaseTypes.json', 'w') as f:
-        json.dump(mod_database_references, f, indent=2, default=convert)
-
-    deal_with_defaults(mod_map, mod_type_map)
-
-    with open('resources/ModArgInfo.json', 'w') as f:
-        json.dump(mod_map, f, indent=2, default=convert)
+    mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap)
     # --------------------------------------------------------------------------------
     # -------------------------   Requirements    ------------------------------------
     # --------------------------------------------------------------------------------
     # first get requirements from modifier tables
-    mine_requirements(manual_collection_classification, db_dict, mod_tables, TableOwnerObjectMap)
+    mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap)
 
-    with open('resources/LocalizedTags.json') as f:
+    with open('resources/db_spec/LocalizedTags.json') as f:
         localised = json.load(f)
 
     localised = set(localised)
@@ -254,8 +51,8 @@ def gather_effects(db_dict):
     for db, engine in db_dict.items():
 
         for table_name, info in db_spec.node_templates.items():
-            if table_name in ['IProperties', 'IPropertyTypes', 'ReportingEvents', 'GameCoreEvents']:
-                continue
+            #if table_name in ['IProperties', 'IPropertyTypes', 'ReportingEvents', 'GameCoreEvents']:
+            #   continue          # TODO didnt need this
             for column_name in info['all_cols']:
                 with engine.connect() as conn:
                     trans = conn.begin()
@@ -280,22 +77,129 @@ def gather_effects(db_dict):
     db_spec.update_node_templates(db_spec.node_templates)
 
 
-def mine_requirements(manual_collection_classification, db_dict, mod_tables, TableOwnerObjectMap):
+def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap):
+    modifier_arguments_name_df, combined_df = harvest_modifier_arguments(db_dict)
+    modifier_arguments_name_df[['EffectType', 'Name', 'Value', 'Type', 'Extra', 'SecondExtra', 'CollectionType']].to_csv('resources/mined/AllModArgValues')
+
+    mod_arg_dict = defaultdict(lambda: defaultdict(list))
+    for a, b, c in modifier_arguments_name_df[['EffectType', 'Name', 'Value']].itertuples(index=False):
+        mod_arg_dict[a][b].append(c)
+    for key, val in mod_arg_dict.items():
+        for k, v in val.items():
+            mod_arg_dict[key][k] = list(set(mod_arg_dict[key][k]))
+
+    mod_arg_dict = dict(mod_arg_dict)
+
+    modifier_arguments_name_df = modifier_arguments_name_df.drop_duplicates(['EffectType', 'Name'])
+    mod_arg_map = make_mod_arg_map(modifier_arguments_name_df)
+
+    df_effect_args = collect_modifier_args(db_dict, combined_df)
+
+    (effect_object_mapper, df_collection_object, df_collection_attach_tbl,
+     collect_attach_map, collect_effect_map) = map_effect_type_objects(db_dict, mod_tables,
+                                                                        manual_collection_classification,
+                                                                        TableOwnerObjectMap)
+
+    mod_map = {key: {'Arguments': val, 'Object': effect_object_mapper.get(key, [])} for key, val in
+               mod_arg_map.items()}
+
+    mod_map = {key: {k: v if k == 'Object' else {k_: {k_a: None if is_nan(v_a) else v_a for k_a, v_a in v_.items()}
+                                                 for k_, v_ in v.items()} for k, v in val.items()}
+               for key, val in mod_map.items()}
+
+    for key, modifier_info in mod_map.items():
+        for mod_arg, mod_arg_info in modifier_info['Arguments'].items():
+            for mod_arg_col, mod_arg_value in mod_arg_info.items():
+                if isinstance(mod_arg_value, set):
+                    if len(mod_arg_value) == 1:
+                        mod_map[key]['Arguments'][mod_arg][mod_arg_col] = list(mod_arg_value)[0]
+
+    dynamic_mods = mine_sql_per_age(db_dict, f"""
+                               SELECT m.ModifierId, m.ModifierType, dm.CollectionType, dm.EffectType
+                               FROM Modifiers m
+                               JOIN DynamicModifiers dm
+                               ON m.ModifierType = dm.ModifierType;
+                               """)
+    dynamicModifiers = dynamic_mods.groupby("ModifierType", as_index=True).first()[[
+        "CollectionType", "EffectType"]].to_dict("index")
+
+    mod_examples = process_arg_examples(mod_arg_dict)
+    mod_type_map, mod_database_references, mod_undiagnosible, mod_missed_database = mine_type_arg_map(mod_examples,
+                                                                                                      mod_map)
+    with open('resources/db_spec/ModifierArgumentTypes.json', 'w') as f:
+        json.dump(mod_type_map, f, indent=2, default=convert)
+    with open('resources/db_spec/ModifierArgumentDatabaseTypes.json', 'w') as f:
+        json.dump(mod_database_references, f, indent=2, default=convert)
+
+    with open('resources/unused/AllModArgValues.json', 'w') as f:
+        json.dump(mod_arg_dict, f, indent=2, default=convert)
+
+    deal_with_defaults(mod_map, mod_type_map)
+
+    with open('resources/db_spec/ModArgInfo.json', 'w') as f:
+        json.dump(mod_map, f, indent=2, default=convert)
+
+    df_effect_args.to_csv('resources/unused/ModifierEffectArguments.csv')
+    df_collection_object.to_csv('resources/mined/CollectionObjectAttach.csv')
+    df_collection_attach_tbl.to_csv('resources/mined/CollectionAttach.csv')
+
+    with open('resources/unused/CollectionAttachMap.json', 'w') as f:
+        json.dump(collect_attach_map, f, indent=2)
+
+    with open('resources/db_spec/CollectionEffectMap.json', 'w') as f:
+        json.dump(collect_effect_map, f, indent=2)
+
+    with open('resources/db_spec/DynamicModifierMap.json', 'w') as f:
+        json.dump(dynamicModifiers, f, indent=2)
+
+
+def mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap):
+
+    reqset_no_modifiers = no_modifier_reqset_harvest(db_dict)
+
+    requirement_object_mapper = map_requirement_type_objects(db_dict, manual_collection_classification,
+                                                             TableOwnerObjectMap, mod_tables, reqset_no_modifiers)
+
+    # now a simpler task. Get all possible Requirement Arguments Names, Values, Extra, Extra2 and Type
+    # combine with GameEffectArguments to get extra info on each if possible
+    req_map, gossips = make_req_arg_map(db_dict, requirement_object_mapper)
+
+    req_arg_dict = make_req_arg_dict(reqset_no_modifiers)
+
+    req_examples = process_arg_examples(req_arg_dict)
+    req_type_map, req_database_references, req_undiagnosible, req_missed_database = mine_type_arg_map(req_examples,
+                                                                                                      req_map)
+    # we need to adjust the DefaultVal
+    deal_with_defaults(req_map, req_type_map)
+
+    with open('resources/db_spec/RequirementInfo.json', 'w') as f:
+        json.dump(req_map, f, indent=2, default=convert)
+
+    with open('resources/db_spec/RequirementArgumentTypes.json', 'w') as f:
+        json.dump(req_type_map, f, indent=2, default=convert)
+
+    with open('resources/db_spec/RequirementArgumentDatabaseTypes.json', 'w') as f:
+        json.dump(req_database_references, f, indent=2, default=convert)
+
+    with open('resources/unused/GossipInfo.json', 'w') as f:
+        json.dump(gossips, f, indent=2, default=convert)
+
+def modifier_req_set_harvest(db_dict, mod_tables):
     total_subject_req_df, subject_req_combined_df, owner_req_combined_df, total_owner_req_df = None, None, None, None
     for db, engine in db_dict.items():
         for tbl in mod_tables:
             df = pd.read_sql(
                 f"""
-                        SELECT dm.CollectionType, dm.EffectType, r.RequirementType, r.RequirementId
-                        FROM {tbl} aa
-                        JOIN Modifiers m
-                        ON m.ModifierId = aa.ModifierId
-                        JOIN DynamicModifiers dm
-                        ON m.ModifierType = dm.ModifierType
-                        JOIN RequirementSets rs ON rs.RequirementSetId = m.SubjectRequirementSetId
-                        JOIN RequirementSetRequirements rsr on rsr.RequirementSetId = rs.RequirementSetId
-                        JOIN Requirements r on r.RequirementId = rsr.RequirementId;
-                        """,
+                            SELECT dm.CollectionType, dm.EffectType, r.RequirementType, r.RequirementId
+                            FROM {tbl} aa
+                            JOIN Modifiers m
+                            ON m.ModifierId = aa.ModifierId
+                            JOIN DynamicModifiers dm
+                            ON m.ModifierType = dm.ModifierType
+                            JOIN RequirementSets rs ON rs.RequirementSetId = m.SubjectRequirementSetId
+                            JOIN RequirementSetRequirements rsr on rsr.RequirementSetId = rs.RequirementSetId
+                            JOIN Requirements r on r.RequirementId = rsr.RequirementId;
+                            """,
                 engine
             )
             df['AttachTable'] = tbl
@@ -303,15 +207,15 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
 
             owner_df = pd.read_sql(
                 f"""SELECT dm.CollectionType, dm.EffectType, r_o.RequirementType, r_o.RequirementId
-                    FROM {tbl} aa
-                    JOIN Modifiers m
-                    ON m.ModifierId = aa.ModifierId
-                    JOIN DynamicModifiers dm
-                    ON m.ModifierType = dm.ModifierType
-                    JOIN RequirementSets rs_o ON rs_o.RequirementSetId = m.OwnerRequirementSetId
-                    JOIN RequirementSetRequirements rsr_o on rsr_o.RequirementSetId = rs_o.RequirementSetId
-                    LEFT JOIN Requirements r_o on r_o.RequirementId = rsr_o.RequirementId;
-                    """,
+                        FROM {tbl} aa
+                        JOIN Modifiers m
+                        ON m.ModifierId = aa.ModifierId
+                        JOIN DynamicModifiers dm
+                        ON m.ModifierType = dm.ModifierType
+                        JOIN RequirementSets rs_o ON rs_o.RequirementSetId = m.OwnerRequirementSetId
+                        JOIN RequirementSetRequirements rsr_o on rsr_o.RequirementSetId = rs_o.RequirementSetId
+                        LEFT JOIN Requirements r_o on r_o.RequirementId = rsr_o.RequirementId;
+                        """,
                 engine
             )
             owner_df['AttachTable'] = tbl
@@ -319,9 +223,10 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
 
         total_subject_req_df = combine_db_df(total_subject_req_df, subject_req_combined_df)
         total_owner_req_df = combine_db_df(total_owner_req_df, owner_req_combined_df)
-    del owner_req_combined_df       # deletes just cause i like using debugger and clutter
-    del subject_req_combined_df     # and cba refactoring these collating logics into functions
-    # now requirements from tables not attached to modifiers
+    return total_subject_req_df, total_owner_req_df
+
+
+def no_modifier_reqset_harvest(db_dict):
     reqset_tables_per_age, reqset_no_modifiers = None, None
     for db, engine in db_dict.items():
         for tbl, col in {"Defeats": "RequirementSetId", "LegacyModifiers": "RequirementSetId",
@@ -345,8 +250,9 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
             reqset_tables_per_age = combine_db_df(reqset_tables_per_age, df)
 
         reqset_no_modifiers = combine_db_df(reqset_no_modifiers, reqset_tables_per_age)
+    return reqset_no_modifiers
 
-
+def make_req_arg_dict(reqset_no_modifiers):
     req_arg_dict = defaultdict(lambda: defaultdict(list))
     for a, b, c in reqset_no_modifiers[['RequirementType', 'Name', 'Value']].itertuples(index=False):
         req_arg_dict[a][b].append(c)
@@ -355,10 +261,12 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
             req_arg_dict[key][k] = list(set(flatten_avoid_string(req_arg_dict[key][k])))
 
     req_arg_dict = dict(req_arg_dict)
-    with open('resources/AllReqArgValues.json', 'w') as f:
+    with open('resources/unused/AllReqArgValues.json', 'w') as f:
         json.dump(req_arg_dict, f, indent=2, default=convert)
+    return req_arg_dict
 
-    del reqset_tables_per_age
+
+def complex_attach_modifiers_reqset(db_dict):
     modifiers_full = None
     for db, engine in db_dict.items():
         modifier_attach = pd.read_sql(
@@ -386,10 +294,15 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
         combined_modifier_attach = df.merge(modifier_attach, left_on="AttachedModifierId", right_on="Value",
                                             how="inner").drop(columns="Value")
         modifiers_full = combine_db_df(modifiers_full, combined_modifier_attach)
-
-    del combined_modifier_attach
-    # the COLLECTION OWNER of attached modifiers is the table of the first modifier that causes attachment
     modifiers_full = modifiers_full.drop_duplicates()
+    return modifiers_full
+
+
+def map_requirement_type_objects(db_dict, manual_collection_classification, TableOwnerObjectMap, mod_tables,
+                                 reqset_no_modifiers):
+    total_subject_req_df, total_owner_req_df = modifier_req_set_harvest(db_dict, mod_tables)
+    modifiers_full = complex_attach_modifiers_reqset(db_dict)
+    # the COLLECTION OWNER of attached modifiers is the table of the first modifier that causes attachment
     modifiers_full['AttachingToObject'] = modifiers_full['CollectionType'].apply(
         lambda x: manual_collection_classification[x]['Subject'])
 
@@ -407,35 +320,9 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
     both_owners = owner_attached_final[owner_attached_final['AttachingToObject'] == 'Owner']
 
     # try find modifiers in known tables
-    missing_mods = list(both_owners['ModifierId'])
-    owner_mod_attach_table = None
-    for tbl in attach_tables:
-        if len(both_owners) > 0:
-            owner_mod_attach_table_per_age = None
-            col_list = [key for key, val in db_spec.node_templates[tbl]['foreign_keys'].items() if val == 'Modifiers']
-            col_list = col_list + [key for key, val in db_spec.node_templates[tbl].get('extra_fks', {}).items() if
-                                   val['ref_table'] == 'Modifiers']
-            if len(col_list) == 1:
-                col = col_list[0]
-            else:
-                if tbl == 'NarrativeStory_Rewards':
-                    col = 'NarrativeRewardType'
-                else:
-                    print(f'missed table {tbl} for doing modifier attachments')
-                    continue
-            for age, engine in db_dict.items():
-                df = pd.read_sql(
-                    f"""SELECT m.{col} FROM {tbl} m WHERE m.{col} IN ('{"', '".join(missing_mods)}');""",
-                    engine
-                )
-                df['AttachTable'] = tbl
-                df['Age'] = age
-                owner_mod_attach_table_per_age = combine_db_df(owner_mod_attach_table_per_age, df)
+    owner_mod_attach_table = derive_owner_attach_modifier_reqset(db_dict, both_owners)
 
-            owner_mod_attach_table = combine_db_df(owner_mod_attach_table, owner_mod_attach_table_per_age)
-    del owner_mod_attach_table_per_age
     # reduce to a map
-
     owner_mod_attach_table = owner_mod_attach_table[['ModifierId', 'AttachTable']]
     owner_mod_attach_table['AttachingToObject'] = owner_mod_attach_table['AttachTable'].apply(
         lambda x: TableOwnerObjectMap[x])
@@ -459,8 +346,6 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
     owner_reqs = owner_reqs.drop('EffectType', axis=1)
     owner_reqs_OWNER = owner_reqs[owner_reqs['CollectionType'] == 'COLLECTION_OWNER'][
         ['RequirementType', 'AttachTable']]
-    owner_reqs_no_OWNER = owner_reqs[owner_reqs['CollectionType'] != 'COLLECTION_OWNER'][
-        ['RequirementType', 'CollectionType', 'AttachTable']]
 
     owner_reqs_OWNER['object'] = owner_reqs_OWNER['AttachTable'].apply(lambda x: TableOwnerObjectMap[x])
 
@@ -482,6 +367,8 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
     # COLLECTION_OWNER and mapped that collection to its modifier owner table and thus object
 
     # now lets do this same process for non COLLECTION_OWNER reqs
+    owner_reqs_no_OWNER = owner_reqs[owner_reqs['CollectionType'] != 'COLLECTION_OWNER'][
+        ['RequirementType', 'CollectionType', 'AttachTable']]
     owner_reqs_no_OWNER['object'] = owner_reqs_no_OWNER['CollectionType'].apply(
         lambda x: manual_collection_classification[x]['Owner'])
     subject_reqs_no_OWNER['object'] = subject_reqs_no_OWNER['CollectionType'].apply(
@@ -526,23 +413,54 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
             if my_obj not in object_requirement_mapper:
                 object_requirement_mapper[my_obj] = []
             object_requirement_mapper[my_obj].append(req)
-    with open('resources/RequirementObjectMap.json', 'w') as f:
+    with open('resources/unused/RequirementObjectMap.json', 'w') as f:
         json.dump(requirement_object_mapper, f, indent=2)
-    with open('resources/ObjectRequirementMap.json', 'w') as f:
+    with open('resources/unused/ObjectRequirementMap.json', 'w') as f:
         json.dump(object_requirement_mapper, f, indent=2)
+    return requirement_object_mapper
 
-    # now a simpler task. Get all possible Requirement Arguments Names, Values, Extra, Extra2 and Type
-    # combine with GameEffectArguments to get extra info on each if possible
+def derive_owner_attach_modifier_reqset(db_dict, both_owners):
+    owner_mod_attach_table = None
+    missing_mods = list(both_owners['ModifierId'])
+    for tbl in attach_tables:
+        if len(both_owners) > 0:
+            owner_mod_attach_table_per_age = None
+            col_list = [key for key, val in db_spec.node_templates[tbl]['foreign_keys'].items() if
+                        val == 'Modifiers']
+            col_list = col_list + [key for key, val in db_spec.node_templates[tbl].get('extra_fks', {}).items() if
+                                   val['ref_table'] == 'Modifiers']
+            if len(col_list) == 1:
+                col = col_list[0]
+            else:
+                if tbl == 'NarrativeStory_Rewards':
+                    col = 'NarrativeRewardType'
+                else:
+                    print(f'missed table {tbl} for doing modifier attachments')
+                    continue
+            for age, engine in db_dict.items():
+                df = pd.read_sql(
+                    f"""SELECT m.{col} FROM {tbl} m WHERE m.{col} IN ('{"', '".join(missing_mods)}');""",
+                    engine
+                )
+                df['AttachTable'] = tbl
+                df['Age'] = age
+                owner_mod_attach_table_per_age = combine_db_df(owner_mod_attach_table_per_age, df)
+
+            owner_mod_attach_table = combine_db_df(owner_mod_attach_table, owner_mod_attach_table_per_age)
+    return owner_mod_attach_table
+
+
+def make_req_arg_map(db_dict, requirement_object_mapper={}):
     requirements_and_args = None
     for db, engine in db_dict.items():
         df = pd.read_sql(
             f"""SELECT r.RequirementId, r.RequirementType, ra.Name, ra.Value, ra.Type, ra.Extra, ra.SecondExtra,
-                    ga.Required, ga.Description, ga.ArgumentType, ga.DatabaseKind, ga.DefaultValue, ga.MinValue, 
-                    ga.MaxValue, ga.Type as GameEffectType
-                    FROM Requirements r
-                    LEFT JOIN RequirementArguments ra ON r.RequirementId = ra.RequirementId
-                    LEFT JOIN GameEffectArguments ga ON r.RequirementType = ga.Type AND ra.Name = ga.Name;
-                    """,
+                        ga.Required, ga.Description, ga.ArgumentType, ga.DatabaseKind, ga.DefaultValue, ga.MinValue, 
+                        ga.MaxValue, ga.Type as GameEffectType
+                        FROM Requirements r
+                        LEFT JOIN RequirementArguments ra ON r.RequirementId = ra.RequirementId
+                        LEFT JOIN GameEffectArguments ga ON r.RequirementType = ga.Type AND ra.Name = ga.Name;
+                        """,
             engine
         )
         requirements_and_args = combine_db_df(requirements_and_args, df)
@@ -578,7 +496,8 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
 
     req_arg_map = {key: {} if all(is_nan(i) for i in val.keys()) else val for key, val in req_arg_map.items()}
 
-    req_map = {key: {'Arguments': val, 'Object': requirement_object_mapper.get(key, [])} for key, val in req_arg_map.items()}
+    req_map = {key: {'Arguments': val, 'Object': requirement_object_mapper.get(key, [])} for key, val in
+               req_arg_map.items()}
 
     for key, modifier_info in req_map.items():
         for mod_arg, mod_arg_info in modifier_info['Arguments'].items():
@@ -594,23 +513,163 @@ def mine_requirements(manual_collection_classification, db_dict, mod_tables, Tab
     req_map['REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_GOSSIPS']['Arguments'] = \
         {k: v for k, v in req_map['REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_GOSSIPS']['Arguments'].items() if k.upper() != k}
 
-    with open('resources/GossipInfo.json', 'w') as f:
-        json.dump(gossips, f, indent=2, default=convert)
+    return req_map, gossips
 
-    req_examples = process_arg_examples(req_arg_dict)
-    req_type_map, req_database_references, req_undiagnosible, req_missed_database = mine_type_arg_map(req_examples,
-                                                                                                      req_map)
-    with open('resources/RequirementArgumentTypes.json', 'w') as f:
-        json.dump(req_type_map, f, indent=2, default=convert)
-    with open('resources/RequirementArgumentDatabaseTypes.json', 'w') as f:
-        json.dump(req_database_references, f, indent=2, default=convert)
 
-    # we need to adjust the DefaultVal
-    deal_with_defaults(req_map, req_type_map)
+def harvest_modifier_arguments(db_dict):
+    modifier_arguments_name_df, combined_df = None, None
+    for db, engine in db_dict.items():
+        df = pd.read_sql(
+            """
+            SELECT dm.EffectType, dm.CollectionType, m.ModifierId, ma.Name, ma.Value, ma.Type,
+             ma.Extra, ma.SecondExtra,
+             ga.Required, ga.Description, ga.ArgumentType, ga.DatabaseKind, ga.DefaultValue, ga.MinValue, 
+             ga.MaxValue, ga.Type as GameEffectType
+            FROM DynamicModifiers dm
+            JOIN Modifiers m
+            ON m.ModifierType = dm.ModifierType
+            LEFT JOIN ModifierArguments ma
+            ON ma.ModifierId = m.ModifierId
+            LEFT JOIN GameEffectArguments ga ON dm.EffectType = ga.Type AND ma.Name = ga.Name;
+            """,
+            engine
+        )
+        if combined_df is None:
+            combined_df = df
+        else:
+            combined_df = pd.concat([combined_df, df], ignore_index=True)
+        modifier_arguments_name_df = combine_db_df(modifier_arguments_name_df, df)
+    return modifier_arguments_name_df, combined_df
 
-    with open('resources/RequirementInfo.json', 'w') as f:
-        json.dump(req_map, f, indent=2, default=convert)
 
+def make_mod_arg_map(modifier_arguments_name_df):
+
+    modifiers_and_args_agg = (
+        modifier_arguments_name_df
+        .groupby(
+            ['EffectType', 'Name', 'Description', 'Required', 'ArgumentType',
+             'DatabaseKind', 'DefaultValue', 'MinValue', 'MaxValue'],
+            as_index=False, dropna=False,
+        )
+        .apply(lambda g: pd.Series({
+            "Value": set(g["Value"]),
+            "Type,Extra,SecondExtra": set(zip(g["Type"], g["Extra"], g["SecondExtra"], ))
+        }))
+        .reset_index(drop=True)
+    )
+
+    cols = [c for c in modifiers_and_args_agg.columns if c not in ("EffectType", "Name")]
+
+    mid_df = modifiers_and_args_agg.set_index(["EffectType", "Name"])[cols].to_dict(orient="index")
+
+    mod_arg_map = {
+        rt: {
+            name: data
+            for (rt2, name), data in mid_df.items()
+            if rt2 == rt
+        }
+        for rt in modifiers_and_args_agg["EffectType"].unique()
+    }
+
+    mod_arg_map = {key: {} if all(is_nan(i) for i in val.keys()) else val for key, val in mod_arg_map.items()}
+    return mod_arg_map
+
+
+def collect_modifier_args(db_dict, combined_df):
+    df = combined_df.drop_duplicates()
+    counts = df.groupby(['EffectType', 'Name']).size().reset_index(name='count')
+    gameEffectArgs = pd.read_sql(
+        """
+            SELECT ga.Type, ga.Name, ga.ArgumentType, ga.DatabaseKind, ga.DefaultValue, ga.Required
+            FROM GameEffectArguments ga;
+            """,
+        list(db_dict.values())[0]
+    )
+    gameEffectArgs = gameEffectArgs.rename(columns={'Type': 'EffectType'})
+    df_effect_args = counts.merge(gameEffectArgs, on=['EffectType', 'Name'], how='left')
+    return df_effect_args
+
+
+def map_effect_type_objects(db_dict, mod_tables, manual_collection_classification, TableOwnerObjectMap):
+    comb_df, comb_df_simple, agg_collection_effect_map_combined = None, None, None
+    comb_collection_attach_df, combined_collection_attach_df, combined_collection_objects_df = None, None, None
+    simple_collection_map = {key: val['Subject'] for key, val in manual_collection_classification.items()}
+
+    for db, engine in db_dict.items():
+        for tbl in mod_tables:
+            df = pd.read_sql(
+                f"""
+                           SELECT dm.CollectionType, m.ModifierId, dm.EffectType
+                           FROM {tbl} aa
+                           JOIN Modifiers m
+                           ON m.ModifierId = aa.ModifierId
+                           JOIN DynamicModifiers dm
+                           ON m.ModifierType = dm.ModifierType;
+                           """,
+                engine
+            )
+            df['AttachTable'] = tbl
+            comb_df = combine_db_df(comb_df, df)
+
+        comb_df_simple = combine_db_df(comb_df_simple, comb_df)
+        agg_df = comb_df.groupby(['CollectionType', 'AttachTable'], as_index=False)['EffectType'].agg(list)
+        combined_collection_attach_df = combine_db_df(combined_collection_attach_df, agg_df)
+
+        agg_collection_attach = comb_df.groupby(['AttachTable'], as_index=False)['CollectionType'].agg(set)
+        comb_collection_attach_df = combine_db_df(comb_collection_attach_df, agg_collection_attach)
+
+        agg_collection_effect_map = comb_df.groupby(['CollectionType'], as_index=False)['EffectType'].agg(set)
+        agg_collection_effect_map_combined = combine_db_df(agg_collection_effect_map_combined,
+                                                           agg_collection_effect_map)
+
+        agg_df['CollectionType'] = agg_df['CollectionType'].map(simple_collection_map)
+        agg_obj_df = (
+            agg_df
+            .groupby(['AttachTable', 'CollectionType'], as_index=False)
+            .agg(EffectType=('EffectType', lambda x: set().union(*x)))
+        )
+        combined_collection_objects_df = combine_db_df(combined_collection_objects_df, agg_obj_df)
+
+    # do a version for objects to bypass COLLECTION_OWNER issues
+    comb_df_simple["object"] = comb_df_simple["CollectionType"].map(simple_collection_map)
+
+    comb_df_simple.loc[comb_df_simple["CollectionType"] == "COLLECTION_OWNER", "object",] = comb_df_simple.loc[
+        comb_df_simple["CollectionType"] == "COLLECTION_OWNER",
+        "AttachTable",
+    ].map(TableOwnerObjectMap)
+
+    # comb_df_simple['object'] = comb_df_simple['AttachTable'].apply(lambda x: TableOwnerObjectMap[x])
+    comb_df_simple = comb_df_simple[['object', 'EffectType']]
+    comb_df_simple['object'] = comb_df_simple["object"].apply(lambda x: x if isinstance(x, list) else [x])
+    comb_df_simple['object'] = comb_df_simple['object'].apply(lambda x: tuple(x))
+    comb_df_simple = comb_df_simple.groupby(['EffectType']).agg(object=('object', lambda x: set().union(*x)))
+    comb_df_simple['object'] = comb_df_simple['object'].apply(lambda x: list(x))
+    effect_object_mapper = comb_df_simple.to_dict()['object']
+
+    # count values of each modifier attachment table and map the collections they use for modifiers to Objects, manual
+    # classification we then want to ascertain what object an attach table is, or at the very least what context it has.
+
+    # attachment collections
+    df_dict = comb_collection_attach_df.T.to_dict()
+    collect_attach_map = {val['AttachTable']: list(val['CollectionType']) for key, val in df_dict.items()}
+
+    #  collections effects
+    df_dict = agg_collection_effect_map_combined.T.to_dict()
+    collect_effect_map = {val['CollectionType']: list(val['EffectType']) for key, val in df_dict.items()}
+
+
+    df_collection_object = (
+        combined_collection_objects_df
+        .groupby(['AttachTable', 'CollectionType'], as_index=False)
+        .agg(EffectType=('EffectType', lambda x: set().union(*x)))
+    )
+    df_collection_attach_tbl = (
+        combined_collection_attach_df
+        .groupby(['AttachTable', 'CollectionType'], as_index=False)
+        .agg(EffectType=('EffectType', lambda x: set().union(*x)))
+    )
+
+    return effect_object_mapper, df_collection_object, df_collection_attach_tbl, collect_attach_map, collect_effect_map
 
 def mine_empty_effects():
     engine = create_engine(f"sqlite:///resources/gameplay-copy-cached-base-content.sqlite")
@@ -634,7 +693,7 @@ def mine_empty_effects():
         if len(df) > 0:
             tables_data[table_name] = df.to_dict('records')
 
-    with open('resources/PreBuiltData.json', 'w') as f:
+    with open('resources/mined/PreBuiltData.json', 'w') as f:
         json.dump(tables_data, f, indent=2)
 
 
@@ -644,7 +703,9 @@ def is_nan(x):
 
 def convert(o):
     if isinstance(o, set):
-        return list(o)
+        new_list = list(o)
+        new_list.sort()
+        return new_list
     raise TypeError
 
 
@@ -712,7 +773,7 @@ def mine_type_arg_map(mined_examples, effect_arg_info):
     undiagnosible = {k: v for k, v in used_examples.items() if len(v) == 0}
     if len(undiagnosible) > 1:          # theres one arg thats NaN for some reason
         for i in undiagnosible:
-            print(f'could not find type for {i} as no examples')
+            log.warning(f'could not find type for {i} as no examples')
 
     used_examples = {k: [part.strip() for s in v for part in s.split(',')] for k, v in used_examples.items() if len(v) > 0}
     flattened_examples = {k: [part.strip() for s in v for part in s.split(',')] for k, v in mined_examples.items()
@@ -731,7 +792,7 @@ def mine_type_arg_map(mined_examples, effect_arg_info):
     remaining = {k: v for k, v in remaining.items() if k not in numbered}
 
     origins = [k for k, v in db_spec.node_templates.items() if v.get('origin_pk') is not None]
-    missed_database, databased, database_references, fxs_defines, plural_find_table = {}, {}, {}, {}, True
+    missed_database, databased, database_references, fxs_defines, plural_find_table = {}, {}, {}, {}, False
     for k, v in remaining.items():
         if k in flattened_examples:
             examples = flattened_examples[k]

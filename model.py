@@ -460,7 +460,7 @@ def validate_xml(xml_dict):
 
 
 def query_mod_db(age, log_queue=None):
-    with open(resource_path('resources/query_VII_mods.sql'), 'r') as f:
+    with open(resource_path('resources/queries/query_VII_mods.sql'), 'r') as f:
         query = f.read()
     query = query.replace('AGE_ANTIQUITY', age)
     conn = sqlite3.connect(f"{db_spec.civ_config}/Mods.sqlite")

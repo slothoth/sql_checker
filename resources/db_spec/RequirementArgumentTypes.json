@@ -1,0 +1,901 @@
+{
+  "REQUIREMENT_AGE_CRISIS_STAGE_IS_X": {
+    "AgeCrisisType": "text",
+    "Amount": "int"
+  },
+  "REQUIREMENT_AGE_PROGRESSION_TOTAL_IS_X": {
+    "AgeProgressionType": "text",
+    "Percent": "int"
+  },
+  "REQUIREMENT_ATTACKER_PLOT_ADJACENT_TO_COAST": {},
+  "REQUIREMENT_ATTACKER_PLOT_BIOME_MATCHES": {
+    "BiomeType": "database"
+  },
+  "REQUIREMENT_BUILDING_IS_ADJACENT_TO_X": {
+    "AdjacentBiomeTypes": "database",
+    "AdjacentBuildingTypes": "database",
+    "AdjacentFeatureTypes": "database",
+    "AdjacentLake": "bool",
+    "AdjacentQuarterTypes": "database",
+    "AdjacentResourceTypes": "database",
+    "AdjacentTerrainTypes": "database",
+    "AnyBuilding": "bool",
+    "BuildingCount": "int",
+    "BuildingType": "database",
+    "DuplicateCount": "int",
+    "ListCount": "bool"
+  },
+  "REQUIREMENT_CITY_BUILT_CONSTRUCTIBLE_TYPE": {
+    "ConstructibleType": "database"
+  },
+  "REQUIREMENT_CITY_BUILT_TAGGED_CONSTRUCTIBLE": {
+    "Tags": "database"
+  },
+  "REQUIREMENT_CITY_CONVERTED": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_CITY_FOLLOWS_RELIGION": {
+    "cityReligion": "bool",
+    "hasReligion": "bool"
+  },
+  "REQUIREMENT_CITY_FOUNDED_BY_UNIT_TYPE": {
+    "UnitType": "text"
+  },
+  "REQUIREMENT_CITY_FOUNDED_WITH_X_BIOME_TILES": {
+    "Amount": "int",
+    "BiomeType": "database"
+  },
+  "REQUIREMENT_CITY_HAPPINESS": {
+    "MinSurplusHappiness": "bool",
+    "Unhappy": "bool"
+  },
+  "REQUIREMENT_CITY_HAS_ANY_BUILDING": {
+    "Amount": "int",
+    "BuildingType": "database",
+    "ConstructibleType": "database"
+  },
+  "REQUIREMENT_CITY_HAS_ANY_WONDER": {},
+  "REQUIREMENT_CITY_HAS_BUILDING": {
+    "Amount": "int",
+    "BuildingType": "database",
+    "ConstructibleType": "database",
+    "Tag": "text"
+  },
+  "REQUIREMENT_CITY_HAS_BUILD_QUEUE": {},
+  "REQUIREMENT_CITY_HAS_FEATURE": {
+    "FeatureType": "database"
+  },
+  "REQUIREMENT_CITY_HAS_GARRISON_UNIT": {},
+  "REQUIREMENT_CITY_HAS_GREAT_WORK": {},
+  "REQUIREMENT_CITY_HAS_ONLY_BUILDINGS_FROM_THIS_AGE": {},
+  "REQUIREMENT_CITY_HAS_PROJECT": {
+    "HasAnyProject": "bool",
+    "ProjectType": "database"
+  },
+  "REQUIREMENT_CITY_HAS_RESOURCE": {
+    "All": "bool",
+    "Produced": "bool",
+    "ResourceClassType": "database",
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_CITY_HAS_RESOURCE_ASSIGNED": {
+    "ResourceTypes": "database"
+  },
+  "REQUIREMENT_CITY_HAS_TERRAIN": {
+    "Amount": "int",
+    "TerrainType": "database"
+  },
+  "REQUIREMENT_CITY_HAS_TRANSFER_UNREST_STAGE": {
+    "CityTransferUnrestStageType": "text"
+  },
+  "REQUIREMENT_CITY_HAS_UNIQUE_QUARTER": {
+    "UniqueQuarterType": "database"
+  },
+  "REQUIREMENT_CITY_HAS_X_OPEN_RESOURCE_SLOTS": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_CITY_HAS_X_RESOURCES_ASSIGNED": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_CITY_IS_CAPITAL": {},
+  "REQUIREMENT_CITY_IS_CITY": {},
+  "REQUIREMENT_CITY_IS_DISTANT_LANDS": {},
+  "REQUIREMENT_CITY_IS_HOLY_CITY": {},
+  "REQUIREMENT_CITY_IS_INFECTED": {},
+  "REQUIREMENT_CITY_IS_ISLAND": {
+    "Tiles": "int"
+  },
+  "REQUIREMENT_CITY_IS_ORIGINAL_OWNER": {},
+  "REQUIREMENT_CITY_IS_TOWN": {},
+  "REQUIREMENT_CITY_POPULATION": {
+    "MaxRuralPopulation": "int",
+    "MaxUrbanPopulation": "int",
+    "MinRuralPopulation": "int",
+    "MinTotalPopulation": "int",
+    "MinUrbanPopulation": "int",
+    "MinWorkerPopulation": "int"
+  },
+  "REQUIREMENT_COLLECTION_ALL_MET": {
+    "CollectionType": "database",
+    "RequirementSetId": "text"
+  },
+  "REQUIREMENT_COLLECTION_ANY_MET": {
+    "CollectionType": "database",
+    "RequirementSetId": "text"
+  },
+  "REQUIREMENT_COLLECTION_COUNT_ATLEAST": {
+    "CollectionType": "database",
+    "Count": "int",
+    "RequirementSetId": "text"
+  },
+  "REQUIREMENT_COMBAT_TYPE_MATCHES": {
+    "CombatType": "text"
+  },
+  "REQUIREMENT_COMMANDER_EARNED_PROMOTION": {},
+  "REQUIREMENT_COMMANDER_HAS_MAXED_DISCIPLINE": {
+    "Amount": "int",
+    "Any": "bool",
+    "Discipline": "database"
+  },
+  "REQUIREMENT_COMMANDER_HAS_X_PROMOTIONS": {
+    "Amount": "int",
+    "CommendationsOnly": "bool",
+    "OnPromotionInterval": "bool",
+    "PromotionsOnly": "bool"
+  },
+  "REQUIREMENT_COMMANDER_IN_COMMAND_RADIUS": {
+    "IsHigherLevelCommander": "bool"
+  },
+  "REQUIREMENT_CONSTRUCTIBLE_HAS_GREAT_WORK_SLOT": {},
+  "REQUIREMENT_DEFENDER_IS_PLAYER_OWNED_DISTRICT": {},
+  "REQUIREMENT_FOUNDED_NO_RELIGION": {},
+  "REQUIREMENT_GAME_AGE_TYPE_MATCH": {
+    "AgeType": "database"
+  },
+  "REQUIREMENT_GAME_IS_STARTED": {},
+  "REQUIREMENT_GAME_TURN_ATLEAST": {
+    "MinGameTurn": "int"
+  },
+  "REQUIREMENT_GAME_TURN_ENDED": {},
+  "REQUIREMENT_GAME_TURN_IS_LESS_THAN_X": {
+    "MaxGameTurn": "int",
+    "Scale": "bool"
+  },
+  "REQUIREMENT_GAME_TURN_IS_X_NARRATIVE": {
+    "AfterTurn": "int",
+    "MinimumTurn": "int",
+    "Scale": "bool",
+    "Turn": "int"
+  },
+  "REQUIREMENT_GAME_TURN_MAX_REACHED": {},
+  "REQUIREMENT_IS_AGE_COUNT": {
+    "AgeCount": "bool"
+  },
+  "REQUIREMENT_LEGACY_PATH_COMPLETED": {
+    "LegacyPathType": "text",
+    "MinLegacyPathsCompleted": "int"
+  },
+  "REQUIREMENT_LEGACY_PATH_ENABLED": {
+    "LegacyPathType": "text"
+  },
+  "REQUIREMENT_LEGACY_PATH_MILESTONE_COMPLETED": {},
+  "REQUIREMENT_MAP_HAS_FEATURE": {
+    "FeatureType": "database"
+  },
+  "REQUIREMENT_METAPROGRESSION_COMPLETED_CHALLENGES": {
+    "Challenges": "text",
+    "ChallengesCategory": "text",
+    "ChallengesClass": "text",
+    "CompleteAll": "bool",
+    "ExemptChallenges": "text",
+    "Threshold": "int"
+  },
+  "REQUIREMENT_METAPROGRESSION_LEGEND_PATH_LEVEL": {
+    "Amount": "int",
+    "CheckForAdditionalContentPaths": "bool",
+    "LeaderType": "database",
+    "LegendPaths": "text",
+    "LevelThreshold": "text"
+  },
+  "REQUIREMENT_NEAR_RELIGIOUS_CITY": {
+    "FriendlyCity": "bool"
+  },
+  "REQUIREMENT_OPPONENT_IS_DISTRICT": {},
+  "REQUIREMENT_OPPONENT_IS_DISTRICT_WITH_SPECIFIC_CONSTRUCTIBLE": {
+    "ConstructibleType": "database"
+  },
+  "REQUIREMENT_OPPONENT_IS_INDEPENDENT": {},
+  "REQUIREMENT_OPPONENT_IS_MINOR_CIV": {},
+  "REQUIREMENT_OPPONENT_IS_OTHER_IDEOLOGY": {},
+  "REQUIREMENT_OPPONENT_IS_SLOWER": {},
+  "REQUIREMENT_OPPONENT_UNIT_DOMAIN_MATCHES": {
+    "UnitDomain": "text"
+  },
+  "REQUIREMENT_OPPONENT_UNIT_TAG_MATCHES": {
+    "Tag": "text"
+  },
+  "REQUIREMENT_PLAYER_AT_PEACE_X_TURNS_AGO": {
+    "TurnsAgo": "int"
+  },
+  "REQUIREMENT_PLAYER_BEHIND_TECH": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_CARD_EFFECTS_COMPLETE": {},
+  "REQUIREMENT_PLAYER_CIVILIZATION_TYPE_MATCHES": {
+    "CivilizationType": "database",
+    "IsPastCivilization": "bool"
+  },
+  "REQUIREMENT_PLAYER_COMPLETED_ESPIONAGE_ACTION": {
+    "Repeatable": "bool"
+  },
+  "REQUIREMENT_PLAYER_CONQUERED_RELIGIOUS_CITY": {
+    "DifferentThanFounded": "bool",
+    "DifferentThanMajority": "bool",
+    "HasReligion": "bool"
+  },
+  "REQUIREMENT_PLAYER_CONQUERED_SETTLEMENT_WITH_BUILDING": {
+    "BuildingType": "database"
+  },
+  "REQUIREMENT_PLAYER_CONQUERED_WONDER": {
+    "IsAssociatedWonder": "bool",
+    "Wonder": "database"
+  },
+  "REQUIREMENT_PLAYER_CONQUERED_X_CITIES": {
+    "CitiesConquered": "int",
+    "OnlyCapital": "bool"
+  },
+  "REQUIREMENT_PLAYER_CONVERTS_OPPONENTS_TO_FOUNDED_RELIGION": {
+    "AllPlayers": "bool",
+    "Amount": "int",
+    "MajorityOnly": "bool",
+    "OnlyDistantLandsPlayers": "bool",
+    "PlayerFounded": "bool",
+    "PlayerMajority": "bool"
+  },
+  "REQUIREMENT_PLAYER_DARK_AGE": {
+    "LegacyPathType": "text",
+    "Place": "int"
+  },
+  "REQUIREMENT_PLAYER_DECLARED_WAR": {
+    "DeclaredByOpponent": "bool",
+    "DeclaredByOwner": "bool",
+    "FirstWarDeclaredOnPlayer": "bool",
+    "HasAlly": "bool",
+    "WarType": "database",
+    "WhileMet": "bool"
+  },
+  "REQUIREMENT_PLAYER_DEFAULT_DEFEAT": {
+    "UnitType": "text"
+  },
+  "REQUIREMENT_PLAYER_DIPLOMACY_ENGAGED_WITH_X_CIVS": {
+    "WithAll": "bool"
+  },
+  "REQUIREMENT_PLAYER_DIPLOMACY_INDEPENDENT_UPDATE_TYPE_MATCHES": {
+    "DiplomacyIndependentUpdateType": "text"
+  },
+  "REQUIREMENT_PLAYER_DIPLOMACY_IS_INVOLVED_WITH_X_ACTIONS": {
+    "ActionGroup": "database",
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_DISCOVERED_NATURAL_WONDER": {
+    "FeatureType": "database"
+  },
+  "REQUIREMENT_PLAYER_DISCOVERED_NATURAL_WONDER_FIRST": {},
+  "REQUIREMENT_PLAYER_ELIGIBLE_CS_BONUS": {
+    "CityStateBonus": "text"
+  },
+  "REQUIREMENT_PLAYER_ESTABLISHED_SETTLEMENT": {},
+  "REQUIREMENT_PLAYER_EXTRACTS_ARTIFACT": {},
+  "REQUIREMENT_PLAYER_FIRST_TIME_SETTLEMENT_OCCUPATION": {
+    "OwnerSettled": "bool"
+  },
+  "REQUIREMENT_PLAYER_FOUNDED_RELIGION": {},
+  "REQUIREMENT_PLAYER_FOUNDED_RELIGION_WITH_BELIEF": {
+    "BeliefType": "database"
+  },
+  "REQUIREMENT_PLAYER_HANDICAP_AT": {
+    "Handicap": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_ACTIVE_TRADITION": {
+    "ActiveAtGoldenAge": "bool",
+    "TraditionType": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_ARCHIVED_GREAT_WORK": {},
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_INDEPENDENT_RELATIONSHIP": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_BUILDINGS": {
+    "Amount": "int",
+    "BuildingTag": "database",
+    "BuildingType": "database",
+    "CurrentAge": "bool",
+    "DistantLands": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_COASTAL_RAIDS": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_GOSSIPS": {
+    "AfterInit": "bool",
+    "AfterTurn": "int",
+    "Amount": "int",
+    "Distance": "int",
+    "DuplicateCount": "int",
+    "GossipTypes": "text",
+    "OrderedTurnWindow": "int",
+    "TurnWindow": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_MILITARY_UNITS": {
+    "Amount": "int",
+    "DomainType": "text",
+    "UnitTag": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_NARRATIVE_TAGS": {
+    "Amount": "int",
+    "NarrativeTagType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_TRIBUTARIES": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_TRIBUTARY_TYPES": {
+    "UseMaxAmount": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE": {
+    "Amount": "int",
+    "CountReplacements": "bool",
+    "UnitTag": "text",
+    "UnitType": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_CIRCUMNAVIGATED": {},
+  "REQUIREMENT_PLAYER_HAS_CITY_REVOLT": {
+    "IsOwner": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_CITY_WITH_X_WORKERS": {
+    "CityAmount": "bool",
+    "WorkerAmount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_CIVILIZATION_OR_LEADER_TRAIT": {
+    "TraitType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMMANDERS_MAXED_DISCIPLINES": {
+    "CommanderCount": "int",
+    "MaxedDisciplineCount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMMANDERS_WITH_X_LEVELS": {
+    "CommanderCount": "int",
+    "DomainType": "text",
+    "LevelCount": "int",
+    "OnlyCommendations": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_ATTRIBUTE_TREE": {
+    "CompletedProgressionTreeType": "database",
+    "TreesCompleted": "int",
+    "TreesInProgress": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_NARRATIVE_STORY": {
+    "StoryType": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_PROGRESSION_TREE_NODE": {
+    "MinDepth": "int",
+    "ProgressionTreeNodeType": "text",
+    "TreeDepth": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_PROJECT": {
+    "ProjectType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_X_DIPLOMACY_ACTIONS": {
+    "ActionType": "database",
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_X_PROGRESSION_TREE_NODES": {
+    "Amount": "int",
+    "CultureOnly": "bool",
+    "MasteredOnly": "bool",
+    "TechOnly": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_COMPLETED_X_STORIES": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_CONSTRUCTIBLE_FILLED_WITH_GREATWORKS": {
+    "Amount": "int",
+    "ConstructibleType": "database",
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_CONVERTED_X_SETTLEMENTS": {
+    "Amount": "int",
+    "DistantLands": "bool",
+    "OtherOnly": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_ENGAGED_DIPLOMACY_ACTIONS": {},
+  "REQUIREMENT_PLAYER_HAS_EXPLORED_X_TILES": {
+    "Repeatable": "bool",
+    "Threshold": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_FEATURE": {
+    "FeatureType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_FEWEST_SETTLEMENTS": {},
+  "REQUIREMENT_PLAYER_HAS_FOUNDED_X_CITIES": {
+    "Amount": "int",
+    "OnlyTowns": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_GAINED_YIELD": {
+    "DynamicProgressEventName": "text",
+    "MinGameTurn": "int",
+    "YieldType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_GOVERNMENT": {
+    "GovernmentType": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_HIGHER_PROGRESSION": {
+    "CultureOnly": "bool",
+    "PlayerPercentile": "int",
+    "ProgressionTreeType": "database",
+    "TechOnly": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_IMPROVEMENT_HIT_WITH_FERTILITY": {
+    "EventOperator": "text",
+    "ImprovementType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_MOST_TRADE_ROUTES": {},
+  "REQUIREMENT_PLAYER_HAS_NEGATIVE_YIELD_PER_TURN": {
+    "YieldType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_NUM_RESOURCES_ASSIGNED": {
+    "Amount": "int",
+    "ResourceClassType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_PANTHEON": {},
+  "REQUIREMENT_PLAYER_HAS_PLUNDERED_X_TRADE_ROUTES": {
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_RESOURCE": {
+    "All": "bool",
+    "Produced": "bool",
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_SETTLEMENTS_WITH_POPULATION": {
+    "Amount": "int",
+    "RuralPopulation": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_SPENT_AN_ATTRIBUTE_POINT": {},
+  "REQUIREMENT_PLAYER_HAS_SPENT_ATTRIBUTE_POINT": {
+    "AttributeType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_UNHAPPY_CITIES": {
+    "Count": "int",
+    "OnlyCities": "bool",
+    "OnlyConquered": "bool",
+    "OnlyDistantLands": "bool",
+    "OnlyFounded": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_UNIQUE_QUARTER": {
+    "UniqueQuarterType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_UNLOCK": {
+    "UnlockTypes": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_UNLOCKED_SPECIFIC_REWARD": {
+    "RewardId": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_VICTORY_POINTS_FOR_TYPE": {
+    "GreatPersonIndividual": "database",
+    "OtherAliveMajors": "bool",
+    "Points": "bool",
+    "VictoryType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_ALLIANCES": {
+    "Amount": "int",
+    "IsExactAmount": "bool",
+    "IsRepeatable": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_CITIES_WITH_BUILDING_SET": {
+    "ConstructibleType": "database",
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_DISTINCTIVE_BUILDINGS_FROM_CURRENT_AGE": {
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_GREAT_WORKS": {
+    "Count": "int",
+    "IncludeArchived": "bool",
+    "ObjectType": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_IMPORTED_RESOURCES": {
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_INFECTED_SETTLEMENTS": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_MASTERIES": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_RELATIONSHIPS": {
+    "Amount": "int",
+    "DiplomacyPlayerRelationships": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_RELIGIONS": {
+    "Amount": "int",
+    "MajorityOnly": "bool",
+    "OnlyFounded": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_RESOURCES": {
+    "Amount": "int",
+    "ResourceClass": "database",
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_RESOURCES_IN_ONE_CITY": {
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_RESOURCE_TYPE": {
+    "Amount": "int",
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS": {
+    "Amount": "int",
+    "CountPerConqueredSettlement": "bool",
+    "CountPerOwnSettlement": "int",
+    "Inverse": "bool",
+    "OnlyCities": "bool",
+    "OnlyHomelands": "bool",
+    "OnlyTowns": "bool",
+    "RequiredCount": "int",
+    "RequiresExactCount": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_AT": {
+    "Amount": "int",
+    "SettlementLocationType": "text",
+    "Tiles": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_FOREIGN_HEMISPHERE": {
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_IN_BIOME": {
+    "BiomeType": "database",
+    "Count": "int",
+    "OnlyDistantLands": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_SETTLEMENTS_WITH_RELIGION": {
+    "Amount": "int",
+    "OnlyFounded": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_STARTING_YIELD": {
+    "Amount": "int",
+    "YieldType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_TOWNS_PRODUCING_PROJECT": {
+    "Count": "int",
+    "DistantLandsOnly": "bool",
+    "ProjectType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_TRADE_ROUTES_WITH_PLAYER": {
+    "AllPlayers": "bool",
+    "Amount": "int",
+    "DistantLands": "bool",
+    "DomainType": "text"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_URBAN_DISTRICTS_WITH_YIELD": {
+    "Count": "int",
+    "YieldAmount": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_VICTORY_POINTS": {
+    "LegacyPathType": "text",
+    "VPNeeded": "int"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_WARS": {
+    "Amount": "int",
+    "CivilizationType": "database",
+    "DeclaredByOpponent": "bool",
+    "WarType": "database"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_WAR_SUPPORT": {
+    "Amount": "int",
+    "LessThanOpponent": "bool",
+    "MoreThanOpponent": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_WONDERS": {
+    "Count": "int",
+    "OriginalConstructor": "bool"
+  },
+  "REQUIREMENT_PLAYER_HAS_X_WORKERS": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_INITIATED_DIPLOMACY_ACTION_RESPONSE_TYPE_MATCHES": {
+    "ResponseType": "database"
+  },
+  "REQUIREMENT_PLAYER_IS_ATTACKING": {
+    "Inverse": "bool"
+  },
+  "REQUIREMENT_PLAYER_IS_AT_PEACE_WITH_ALL_MAJORS": {
+    "OtherPlayer": "text"
+  },
+  "REQUIREMENT_PLAYER_IS_AT_WAR_WITH_OPPOSING_IDEOLOGY": {
+    "IdeologyType": "database"
+  },
+  "REQUIREMENT_PLAYER_IS_HUMAN": {},
+  "REQUIREMENT_PLAYER_IS_IN_GOLDEN_AGE": {},
+  "REQUIREMENT_PLAYER_IS_MAJOR": {},
+  "REQUIREMENT_PLAYER_IS_MINOR": {},
+  "REQUIREMENT_PLAYER_IS_RELIGION_FOUNDER": {},
+  "REQUIREMENT_PLAYER_LEADER_TYPE_MATCHES": {
+    "AcceptVariation": "bool",
+    "LeaderType": "database"
+  },
+  "REQUIREMENT_PLAYER_LEGACY_PATH_MILESTONE_ACHIEVED": {
+    "AgeProgressionMilestoneType": "text"
+  },
+  "REQUIREMENT_PLAYER_MET_IMMEDIATE_GOSSIP": {
+    "GOSSIP_CONSTRUCT_BUILDING01": "text",
+    "GOSSIP_DIPLOMACY_RESPONSE": "text",
+    "GOSSIP_PILLAGE": "text",
+    "GOSSIP_UNIT_COMBAT_DEATH": "text",
+    "GossipTypes": "text"
+  },
+  "REQUIREMENT_PLAYER_MET_NUM_CIVS": {
+    "Amount": "int",
+    "ForeignHemisphere": "bool",
+    "HomeHemisphere": "bool"
+  },
+  "REQUIREMENT_PLAYER_OVERBUILDS": {
+    "AnyOverbuild": "bool",
+    "BiomeType": "database",
+    "NewConstructibleType": "database",
+    "OldConstructibleType": "database"
+  },
+  "REQUIREMENT_PLAYER_OVER_SETTLEMENT_CAP": {},
+  "REQUIREMENT_PLAYER_OWNS_OBJECT": {},
+  "REQUIREMENT_PLAYER_PLOTS_REVEALED_ARE_X": {
+    "PlotsRevealed": "int"
+  },
+  "REQUIREMENT_PLAYER_PRODUCES_AT_LEAST_X_RESOURCE": {
+    "Amount": "int",
+    "DistantLandsOnly": "bool",
+    "PlayerCount": "int",
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLAYER_RAZED_X_CITIES": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_RECONQUERED_X_CITIES": {
+    "Count": "int"
+  },
+  "REQUIREMENT_PLAYER_SEEN_STORYLET": {},
+  "REQUIREMENT_PLAYER_SPECIFIC_WONDER_BUILT": {
+    "AnyWonder": "bool",
+    "ConstructibleType": "database"
+  },
+  "REQUIREMENT_PLAYER_STARTS_TRADE_ROUTE_WITH_MATCHING_BUILDING": {
+    "BuildingType": "database"
+  },
+  "REQUIREMENT_PLAYER_TOTAL_DISTRICTS": {
+    "Amount": "int",
+    "DistrictClass": "text"
+  },
+  "REQUIREMENT_PLAYER_TOTAL_IMPROVED_RESOURCES": {
+    "Amount": "int",
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLAYER_TOTAL_POPULATION": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_TRADES_FOR_X_RESOURCES": {
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLAYER_TRADES_WITH_PLAYERS_AT_WAR": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_TRADES_WITH_X_PLAYERS": {
+    "Amount": "int",
+    "Percent": "int"
+  },
+  "REQUIREMENT_PLAYER_TRADES_X_RESOURCES": {
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLAYER_TRADE_ROUTE_HAS_X_RESOURCES": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_PLAYER_TRADITION_SLOTS": {
+    "MinUnlocked": "int"
+  },
+  "REQUIREMENT_PLAYER_TRIGGERED_DISCOVERY": {
+    "Any": "bool"
+  },
+  "REQUIREMENT_PLAYER_UNIT_DESTROYS_DISTRICT_DEFENSES": {
+    "UnitTag": "text"
+  },
+  "REQUIREMENT_PLAYER_UNIT_DESTROYS_DISTRICT_DEFENSES_TRIGGER": {
+    "UnitTag": "text"
+  },
+  "REQUIREMENT_PLAYER_UNLOCKED_CIVIC": {},
+  "REQUIREMENT_PLAYER_UNLOCKED_TECHNOLOGY": {},
+  "REQUIREMENT_PLAYER_VICTORY_PLACED": {
+    "Place": "int",
+    "Specific": "bool",
+    "VictoryClass": "database"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_CONSTRUCTIBLE_TYPE_MATCHES": {
+    "ConstructibleType": "database",
+    "MaxRange": "int"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_FEATURE_TYPE_MATCHES": {
+    "FeatureType": "database"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_FRIENDLY_UNIT_TAG_MATCHES": {
+    "IncludeCenter": "bool",
+    "Tag": "text"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_NUM_ENEMY_UNITS": {
+    "NumUnits": "int"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_RESOURCE_CLASS_TYPE_MATCHES": {},
+  "REQUIREMENT_PLOT_ADJACENT_TERRAIN_TYPE_MATCHES": {
+    "TerrainType": "database"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_TO_COAST": {},
+  "REQUIREMENT_PLOT_ADJACENT_TO_LAKE": {},
+  "REQUIREMENT_PLOT_ADJACENT_TO_OWNER": {
+    "MaxDistance": "int",
+    "MinDistance": "bool"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_TO_OWNER_AT_WAR": {},
+  "REQUIREMENT_PLOT_ADJACENT_TO_RIVER": {
+    "Navigable": "bool"
+  },
+  "REQUIREMENT_PLOT_ADJACENT_UNIT_TAG_MATCHES": {
+    "IncludeCenter": "bool",
+    "Tag": "text"
+  },
+  "REQUIREMENT_PLOT_BIOME_TYPE_MATCHES": {
+    "BiomeType": "database"
+  },
+  "REQUIREMENT_PLOT_DISTRICT_CLASS": {
+    "DistrictClass": "text"
+  },
+  "REQUIREMENT_PLOT_FEATURE_TYPE_MATCHES": {
+    "FeatureClassType": "database"
+  },
+  "REQUIREMENT_PLOT_HAS_ANY_FEATURE": {},
+  "REQUIREMENT_PLOT_HAS_CONSTRUCTIBLE": {
+    "ConstructibleType": "database",
+    "Tag": "text"
+  },
+  "REQUIREMENT_PLOT_HAS_NUM_CONSTRUCTIBLES": {
+    "Amount": "int",
+    "ConstructibleClass": "database"
+  },
+  "REQUIREMENT_PLOT_HAS_ROUTE_TYPE": {
+    "RouteType": "database"
+  },
+  "REQUIREMENT_PLOT_HAS_YIELD": {
+    "Amount": "int",
+    "YieldType": "database"
+  },
+  "REQUIREMENT_PLOT_IN_COMMAND_RADIUS": {
+    "UnitType": "text"
+  },
+  "REQUIREMENT_PLOT_IS_COASTAL_LAND": {},
+  "REQUIREMENT_PLOT_IS_HOMELANDS": {},
+  "REQUIREMENT_PLOT_IS_LAKE": {},
+  "REQUIREMENT_PLOT_IS_NATURAL_WONDER": {},
+  "REQUIREMENT_PLOT_IS_OWNER": {},
+  "REQUIREMENT_PLOT_IS_QUARTER": {},
+  "REQUIREMENT_PLOT_IS_RIVER": {
+    "Minor": "bool",
+    "Navigable": "bool"
+  },
+  "REQUIREMENT_PLOT_IS_SUZERAIN": {},
+  "REQUIREMENT_PLOT_NEAR_CAPITAL": {
+    "MaxDistance": "int",
+    "OwnedByCapital": "bool"
+  },
+  "REQUIREMENT_PLOT_RESOURCE_CLASS_TYPE_MATCHES": {
+    "ResourceClass": "database"
+  },
+  "REQUIREMENT_PLOT_RESOURCE_TAG_MATCHES": {},
+  "REQUIREMENT_PLOT_RESOURCE_TYPE_MATCHES": {
+    "ResourceType": "database"
+  },
+  "REQUIREMENT_PLOT_RESOURCE_VISIBLE": {},
+  "REQUIREMENT_PLOT_TERRAIN_TYPE_MATCHES": {
+    "TerrainType": "database"
+  },
+  "REQUIREMENT_PLOT_UNIQUE_QUARTER": {
+    "UniqueQuarterType": "database"
+  },
+  "REQUIREMENT_PLOT_WAS_ASSIGNED_A_SPECIALIST": {},
+  "REQUIREMENT_REQUIREMENTSET_IS_MET": {
+    "RequirementSetId": "text"
+  },
+  "REQUIREMENT_TARGET_IS_ADJACENT_TO_FRIENDLY_UNIT": {
+    "DefenderDomain": "text",
+    "FriendlyAdjacentDomain": "text",
+    "IncludeAlliedUnits": "bool"
+  },
+  "REQUIREMENT_TEAM_DOMINATION_VICTORY": {},
+  "REQUIREMENT_TEAM_LEGACY_VICTORY": {},
+  "REQUIREMENT_TOWN_WAS_UPGRADED_TO_CITY": {},
+  "REQUIREMENT_UNIT_ARMY_HAS_UNITS": {},
+  "REQUIREMENT_UNIT_ARMY_REINFORCEMENT_STARTED": {
+    "SingleWarCount": "int"
+  },
+  "REQUIREMENT_UNIT_CLASS_MATCHES": {
+    "UnitClass": "database"
+  },
+  "REQUIREMENT_UNIT_CORE_CLASS_MATCHES": {
+    "UnitCoreClass": "text"
+  },
+  "REQUIREMENT_UNIT_DAMAGE_MINIMUM": {
+    "MinimumAmount": "bool"
+  },
+  "REQUIREMENT_UNIT_DOMAIN_MATCHES": {
+    "UnitDomain": "text"
+  },
+  "REQUIREMENT_UNIT_EMBARKED": {},
+  "REQUIREMENT_UNIT_FOCUSED_ATTACK": {
+    "Amount": "int",
+    "CommandType": "database"
+  },
+  "REQUIREMENT_UNIT_FORMATION_CLASS_MATCHES": {
+    "UnitFormationClass": "text"
+  },
+  "REQUIREMENT_UNIT_HAS_ABILITY": {
+    "UnitAbilityType": "database"
+  },
+  "REQUIREMENT_UNIT_HAS_BEEN_CREATED_BY_PLAYER": {},
+  "REQUIREMENT_UNIT_HAS_BEEN_KILLED_BY_PLAYER": {},
+  "REQUIREMENT_UNIT_HAS_PACKED_UNITS": {
+    "Amount": "int",
+    "CountCombatUnits": "bool",
+    "CountNonCombatUnits": "bool"
+  },
+  "REQUIREMENT_UNIT_HAS_PACKED_UNITS_AFTER_TURN": {
+    "MinGameTurn": "int",
+    "UnitAmount": "int"
+  },
+  "REQUIREMENT_UNIT_HAS_PACKED_UNITS_BY_TAGS_OR_CORE_CLASSES": {
+    "Tags": "database"
+  },
+  "REQUIREMENT_UNIT_HAS_XP": {
+    "Amount": "int"
+  },
+  "REQUIREMENT_UNIT_HEALTH_THRESHOLD": {
+    "Amount": "int",
+    "BelowAmount": "bool"
+  },
+  "REQUIREMENT_UNIT_IN_ENEMY_TERRITORY": {},
+  "REQUIREMENT_UNIT_IN_OWNER_TERRITORY": {
+    "friendlyOnly": "bool"
+  },
+  "REQUIREMENT_UNIT_IS_COMBAT": {},
+  "REQUIREMENT_UNIT_IS_ENEMY_OF_OWNER": {},
+  "REQUIREMENT_UNIT_IS_FORTIFIED": {},
+  "REQUIREMENT_UNIT_IS_INDEPENDENT": {},
+  "REQUIREMENT_UNIT_IS_IN_HOMELANDS": {},
+  "REQUIREMENT_UNIT_IS_STATIONED_ON_DISTRICT": {
+    "DistrictType": "database",
+    "Owned": "bool"
+  },
+  "REQUIREMENT_UNIT_IS_WOUNDED": {},
+  "REQUIREMENT_UNIT_NEAR_CITY_WITH_PROJECT": {
+    "FriendlyCity": "bool",
+    "ProjectType": "database"
+  },
+  "REQUIREMENT_UNIT_ON_DISTRICT": {
+    "DistrictType": "database",
+    "Friendly": "bool"
+  },
+  "REQUIREMENT_UNIT_ON_FEATURE": {
+    "FeatureType": "database"
+  },
+  "REQUIREMENT_UNIT_TAG_MATCHES": {
+    "MatchAllTags": "bool",
+    "Tag": "text",
+    "UnitType": "text"
+  },
+  "REQUIREMENT_UNIT_TRADE_ROUTE_ESTABLISHED": {},
+  "REQUIREMENT_UNIT_TYPE_MATCHES": {
+    "UnitType": "text"
+  },
+  "REQUIREMENT_WONDER_IS_ACTIVE": {
+    "ConstructibleType": "database"
+  }
+}
