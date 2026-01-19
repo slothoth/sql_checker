@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, select
+from sqlalchemy import create_engine, select, Text
 import json
 
 from graph.db_spec_singleton import ages
@@ -53,3 +53,11 @@ def test_req_harvest():
         SQLValidator.engine_dict[age_type] = engine
 
     mine_requirements(SQLValidator.engine_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap)
+
+
+def test_possible_vals_harvest():
+    path = f"resources/gameplay-base"
+    for age_type in ages:
+        engine = create_engine(f"sqlite:///{path}_{age_type}.sqlite")  # already built
+        SQLValidator.engine_dict[age_type] = engine
+

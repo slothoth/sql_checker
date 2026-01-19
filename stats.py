@@ -3,7 +3,7 @@ import math
 from collections import defaultdict, Counter
 import sqlite3
 import pandas as pd
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, select, Text
 
 from graph.db_spec_singleton import db_spec, attach_tables
 from graph.utils import flatten, flatten_avoid_string, to_number
@@ -11,6 +11,7 @@ from graph.utils import flatten, flatten_avoid_string, to_number
 import logging
 
 log = logging.getLogger(__name__)
+
 
 def combine_db_df(df_combined, df_to_add):
     if df_combined is None:
@@ -20,7 +21,7 @@ def combine_db_df(df_combined, df_to_add):
     return df_combined
 
 
-def gather_effects(db_dict):
+def gather_effects(db_dict, metadata):
     collection_types = pd.read_sql("SELECT Type FROM Types WHERE Kind='KIND_COLLECTION'", db_dict['AGE_ANTIQUITY'])
     collection_types = list(collection_types['Type'])
     with open('resources/db_spec/CollectionsList.json', 'w') as f:
@@ -42,39 +43,9 @@ def gather_effects(db_dict):
     # first get requirements from modifier tables
     mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap)
 
-    with open('resources/db_spec/LocalizedTags.json') as f:
-        localised = json.load(f)
+    update_loc_spec(db_dict)
 
-    localised = set(localised)
-
-    localise_table_cols = defaultdict(list)
-    for db, engine in db_dict.items():
-
-        for table_name, info in db_spec.node_templates.items():
-            #if table_name in ['IProperties', 'IPropertyTypes', 'ReportingEvents', 'GameCoreEvents']:
-            #   continue          # TODO didnt need this
-            for column_name in info['all_cols']:
-                with engine.connect() as conn:
-                    trans = conn.begin()
-                    rows = {i[0] for i in conn.execute(text(f"""SELECT {column_name} FROM {table_name} 
-                                            t WHERE {column_name} IS NOT NULL""")).fetchall()}
-                trans.rollback()
-                if len(rows) == 0:
-                    continue
-                non_localised = rows - localised
-                localised_proportions = (len(rows) - len(non_localised)) / len(rows)
-                if localised_proportions >= 0.5:
-                    localise_table_cols[table_name].append(column_name)
-                else:
-                    if column_name in ['Name', 'Description']:
-                        log.info(f'missed localisation on these rows for {table_name}.{column_name}:', rows)
-    for table_name, table_cols in localise_table_cols.items():
-        db_spec.node_templates[table_name]['localised'] = []
-        for col in table_cols:
-            db_spec.node_templates[table_name]['localised'].append(col)
-        db_spec.node_templates[table_name]['localised'] = list(set(db_spec.node_templates[table_name]['localised']))
-
-    db_spec.update_node_templates(db_spec.node_templates)
+    update_possible_vals_spec(db_dict, metadata)
 
 
 def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap):
@@ -891,3 +862,92 @@ def deal_with_defaults(info_map, type_map):
                               f'unhandled argument {arg_type}, skipping')
     for k, key in delete_refs:
         del info_map[k]['Arguments'][key]
+
+
+def update_loc_spec(db_dict):
+
+    with open('resources/db_spec/LocalizedTags.json') as f:
+        localised = json.load(f)
+
+    localised = set(localised)
+
+    localise_table_cols = defaultdict(list)
+    for db, engine in db_dict.items():
+
+        for table_name, info in db_spec.node_templates.items():
+            for column_name in info['all_cols']:
+                with engine.connect() as conn:
+                    trans = conn.begin()
+                    rows = {i[0] for i in conn.execute(text(f"""SELECT {column_name} FROM {table_name} 
+                                            t WHERE {column_name} IS NOT NULL""")).fetchall()}
+                trans.rollback()
+                if len(rows) == 0:
+                    continue
+                non_localised = rows - localised
+                localised_proportions = (len(rows) - len(non_localised)) / len(rows)
+                if localised_proportions >= 0.5:
+                    localise_table_cols[table_name].append(column_name)
+                else:
+                    if column_name in ['Name', 'Description']:
+                        log.info(f'missed localisation on these rows for {table_name}.{column_name}:', rows)
+    for table_name, table_cols in localise_table_cols.items():
+        db_spec.node_templates[table_name]['localised'] = []
+        for col in table_cols:
+            db_spec.node_templates[table_name]['localised'].append(col)
+        db_spec.node_templates[table_name]['localised'] = list(set(db_spec.node_templates[table_name]['localised']))
+
+    db_spec.update_node_templates(db_spec.node_templates)
+
+
+def update_possible_vals_spec(db_dict, metadata):
+    age_possible_vals = {}
+    for age_type, engine in db_dict.items():
+        result = {}
+        with engine.connect() as conn:
+            for table_name, table in metadata.tables.items():
+                table_dict = {}
+                spec = db_spec.node_templates[table_name]
+                for column in table.c:
+                    if table_name in ['ModifierArguments', 'RequirementArguments'] and column.name == 'Value':
+                        continue
+                    not_covered = column.name not in db_spec.all_possible_vals[table_name]
+                    not_covered = not_covered and column.name not in spec.get('localised', [])
+                    not_covered = not_covered and column.name not in spec.get('foreign_keys')
+                    if isinstance(column.type, Text) and not column.primary_key and not_covered:
+                        stmt = select(column).distinct()
+                        values = [row[0] for row in conn.execute(stmt) if row[0] is not None]
+                        if any('LOC_' in i for i in values) or column.name in ['Description', 'Name']:
+                            continue
+                        if len(values) > 0:
+                            table_dict[column.name] = values
+                if len(table_dict) > 0:
+                    result[table_name] = table_dict
+        age_possible_vals[age_type] = result
+
+    all_possible_vals = defaultdict(dict)
+    for table_name, table in metadata.tables.items():
+        for column in table.c:
+            combined_vals = list(set(val for age in age_possible_vals.keys()
+                                     for val in age_possible_vals[age].get(table_name, {}).get(column.name, [])))
+            if 400 > len(combined_vals) > 0:  # too many slows performance
+                all_possible_vals[table_name][column.name] = combined_vals
+                if table_name not in db_spec.all_possible_vals:
+                    db_spec.all_possible_vals[table_name] = {}
+                if column.name not in db_spec.all_possible_vals[table_name]:
+                    db_spec.all_possible_vals[table_name][column.name] = combined_vals
+
+    for age, poss_val_dict in age_possible_vals.items():
+        for table_name, table in poss_val_dict.items():
+            for column, values in table.items():
+                if len(values) < 300:
+                    if table_name not in db_spec.possible_vals[age]:
+                        db_spec.possible_vals[age][table_name] = {}
+                    if column not in db_spec.possible_vals[age][table_name]:
+                        db_spec.possible_vals[age][table_name][column] = values
+
+    all_cols = {f'{k}_{col}': items for k, v in all_possible_vals.items() for col, items in v.items()}
+    all_cols_tuples = [(k, v) for k, v in all_cols.items()]
+    all_cols_tuples.sort(key=lambda t: len(t[1]), reverse=True)
+
+    db_spec.update_possible_vals(db_spec.possible_vals)
+    db_spec.update_all_vals(db_spec.all_possible_vals)

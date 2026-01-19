@@ -309,7 +309,7 @@ class SchemaInspector:
                         sql_statements_mods, missed_mods = load_files(modded, 'Mod')
                         mod_status_info = lint_database(engine, sql_statements_mods, keep_changes=True)
                     self.engine_dict[age_type] = engine
-                gather_effects(self.engine_dict)
+                gather_effects(self.engine_dict, self.metadata)
                 # also do the stats checks
             else:
                 engine = create_engine(f"sqlite:///{path}_{age}.sqlite")     # already built
