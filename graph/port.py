@@ -32,17 +32,17 @@ def port_connect_transmit(input_port, output_port):
             update_widget_or_prop(changing_node, changing_name, new_value)
     # update gameEffects property to build requirements Set, with nested req OR AND
     if output_node.name() == 'CustomGameEffect' and input_name in ['ReqSet', 'RequirementSetId']:
-        current_reqset = output_node.get_property('RequirementSetDict')
-        if current_reqset:
-            current_reqset = current_reqset[output_name]
-            # build new req
+        req_set_dict = output_node.get_property('RequirementSetDict')
+        if req_set_dict:
             input_node_name = input_node.get_property('table_name')
             if input_node_name == 'ReqEffectCustom':            # add single req to list
                 req_id = input_node.get_widget('RequirementId').get_value()
-                current_reqset['reqs'].append(req_id)
+                req_set_dict[output_name]['reqs'].append(req_id)
+                output_node.set_property('RequirementSetDict', req_set_dict)
             elif input_node_name == 'RequirementSets':          # use existant reqset
                 reqset_id = input_node.get_widget('RequirementSetId').get_value()
-                current_reqset['reqs'].append({'reqset': reqset_id})
+                req_set_dict[output_name]['reqs'].append({'reqset': reqset_id})
+                output_node.set_property('RequirementSetDict', req_set_dict)
             else:
                 log.warning(f'wrong input table when building connection between CustomGameEffect'
                             f' and {input_node_name}')
