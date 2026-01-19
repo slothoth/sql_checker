@@ -265,6 +265,7 @@ class ExpandingLineEdit(SuggestorPopulatorWidget):
     def update_from_state(self, new_value):
         if not self.line_edit.user_edited:
             self.line_edit.setText(new_value)
+            self.on_value_changed()
             return True
         return False
 
