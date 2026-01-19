@@ -447,14 +447,13 @@ class SchemaInspector:
         if os.path.exists(db_path):
             os.remove(db_path)
         conn = sqlite3.connect(db_path)
-        with open(f"{db_spec.civ_install}/Base/Assets/schema/gameplay/01_GameplaySchema.sql", 'r') as f:
-            query_tables = f.read()
+        definition_scripts = [f for f in glob.glob(f"{db_spec.civ_install}/Base/Assets/schema/gameplay/*.sql")]
         cur = conn.cursor()
         conn.create_function("Make_Hash", 1, make_hash)  # setup hash
-        cur.executescript(query_tables)
-        table_name = 'UnitAbilityModifiers'
-        cur.execute(f"SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}';")
-        rows = cur.fetchall()
+        for def_path_script in definition_scripts:
+            with open(def_path_script, 'r') as f:
+                query_tables = f.read()
+            cur.executescript(query_tables)
         # setup prebuilt entries
         engine = create_engine(f"sqlite:///{db_path}")
         with engine.begin() as conn_engine:
