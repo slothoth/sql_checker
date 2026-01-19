@@ -20,7 +20,6 @@ class BasicDBNode(BaseNode):
         self._initial_fields = []
         self._extra_fields = []
         self.output_port_tables = {}
-        self._default_color = None
         self.test_error = False
         self.can_validate = False
         self._default_color = self.color()
@@ -128,7 +127,6 @@ class BasicDBNode(BaseNode):
         else:
             self.set_color(*self._default_color)        # Restore original color
             self.test_error = False
-       # self.update()        # Force the graph UI to redraw the node            is this needed?
 
     def get_properties_to_sql(self):
         custom_properties = {k: v for k, v in self.properties()['custom'].items() if k != 'sql_form'}

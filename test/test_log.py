@@ -95,13 +95,11 @@ def test_log_not_null_errors(qtbot):
     mod_test_session(window.graph)
     log_output = window.graph.side_panel.log_display.toPlainText()
     log_lines = log_output.split('\n')
-    assert 'There were 1 failed Insertions:' in log_lines
-    assert 'Missed Inserts for Constructibles:' in log_lines
-    assert ('Entry Constructibles with primary key: ConstructibleType: BUILDING_TEST could not be inserted as'
-            ' ConstructibleClass was not specified.') in log_lines
+    assert 'There were 1 Invalid Nodes that were not run:' in log_lines
+    assert 'Node Constructibles had problem MISSING REQUIRED COLUMNS: ConstructibleClass;' in log_lines
 
 
-def test_log_discards_errors_from_no_fk_due_to_fail_insert(qtbot):
+def test_log_discards_errors_from_no_fk_due_to_fail_insert(qtbot):      # fake fails when ran in sequence
     window = make_window(qtbot)
     district = create_node(window, 'Districts')
     district.get_widget('DistrictType').set_value('DISTRICT_TEST')

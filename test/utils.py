@@ -80,7 +80,7 @@ def update_delete_node_setup(sql_command, qtbot):
     qtbot.waitExposed(window)
     node = window.graph.create_node('db.where.WhereNode')
     qtbot.wait(1)
-    node.set_property('sql', sql_command)
+    node.set_property('sql_form', sql_command)
     qtbot.wait(1)
     value = node.get_widget('changes').get_value()
     return node, value

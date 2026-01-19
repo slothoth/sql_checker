@@ -73,11 +73,11 @@ class WhereNode(BaseNode):
     __identifier__ = 'db.where'
     NODE_NAME = 'Where Node'
     sql_output_triggerable = False
-    sql_error = False
+    test_error = False
 
     def __init__(self):
         super(WhereNode, self).__init__()
-
+        self._default_color = self.color()
         self.add_custom_widget(ReadOnlySqlText(self.view, name="sql_form", label="SQL"),
                                widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.add_custom_widget(ReadOnlyTwoColTable(self.view, name="changes", label="Changes"),
@@ -86,11 +86,8 @@ class WhereNode(BaseNode):
         self.default_palette = self.input_text_widget.palette()
         self.sql_output_triggerable = True
 
-    def set_sql(self, sql: str):
-        self.get_widget("sql").set_value(sql)
-
     def apply_and_populate(self):
-        sql = self.get_widget("sql").get_value()
+        sql = self.get_widget("sql_form").get_value()
         try:
             column_output_tuples = update_delete_transform(sql, age=self.graph.property('meta').get('Age', 'AGE_ANTIQUITY'))
         except (TypeError, KeyError, ValueError, sqlite3.Warning) as e:
@@ -98,11 +95,11 @@ class WhereNode(BaseNode):
             self.color_as_error()
             error_tuples = self.format_error_for_table(str(e))
             self.get_widget("changes").set_value(error_tuples)
-            self.sql_error = True
+            self.test_error = True
             self.sql_output_triggerable = True
             return
-        if self.sql_error:
-            self.sql_error = False
+        if self.test_error:
+            self.test_error = False
             self.reset_color()
         self.get_widget("changes").set_value(column_output_tuples)
 
@@ -130,7 +127,6 @@ class WhereNode(BaseNode):
         lines = self.split_text_to_fit(error_message, available_space, metrics)
         return [(i, '') for i in lines]
 
-
     @staticmethod
     def split_text_to_fit(text, max_width, metrics):
         words = text.split(' ')
@@ -149,3 +145,12 @@ class WhereNode(BaseNode):
             lines.append(current_line)
 
         return lines
+
+    def error_color(self, is_error=True):
+        if is_error:
+            error_color = (200, 30, 30)        # Set to an error color (e.g., Red: R, G, B, A)
+            self.set_color(*error_color)
+            self.test_error = True
+        else:
+            self.set_color(*self._default_color)        # Restore original color
+            self.test_error = False

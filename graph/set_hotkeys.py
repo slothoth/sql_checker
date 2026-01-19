@@ -473,10 +473,10 @@ def mod_test_session(graph):
     """
     current = graph.current_session() or 'resources/graph.json'
     graph.save_session(current)
-    sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
+    sql_lines, dict_form_list, loc_lines, incompletes_ordered = transform_json(current)
     age = graph.property('meta').get('Age')
     push_to_log(graph, f'Testing mod for: {age}')
-    result = check_valid_sql_against_db(age, sql_lines, dict_form_list)           # need to do loc test too
+    result = check_valid_sql_against_db(age, sql_lines, dict_form_list, incompletes=incompletes_ordered) # need to do loc test too
     extract_state_test(graph, result)
     # make the collapsible panel be shown
 

@@ -1,4 +1,4 @@
-
+import glob
 import os
 import sqlite3
 from collections import defaultdict
@@ -173,6 +173,8 @@ class SchemaInspector:
 
         self.canonicalise_columns = {name: {col.name.lower(): col.name for col in table.columns}
                                      for name, table in tables.items()}
+
+        self.state_validation_setup('AGE_ANTIQUITY')
 
     def engine_instantiation(self, db_path):
         empty_engine = self.make_base_db(db_path)
@@ -369,9 +371,11 @@ class SchemaInspector:
             log.error(name, coltype, repr(value))
 
         if not filtered:
-            return 'CUSTOM_ERROR_CODE', filtered
+            return 'NO COLUMNS PRESENT', filtered
 
-        # TODO now check that not nullables + no default present (we have map) and that primary key is present
+        missing_columns = [k for k, v in self.required_map[table_name].items() if k not in filtered]
+        if len(missing_columns) > 0:
+            return f'MISSING REQUIRED COLUMNS: {", ".join(missing_columns)}', filtered
 
         stmt = insert(self.Base.metadata.tables[table_name]).values(**filtered)
         sql = stmt.compile(dialect=sqlite.dialect(), compile_kwargs={"literal_binds": True})
@@ -499,7 +503,7 @@ def extract_server_default(col, engine_default):
     return arg
 
 
-def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=None):
+def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=None, incomplete_dict=()):
     Session = sessionmaker(bind=engine)
 
     with engine.connect() as conn:
@@ -525,7 +529,8 @@ def lint_database(engine, sql_command_dict, keep_changes=False, dict_form_list=N
             fk_errors = session.execute(text("PRAGMA foreign_key_check")).all()
             integrity = session.execute(text("PRAGMA integrity_check")).scalar()
 
-            lint_info = {"results": results, "foreign_key_errors": fk_errors, "integrity": integrity}
+            lint_info = {"results": results, "foreign_key_errors": fk_errors, "integrity": integrity,
+                         "incomplete_dict": incomplete_dict}
             return lint_info
 
         finally:
@@ -608,15 +613,25 @@ def explain_errors(lint_info, session):
 
         pk_entry = {k: v for k, v in row.items() if k in primary_keys}
         formatted_entry = "".join([f'{k}: {v}\n' for k, v in pk_entry.items()])
+        error_dict = None
         if primary_key_table in lint_info.get('insert_error_explanations', {}):
+            error_dict = lint_info['insert_error_explanations']
+        if primary_key_table in lint_info.get('incomplete_dict', {}):
+            error_dict = lint_info['incomplete_dict']
+        if error_dict is not None:
             pk_tuple = tuple([row[fk_col]])
-            insertion_fail = lint_info['insert_error_explanations'][primary_key_table].get(pk_tuple)
+            insertion_fail = error_dict.get(primary_key_table, {}).get(pk_tuple)
             if insertion_fail is not None:
                 fk_error_title = '\nAlso causes FOREIGN KEY errors on entries:'
-                if fk_error_title not in insertion_fail:
-                    lint_info['insert_error_explanations'][primary_key_table][pk_tuple] += fk_error_title
                 fk_addition = f'\nINSERT into {insertion_table}: {formatted_entry}'
-                lint_info['insert_error_explanations'][primary_key_table][pk_tuple] += fk_addition
+                if isinstance(insertion_fail, dict):
+                    if fk_error_title not in insertion_fail['sql']:
+                        error_dict[primary_key_table][pk_tuple]['sql'] += fk_error_title
+                    error_dict[primary_key_table][pk_tuple]['sql'] += fk_addition
+                else:
+                    if fk_error_title not in insertion_fail:
+                        error_dict[primary_key_table][pk_tuple] += fk_error_title
+                    error_dict[primary_key_table][pk_tuple] += fk_addition
             continue
 
         explained_error_dict[error_tuple] = (f"FOREIGN KEY missing:\nINSERT into {insertion_table}:\n{formatted_entry}"
@@ -647,10 +662,10 @@ def constraint_color(index, total,                  # living here as used for in
     return int(r * 255), int(g * 255), int(b * 255)
 
 
-def check_valid_sql_against_db(age, sql_dict_list, dict_form_list=None):
+def check_valid_sql_against_db(age, sql_dict_list, dict_form_list=None, incompletes=()):
     SQLValidator.state_validation_setup(age)
     result_info = lint_database(SQLValidator.engine_dict[age], {'main.sql': sql_dict_list},
-                                keep_changes=False, dict_form_list=dict_form_list)
+                                keep_changes=False, dict_form_list=dict_form_list, incomplete_dict=incompletes)
     return result_info
 
 

@@ -555,9 +555,22 @@ def extract_state_test(graph, data):
             push_to_log(graph, val)
     if no_errors:
         push_to_log(graph, 'Valid mod setup')
+
+    num_incompletes = len(data.get('incomplete_dict', {}))
+    all_nodes, incomplete_nodes = graph.all_nodes(), []
+    if num_incompletes > 0:                     # this doesnt necessarily cause invalid state
+        node_id_mapper = {i.id: i.get_property('table_name') for i in all_nodes}
+        push_to_log(graph, f'There were {num_incompletes} Invalid Nodes that were not run:')
+        for table_name, bad_entries in data['incomplete_dict'].items():
+            for key, info in bad_entries.items():
+                push_to_log(graph, f'Node {node_id_mapper[info["node_source"]]} had problem {info["sql"]}')
+                if no_errors:
+                    no_errors = 'FOREIGN KEY' not in info["sql"]
+                incomplete_nodes.append(info["node_source"])
+
     error_node_tracker.empty_node_list()
-    for node in graph.all_nodes():
-        if node.id in data.get('marked_nodes', []):
+    for node in all_nodes:
+        if node.id in data.get('marked_nodes', []) or node.id in incomplete_nodes:
             error_node_tracker.add_node(node.id)
             if node.test_error:
                 continue

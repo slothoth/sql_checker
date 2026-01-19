@@ -1,4 +1,6 @@
 import json
+from collections import defaultdict
+
 from graph.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
 
@@ -29,7 +31,8 @@ def transform_json(json_filepath):
     with open(json_filepath) as f:
         data = json.load(f)
     sql_code, dict_form_list, loc_dict_list, loc_code = [], [], [], None
-    update_nodes, incompletes_full = {}, []
+    update_nodes = {}
+    incompletes_ordered = defaultdict(dict)
     for node_id, val in data['nodes'].items():
         if val['type_'] == 'db.where.WhereNode':
             update_nodes[node_id] = val
@@ -39,17 +42,26 @@ def transform_json(json_filepath):
             sql_commands = [{'sql': f'{i.strip()};', 'node_source': node_id} for i in sql_form.split(';') if len(i) > 0]
         else:
             sql_commands = [{'sql': i, 'node_source': node_id} for i in sql_form]
-
-        # incompletes = [i for i in sql_commands if ' DEFAULT VALUES' in i['sql'] or ' RETURNING' in i['sql']]
-        incompletes = [i for i in sql_commands if 'CUSTOM_ERROR_CODE' in i['sql']]
-        completes = [i for i in sql_commands if i not in incompletes]
+        incompletes = {idx: i for idx, i in enumerate(sql_commands) if 'MISSING REQUIRED COLUMNS' in i['sql'] or 'NO COLUMNS PRESENT' in i['sql']}
+        completes = [i for i in sql_commands if i not in incompletes.values()]
         sql_code.extend(completes)
-        incompletes_full.extend(incompletes)
         dict_form = custom_properties.get('dict_sql')
         dict_form_list.append({'sql': dict_form, 'node_source': node_id})
         loc_form = custom_properties.get('loc_sql_form', [])
         if len(loc_form) > 0:
             loc_dict_list.extend(loc_form)
+        for idx, i in incompletes.items():
+            if isinstance(dict_form, list):
+                dict_form = dict_form[idx]
+            tbl_name = dict_form['table_name']
+            primary_key_cols = db_spec.node_templates[tbl_name].get("primary_keys")
+            pk_dict = {k: v for k, v in dict_form['columns'].items() if k in primary_key_cols}
+            pk_tuple = tuple([v for k, v in pk_dict.items()])
+            if len(pk_tuple) == 0 or pk_tuple in incompletes_ordered[tbl_name]:
+                key = (i['node_source'], tbl_name)                       # for very broken ones with no pk tuple
+            else:
+                key = pk_tuple
+            incompletes_ordered[tbl_name][key] = i
 
     if len(error_string) > 0:
         return error_string
@@ -59,7 +71,7 @@ def transform_json(json_filepath):
         loc_code = loc_code + ",\n".join(f"('{i['Language']}', '{i['Tag']}', '{i['Text']}')"
                                          for i in loc_dict_list if i['Text'] != '') + ';'
 
-    return sql_code, dict_form_list, loc_code, incompletes_full
+    return sql_code, dict_form_list, loc_code, dict(incompletes_ordered)
 
 
 def argument_transform(sql_code, error_string, dict_form_list, effect_string, effect_id, custom_properties, type_arg,
@@ -113,7 +125,7 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
     effect_type = no_arg_params['EffectType']
     collection_type = no_arg_params['CollectionType']
     modifier_type = no_arg_params['ModifierType']  # DynamicModifiers
-    if (effect_type, modifier_type, collection_type) == ('', '', ''):
+    if modifier_type == '' or (collection_type, effect_type) == ('', ''):
         error_string += 'Canceled Effect as no EffectType to check with'
         return sql_code, dict_form_list, error_string
     added_types = [i['sql']['columns']['Type'] for i in dict_form_list if i['sql']['table_name'] == 'Types']
