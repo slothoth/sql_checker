@@ -29,25 +29,27 @@ def transform_json(json_filepath):
     with open(json_filepath) as f:
         data = json.load(f)
     sql_code, dict_form_list, loc_dict_list, loc_code = [], [], [], None
+    update_nodes, incompletes_full = {}, []
     for node_id, val in data['nodes'].items():
+        if val['type_'] == 'db.where.WhereNode':
+            update_nodes[node_id] = val
         custom_properties = val['custom']
-        table_name = val.get('table_name', custom_properties['table_name'])
-        custom_properties = SQLValidator.normalize_node_bools(custom_properties, table_name)
-        custom_properties = {k: v for k, v in custom_properties.items() if v is not None}
-        if table_name == 'ReqEffectCustom':
-            sql_code, dict_form_list, error_string = req_custom_transform(data, custom_properties, node_id,
-                                                                          sql_code, dict_form_list, error_string)
-
-        elif table_name == 'GameEffectCustom':
-            sql_code, dict_form_list, error_string = effect_custom_transform(custom_properties, node_id,
-                                                                             sql_code, dict_form_list, error_string)
-
+        sql_form = custom_properties.get('sql_form')
+        if isinstance(sql_form, str):
+            sql_commands = [{'sql': f'{i.strip()};', 'node_source': node_id} for i in sql_form.split(';') if len(i) > 0]
         else:
-            loc_entries = transform_localisation(custom_properties, table_name)
-            loc_dict_list.extend(loc_entries)
-            sql, dict_form, error_string = transform_to_sql(custom_properties, table_name, error_string)
-            sql_code.append({'sql': sql, 'node_source': node_id})
-            dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+            sql_commands = [{'sql': i, 'node_source': node_id} for i in sql_form]
+
+        # incompletes = [i for i in sql_commands if ' DEFAULT VALUES' in i['sql'] or ' RETURNING' in i['sql']]
+        incompletes = [i for i in sql_commands if 'CUSTOM_ERROR_CODE' in i['sql']]
+        completes = [i for i in sql_commands if i not in incompletes]
+        sql_code.extend(completes)
+        incompletes_full.extend(incompletes)
+        dict_form = custom_properties.get('dict_sql')
+        dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+        loc_form = custom_properties.get('loc_sql_form', [])
+        if len(loc_form) > 0:
+            loc_dict_list.extend(loc_form)
 
     if len(error_string) > 0:
         return error_string
@@ -57,7 +59,7 @@ def transform_json(json_filepath):
         loc_code = loc_code + ",\n".join(f"('{i['Language']}', '{i['Tag']}', '{i['Text']}')"
                                          for i in loc_dict_list if i['Text'] != '') + ';'
 
-    return sql_code, dict_form_list, loc_code
+    return sql_code, dict_form_list, loc_code, incompletes_full
 
 
 def argument_transform(sql_code, error_string, dict_form_list, effect_string, effect_id, custom_properties, type_arg,
@@ -77,28 +79,32 @@ def argument_transform(sql_code, error_string, dict_form_list, effect_string, ef
                 sql, dict_form, error_string = transform_to_sql({f'{effect_string}Id': effect_id, 'Name': arg_name,
                                                       'Value': arg_value},
                                                      f'{effect_string}Arguments', error_string)
-                sql_code.append({'sql': sql, 'node_source': node_id})
-                dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+                sql_code.append(sql)
+                dict_form_list.append(dict_form)
 
         else:
             if arg_value != arg_default:
                 sql, dict_form, error_string = transform_to_sql({f'{effect_string}Id': effect_id, 'Name': arg_name,
-                                                      'Value': arg_value}, f'{effect_string}Arguments', error_string)
-                sql_code.append({'sql': sql, 'node_source': node_id})
-                dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+                                                'Value': arg_value}, f'{effect_string}Arguments', error_string)
+                sql_code.append(sql)
+                dict_form_list.append(dict_form)
 
 
-def req_custom_transform(data, custom_properties, node_id, sql_code, dict_form_list, error_string):
+def req_custom_transform(custom_properties, node_id, sql_code, dict_form_list, error_string):
     req_id = custom_properties['RequirementId']
     req_type = custom_properties['RequirementType']  # need to change on data level as used in cols dict.
+    if req_type == '':
+        error_string += 'Canceled Requirement as no RequirementType to check with'
+        return sql_code, dict_form_list, error_string
     columns_dict = {k: v for k, v in custom_properties.items() if 'param_' not in k and k not in excludes
                     and k != 'ReqSet'}
     sql, dict_form, error_string = transform_to_sql(columns_dict, 'Requirements', error_string)
-    sql_code.append({'sql': sql, 'node_source': node_id})
-    dict_form_list.append({'sql': dict_form, 'node_source': node_id})
-    argument_transform(sql_code, error_string, dict_form_list, 'Requirement', req_id, custom_properties,
-                       db_spec.req_type_arg_map[req_type],
-                       db_spec.requirement_argument_info[req_type], node_id=node_id)
+    sql_code.append(sql)
+    dict_form_list.append(dict_form)
+    if req_type in db_spec.req_type_arg_map:
+        argument_transform(sql_code, error_string, dict_form_list, 'Requirement', req_id, custom_properties,
+                           db_spec.req_type_arg_map[req_type],
+                           db_spec.requirement_argument_info[req_type], node_id=node_id)
     return sql_code, dict_form_list, error_string
 
 
@@ -107,18 +113,20 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
     effect_type = no_arg_params['EffectType']
     collection_type = no_arg_params['CollectionType']
     modifier_type = no_arg_params['ModifierType']  # DynamicModifiers
+    if (effect_type, modifier_type, collection_type) == ('', '', ''):
+        error_string += 'Canceled Effect as no EffectType to check with'
+        return sql_code, dict_form_list, error_string
     added_types = [i['sql']['columns']['Type'] for i in dict_form_list if i['sql']['table_name'] == 'Types']
-    if modifier_type not in db_spec.dynamic_mod_info and modifier_type not in added_types:
+    if modifier_type not in db_spec.dynamic_mod_info and modifier_type not in added_types:      # new ModifierType
         sql, dict_form, error_string = transform_to_sql({'ModifierType': modifier_type,
                                                          'CollectionType': collection_type,
                                               'EffectType': effect_type}, 'DynamicModifiers', error_string)
-        sql_code.append({'sql': sql, 'node_source': node_id})
-        dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+        sql_code.append(sql)
+        dict_form_list.append(dict_form)
         sql, dict_form, error_string = transform_to_sql({'Type': modifier_type, 'Kind': 'KIND_MODIFIER'},
                                              'Types', error_string)
-        sql_code.append({'sql': sql, 'node_source': node_id})
-        dict_form_list.append({'sql': dict_form, 'node_source': node_id})
-
+        sql_code.append(sql)
+        dict_form_list.append(dict_form)
 
     # do requirementSets, to handle nesting and multiple connections to different requirementSets and ReqCustom
     rename_mapper = {'SubjectReq': 'SubjectRequirementSetId', 'OwnerReq': 'OwnerRequirementSetId'}
@@ -132,8 +140,8 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
             sql, dict_form, error_string = transform_to_sql({'RequirementSetId': reqset_name,
                                                   'RequirementSetType': reqset_type},
                                                  'RequirementSets', error_string)
-            dict_form_list.append({'sql': dict_form, 'node_source': node_id})
-            sql_code.append({'sql': sql, 'node_source': node_id})
+            dict_form_list.append(dict_form)
+            sql_code.append(sql)
             for req in reqset_object_info['reqs']:
                 req_id = req
                 if isinstance(req, dict):
@@ -143,29 +151,28 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
                     sql, dict_form, error_string = transform_to_sql({'RequirementId': req_name,
                                                           'RequirementType': 'REQUIREMENT_REQUIREMENTSET_IS_MET'},
                                                          'Requirements', error_string)
-                    sql_code.append({'sql': sql, 'node_source': node_id})
-                    dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+                    sql_code.append(sql)
+                    dict_form_list.append(dict_form)
 
                     sql, dict_form, error_string = transform_to_sql({'RequirementId': req_name,
                                                           'Name': 'REQUIREMENT_REQUIREMENTSET_IS_MET',
                                                           'Value': nested_reqset},
                                                          'RequirementArguments', error_string)
-                    sql_code.append({'sql': sql, 'node_source': node_id})
-                    dict_form_list.append({'sql': dict_form, 'node_source': node_id})
-                    dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+                    sql_code.append(sql)
+                    dict_form_list.append(dict_form)
 
                     req_id = req_name
 
                 sql, dict_form, error_string = transform_to_sql({'RequirementSetId': reqset_name,
                                                       'RequirementId': req_id},
                                                      'RequirementSetRequirements', error_string)
-                sql_code.append({'sql': sql, 'node_source': node_id})
+                sql_code.append(sql)
 
     mod_cols = db_spec.node_templates['Modifiers']['all_cols']  # Modifiers
     columns_dict = {reqset_used.get(k, k): v for k, v in no_arg_params.items() if reqset_used.get(k, k) in mod_cols}
     sql, dict_form, error_string = transform_to_sql(columns_dict, 'Modifiers', error_string)
-    sql_code.append({'sql': sql, 'node_source': node_id})
-    dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+    sql_code.append(sql)
+    dict_form_list.append(dict_form)
     if modifier_type in db_spec.dynamic_mod_info:
         effect_type = db_spec.dynamic_mod_info[modifier_type]['EffectType']
         # collection_type = db_spec.dynamic_mod_info[modifier_type]['CollectionType']       # unneeded for now
@@ -179,8 +186,8 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
     columns_dict = {k: v for k, v in no_arg_params.items() if k in mod_string_cols}
     if not any([v == '' for k, v in columns_dict.items() if k in template['primary_texts']]):
         sql, dict_form, error_string = transform_to_sql(columns_dict, 'ModifierStrings', error_string)
-        sql_code.append({'sql': sql, 'node_source': node_id})
-        dict_form_list.append({'sql': dict_form, 'node_source': node_id})
+        sql_code.append(sql)
+        dict_form_list.append(dict_form)
 
     return sql_code, dict_form_list, error_string
 

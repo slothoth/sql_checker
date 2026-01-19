@@ -473,7 +473,7 @@ def mod_test_session(graph):
     """
     current = graph.current_session() or 'resources/graph.json'
     graph.save_session(current)
-    sql_lines, dict_form_list, loc_lines = transform_json(current)
+    sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
     age = graph.property('meta').get('Age')
     push_to_log(graph, f'Testing mod for: {age}')
     result = check_valid_sql_against_db(age, sql_lines, dict_form_list)           # need to do loc test too
@@ -492,7 +492,7 @@ def save_session_to_mod(graph, parent=None):
         current = 'resources/graph.json'
 
     graph.save_session(current)
-    sql_lines, dict_form_list, loc_lines = transform_json(current)
+    sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
     write_sql(sql_lines)
     write_loc_sql(loc_lines)
 

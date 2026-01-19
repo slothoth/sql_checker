@@ -78,11 +78,11 @@ class WhereNode(BaseNode):
     def __init__(self):
         super(WhereNode, self).__init__()
 
-        self.add_custom_widget(ReadOnlySqlText(self.view, name="sql", label="SQL"),
+        self.add_custom_widget(ReadOnlySqlText(self.view, name="sql_form", label="SQL"),
                                widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.add_custom_widget(ReadOnlyTwoColTable(self.view, name="changes", label="Changes"),
                                widget_type=NodePropWidgetEnum.HIDDEN.value)
-        self.input_text_widget = self.get_widget('sql').get_custom_widget()
+        self.input_text_widget = self.get_widget('sql_form').get_custom_widget()
         self.default_palette = self.input_text_widget.palette()
         self.sql_output_triggerable = True
 
@@ -109,7 +109,7 @@ class WhereNode(BaseNode):
     def set_property(self, name, value, push_undo=True):
         super().set_property(name=name, value=value, push_undo=True)
         if self.sql_output_triggerable:
-            if name == 'sql':
+            if name == 'sql_form':
                 self.apply_and_populate()
 
     def color_as_error(self):

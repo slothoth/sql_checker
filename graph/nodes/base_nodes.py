@@ -26,6 +26,7 @@ class BasicDBNode(BaseNode):
         self._default_color = self.color()
         self.create_property('sql_form', '', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.create_property('loc_sql_form', '', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+        self.create_property('dict_sql', {}, widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
         connection_spec = db_spec.node_templates.get(connect_table, {})
@@ -61,11 +62,14 @@ class BasicDBNode(BaseNode):
                 })
 
     def set_spec(self, col_dict):
-        for col_name, value in col_dict.items():
+        self.can_validate = False           # delay validation, just needless sql_building
+        last_idx = len(col_dict) - 1
+        for idx, (col_name, value) in enumerate(col_dict.items()):
+            if idx >= last_idx:
+                self.can_validate = True
             if value is not None and value != 'NULL':
                 widget = self.get_widget(col_name)
                 if widget:
-                    current_val = self.get_property(col_name)
                     if 'CheckBox' in type(widget).__name__:
                         if isinstance(value, str):
                             value = int(value)

@@ -37,7 +37,7 @@ def save(window):
 
 def mod_output_check(window, test_sql_path):
     current = save(window)
-    sql_lines, dict_form_list, loc_lines = transform_json(current)
+    sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
     write_sql(sql_lines)
     write_loc_sql(loc_lines)
     check_test_against_expected_sql(test_sql_path, 'resources/main.sql')

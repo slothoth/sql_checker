@@ -524,7 +524,7 @@ def query_mod_db(age, log_queue=None):
 def log_message(message, log_queue):
     if log_queue is not None:
         log_queue.put(message)
-    print(message)
+    logging.info(message)
 
 
 def check_state(cursor):
@@ -650,4 +650,8 @@ def load_files(jobs, job_type, log_queue=None):
             comment_cleaned = re.sub(r'--.*?\n', '', sql_contents, flags=re.DOTALL)
             sql_statements[short_name] = sqlparse.split(comment_cleaned)
             ensure_ordered_sql.append((short_name, sql_statements[short_name]))
-    return sql_statements, missed_files
+
+    # new logic for linting database entries relies on using a source node. As raw files dont have source,
+    # we are just gonna use the filepath i guess
+    dictified = {key: [{'sql': i, 'node_source': key} for i in val] for key, val in sql_statements.items()}
+    return dictified, missed_files

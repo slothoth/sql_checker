@@ -18,7 +18,14 @@
     "label": "Requirement Node",
     "file": "./hotkey_functions.py",
     "function_name": "create_requirement_game_effects",
-    "shortcut": "Ctrl+Shift+N"
+    "shortcut": "Ctrl+N"
+  },
+  {
+    "type": "command",
+    "label": "Update Node",
+    "file": "./hotkey_functions.py",
+    "function_name": "create_update_node",
+    "shortcut": "Ctrl+Shift+M"
   },
   {
     "type":"command",
@@ -77,7 +84,7 @@
         "type":"command",
         "label":"Test...",
         "file":"./hotkey_functions.py",
-        "function_name":"test_session",
+        "function_name":"mod_test_session",
         "shortcut":"Shift+T"
       },
       {
@@ -329,6 +336,20 @@
         "file":"./hotkey_functions.py",
         "function_name":"expand_group_node",
         "shortcut":"Alt+Enter"
+      },
+      {
+        "type":"command",
+        "label":"Focus Next Error Node",
+        "file":"./hotkey_functions.py",
+        "function_name":"get_next_error_node",
+        "shortcut":"E"
+      },
+      {
+        "type":"command",
+        "label":"Focus Previous Error Node",
+        "file":"./hotkey_functions.py",
+        "function_name":"get_previous_error_node",
+        "shortcut":"Shift+E"
       }
     ]
   },

@@ -86,8 +86,11 @@ class DynamicNode(BasicDBNode):
             if self.can_validate and old_value != value and widget and widget.widget_string_type == 'QLineEdit':
                 self._validate_field(name, value)
             super().set_property(name=name, value=value, push_undo=True)
-        if self.can_validate and name not in {'sql_form', 'loc_sql_form'}:      # prevents looping
-            self.convert_to_sql()
+        if self.can_validate and name not in {'sql_form', 'loc_sql_form', 'dict_sql'}:      # prevents looping
+            sql_code, dict_form, loc = self.convert_to_sql()
+            super().set_property('sql_form', sql_code)
+            super().set_property('dict_sql', dict_form)
+            super().set_property('loc_sql_form', loc)
 
     def set_spec(self, col_dict):
         super().set_spec(col_dict=col_dict)
@@ -99,8 +102,8 @@ class DynamicNode(BasicDBNode):
         loc_entries = transform_localisation(custom_properties, table_name)
         error_string = ''
         sql, dict_form, error_string = transform_to_sql(custom_properties, table_name, error_string)
-        self.set_property('sql_form', sql)
-        self.set_property('loc_sql_form', "\n".join([i for i in loc_entries]))
+        return sql, dict_form, loc_entries
+
 
 # had to auto generate classes rather then generate at node instantition because
 # on save they werent storing their properties in such a way they could be loaded again

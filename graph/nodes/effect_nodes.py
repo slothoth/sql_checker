@@ -45,8 +45,10 @@ class BaseEffectNode(BasicDBNode):
             self.get_property('arg_params')[name] = value
 
         super().set_property(name, value, push_undo=push_undo)
-        if self.can_validate and name not in {'sql_form', 'loc_sql_form'}:      # prevents looping
-            self.convert_to_sql()
+        if self.can_validate and name not in {'sql_form', 'loc_sql_form', 'dict_form_list'}:      # prevents looping
+            sql_code, dict_form_list, loc = self.convert_to_sql()
+            super().set_property('sql_form', sql_code)
+            super().set_property('dict_sql', dict_form_list)
 
     def update(self):
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
@@ -199,7 +201,7 @@ class BaseEffectNode(BasicDBNode):
         return
 
     def convert_to_sql(self):
-        return
+        return [], {}, ''           # sql_list, dict form, loc
 
 class GameEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
@@ -322,13 +324,11 @@ class GameEffectNode(BaseEffectNode):
         custom_properties = self.get_properties_to_sql()
         sql_code, dict_form_list, error_string = [], [], ''
         node_id = self.id
-        try:
-            sql_code, dict_form_list, error_string = effect_custom_transform(custom_properties, node_id,
-                                                                         sql_code, dict_form_list, error_string)
-        except Exception as e:
-            log.warning(f'missed converting sql code, due to {e}')
-            return
-        self.set_property('sql_form', sql_code)
+        sql_code, dict_form_list, error_string = effect_custom_transform(custom_properties, node_id,
+                                                                     sql_code, dict_form_list, error_string)
+        return sql_code, dict_form_list, ''
+
+
 
 
 class RequirementEffectNode(BaseEffectNode):
@@ -391,4 +391,4 @@ class RequirementEffectNode(BaseEffectNode):
         node_id = self.id
         sql_code, dict_form_list, error_string = req_custom_transform(custom_properties, node_id,
                                                                       sql_code, dict_form_list, error_string)
-        self.set_property('sql_form', sql_code)
+        return sql_code, dict_form_list, ''
