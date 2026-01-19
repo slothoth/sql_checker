@@ -213,7 +213,7 @@ class SchemaInspector:
 
         # Remove empty string values from all_data for cleaner validation  # TODO remove the '' as sometimes valid, but need better solution
         cleaned_data = {k: (None if v == '' else v) for k, v in data.items()
-                        if k==field_name or v is not None or v == ''}
+                        if k == field_name or v is not None or v == ''}
         # deal with checkbox bools
         cleaned_data = {k: int(v) if isinstance(v, bool) else v for k, v in cleaned_data.items()}
         try:
@@ -332,7 +332,7 @@ class SchemaInspector:
 
             if skip_defaults:
                 col = cols[k]
-                default = None
+                default, casted_default = None, None
                 if col.default is not None and col.default.is_scalar:
                     default = col.default.arg
                 elif col.server_default is not None:
@@ -341,14 +341,18 @@ class SchemaInspector:
                         default = expr.text.strip('"')
                         if col.type.python_type is bool:
                             if default in ['0', '1']:
-                                default = bool(int(default))
+                                casted_default = bool(int(default))
                         if col.type.python_type is int:
-                            default = int(default)
+                            casted_default = int(default)
+                        if col.type.python_type is float:
+                            casted_default = float(default)
                     else:
-                        raise NotImplementedError('Other type of default ahhh! not handled')
+                        log.error('unsupported conversion of default value')
                 if v == default:
                     continue
                 if col.type.python_type is str and v == '':          # unsure if this is the best case
+                    continue
+                if v == casted_default:
                     continue
 
             non_default_entries[k] = v
