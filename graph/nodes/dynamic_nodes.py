@@ -33,11 +33,6 @@ class DynamicNode(BasicDBNode):
 
         return is_valid
 
-    def _update_field_style(self, field_name, is_valid):
-        widget = self.get_widget(field_name)
-        if widget:
-            widget.adjust_color(widget.get_custom_widget(), is_valid)
-
     def _validate_all_fields(self):
         all_cols = self._initial_fields + self._extra_fields
         all_data = {k: v for k, v in self.properties()['custom'].items() if k in all_cols}

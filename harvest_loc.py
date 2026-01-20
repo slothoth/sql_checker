@@ -8,4 +8,4 @@ cursor = conn.cursor()
 cursor.execute("SELECT Tag FROM LocalizedText;")
 localised = [i[0] for i in cursor.fetchall()]
 with open('resources/db_spec/LocalizedTags.json', 'w') as f:
-    json.dump(localised, f)
+    json.dump(localised, f, sort_keys=True)

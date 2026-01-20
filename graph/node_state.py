@@ -93,3 +93,6 @@ class SuggestionHub(QtCore.QObject):
 
         for dd in self._dropdowns_by_target_table.get(target_table, set()):
             dd.set_dynamic_suggestions(dynamic)
+
+    def add_custom_watch(self, target_table, widget):
+        self._dropdowns_by_target_table.setdefault(target_table, set()).add(widget)

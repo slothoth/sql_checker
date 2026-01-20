@@ -43,6 +43,10 @@ class BaseEffectNode(BasicDBNode):
 
         if name in self.get_property('arg_params') and self.graph is not None:
             self.get_property('arg_params')[name] = value
+            arg_info = self.argument_info_map[self.get_property(self.arg_setter_prop)]['Arguments'][name]
+            if arg_info.get('MinedNeeded', False):
+                if self.arg_prop_map[self.get_property(self.arg_setter_prop)][name] in ['database', 'text']:
+                    self._update_field_style(name, value != '')
 
         super().set_property(name, value, push_undo=push_undo)
         if self.can_validate and name not in {'sql_form', 'loc_sql_form', 'dict_form_list'}:      # prevents looping
@@ -122,13 +126,12 @@ class BaseEffectNode(BasicDBNode):
             # get db type and use dropdownlinedit database_arg_map
             arg_table = self.get_param_arg_table(arg)
 
-
             base_vals = db_spec.possible_vals[self.graph.property('meta')['Age']].get(arg_table, {}).get('_PK_VALS') or []
 
             self.add_custom_widget(DropDownLineEdit(parent=self.view, label=arg, name=arg, text='',
                                                     suggestions=base_vals), tab='fields')
             widget = self.get_widget(arg)
-            self.graph.suggest_hub._dropdowns_by_target_table.setdefault(arg_table, set()).add(widget)
+            self.graph.suggest_hub.add_custom_watch(arg_table, widget)
         elif prop_type == 'bool':
             self.set_bool_checkbox(arg, default_val=None, display_in_prop_bin=False)
         elif prop_type == 'int':
@@ -202,6 +205,7 @@ class BaseEffectNode(BasicDBNode):
 
     def convert_to_sql(self):
         return [], {}, ''           # sql_list, dict form, loc
+
 
 class GameEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
@@ -327,7 +331,6 @@ class GameEffectNode(BaseEffectNode):
         sql_code, dict_form_list, error_string = effect_custom_transform(custom_properties, node_id,
                                                                      sql_code, dict_form_list, error_string)
         return sql_code, dict_form_list, ''
-
 
 
 

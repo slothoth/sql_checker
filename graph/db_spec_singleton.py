@@ -129,7 +129,7 @@ class ResourceLoader:
     @staticmethod
     def _write_file(path, data):
         with open(path, 'w') as f:
-            json.dump(data, f, indent=2)
+            json.dump(data, f, indent=2, sort_keys=True)
 
     def update_node_templates(self, data):
         self.node_templates = data

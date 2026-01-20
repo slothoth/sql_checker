@@ -5,15 +5,17 @@ from graph.db_spec_singleton import ages
 from stats import gather_effects, mine_empty_effects, mine_requirements
 from schema_generator import SQLValidator
 from graph.node_controller import NodeEditorWindow
-
 # mostly just used to generate and save test data for other tests
+
+
 def test_effects_harvest():
     mine_empty_effects()
     path = f"resources/gameplay-base"
     for age_type in ages:
         engine = create_engine(f"sqlite:///{path}_{age_type}.sqlite")  # already built
         SQLValidator.engine_dict[age_type] = engine
-    gather_effects(SQLValidator.engine_dict)
+    gather_effects(SQLValidator.engine_dict, SQLValidator.metadata)
+
 
 def test_setup_all_unique_nodes(qtbot):
     window = NodeEditorWindow()
@@ -37,6 +39,7 @@ def test_setup_all_unique_nodes(qtbot):
     file_path = graph.save_dialog(current)
     if file_path:
         graph.save_session(file_path)
+
 
 def test_req_harvest():
     with open('resources/manual_assigned/CollectionObjectManualAssignment.json') as f:

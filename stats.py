@@ -3,6 +3,7 @@ import math
 from collections import defaultdict, Counter
 import sqlite3
 import pandas as pd
+from itertools import combinations
 from sqlalchemy import create_engine, text, select, Text
 
 from graph.db_spec_singleton import db_spec, attach_tables
@@ -25,7 +26,7 @@ def gather_effects(db_dict, metadata):
     collection_types = pd.read_sql("SELECT Type FROM Types WHERE Kind='KIND_COLLECTION'", db_dict['AGE_ANTIQUITY'])
     collection_types = list(collection_types['Type'])
     with open('resources/db_spec/CollectionsList.json', 'w') as f:
-        json.dump(collection_types, f, indent=2)
+        json.dump(collection_types, f, indent=2, sort_keys=True)
 
     with open('resources/manual_assigned/CollectionObjectManualAssignment.json') as f:
         manual_collection_classification = json.load(f)
@@ -97,38 +98,47 @@ def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwn
     mod_examples = process_arg_examples(mod_arg_dict)
     mod_type_map, mod_database_references, mod_undiagnosible, mod_missed_database = mine_type_arg_map(mod_examples,
                                                                                                       mod_map)
+    deal_with_defaults(mod_map, mod_type_map)
+    # get modifiers and aggregate by id
+    eff_required_args, eff_exclusionary_args = extract_argument_stats(modifier_arguments_name_df,
+                                                                                         'EffectType',
+                                                                                         'ModifierId')
+    for effect, info in mod_map.items():
+        info['Exclusionary_Arguments'] = [list(i) for i in eff_exclusionary_args[effect]]
+        for arg_name, name_info in info['Arguments'].items():
+            name_info['MinedNeeded'] = arg_name in eff_required_args[effect]
+            name_info['MinedExclusions'] = [j for i in eff_exclusionary_args[effect] if arg_name in i for j in i if j != arg_name]
+
     with open('resources/db_spec/ModifierArgumentTypes.json', 'w') as f:
-        json.dump(mod_type_map, f, indent=2, default=convert)
+        json.dump(mod_type_map, f, indent=2, default=convert, sort_keys=True)
     with open('resources/db_spec/ModifierArgumentDatabaseTypes.json', 'w') as f:
-        json.dump(mod_database_references, f, indent=2, default=convert)
+        json.dump(mod_database_references, f, indent=2, default=convert, sort_keys=True)
 
     with open('resources/unused/AllModArgValues.json', 'w') as f:
-        json.dump(mod_arg_dict, f, indent=2, default=convert)
-
-    deal_with_defaults(mod_map, mod_type_map)
+        json.dump(mod_arg_dict, f, indent=2, default=convert, sort_keys=True)
 
     with open('resources/db_spec/ModArgInfo.json', 'w') as f:
-        json.dump(mod_map, f, indent=2, default=convert)
+        json.dump(mod_map, f, indent=2, default=convert, sort_keys=True)
 
     df_effect_args.to_csv('resources/unused/ModifierEffectArguments.csv')
     df_collection_object.to_csv('resources/mined/CollectionObjectAttach.csv')
     df_collection_attach_tbl.to_csv('resources/mined/CollectionAttach.csv')
 
     with open('resources/unused/CollectionAttachMap.json', 'w') as f:
-        json.dump(collect_attach_map, f, indent=2)
+        json.dump(collect_attach_map, f, indent=2, sort_keys=True)
 
     with open('resources/db_spec/CollectionEffectMap.json', 'w') as f:
-        json.dump(collect_effect_map, f, indent=2)
+        json.dump(collect_effect_map, f, indent=2, sort_keys=True)
 
     with open('resources/db_spec/DynamicModifierMap.json', 'w') as f:
-        json.dump(dynamicModifiers, f, indent=2)
+        json.dump(dynamicModifiers, f, indent=2, sort_keys=True)
 
 
 def mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap):
 
     reqset_no_modifiers = no_modifier_reqset_harvest(db_dict)
 
-    requirement_object_mapper = map_requirement_type_objects(db_dict, manual_collection_classification,
+    requirement_object_mapper, req_args_name_df = map_requirement_type_objects(db_dict, manual_collection_classification,
                                                              TableOwnerObjectMap, mod_tables, reqset_no_modifiers)
 
     # now a simpler task. Get all possible Requirement Arguments Names, Values, Extra, Extra2 and Type
@@ -140,20 +150,31 @@ def mine_requirements(db_dict, manual_collection_classification, mod_tables, Tab
     req_examples = process_arg_examples(req_arg_dict)
     req_type_map, req_database_references, req_undiagnosible, req_missed_database = mine_type_arg_map(req_examples,
                                                                                                       req_map)
+
+    req_required_args, req_exclusionary_args = extract_argument_stats(req_args_name_df,
+                                                                                         'RequirementType',
+                                                                                         'RequirementId')
+    for effect, info in req_map.items():
+        info['Exclusionary_Arguments'] = [list(i) for i in req_exclusionary_args[effect]]
+        for arg_name, name_info in info['Arguments'].items():
+            name_info['MinedNeeded'] = arg_name in req_required_args[effect]
+            name_info['MinedExclusions'] = [j for i in req_exclusionary_args[effect] if arg_name in i
+                                            for j in i if j != arg_name]
     # we need to adjust the DefaultVal
     deal_with_defaults(req_map, req_type_map)
 
     with open('resources/db_spec/RequirementInfo.json', 'w') as f:
-        json.dump(req_map, f, indent=2, default=convert)
+        json.dump(req_map, f, indent=2, default=convert, sort_keys=True)
 
     with open('resources/db_spec/RequirementArgumentTypes.json', 'w') as f:
-        json.dump(req_type_map, f, indent=2, default=convert)
+        json.dump(req_type_map, f, indent=2, default=convert, sort_keys=True)
 
     with open('resources/db_spec/RequirementArgumentDatabaseTypes.json', 'w') as f:
-        json.dump(req_database_references, f, indent=2, default=convert)
+        json.dump(req_database_references, f, indent=2, default=convert, sort_keys=True)
 
     with open('resources/unused/GossipInfo.json', 'w') as f:
-        json.dump(gossips, f, indent=2, default=convert)
+        json.dump(gossips, f, indent=2, default=convert, sort_keys=True)
+
 
 def modifier_req_set_harvest(db_dict, mod_tables):
     total_subject_req_df, subject_req_combined_df, owner_req_combined_df, total_owner_req_df = None, None, None, None
@@ -233,7 +254,7 @@ def make_req_arg_dict(reqset_no_modifiers):
 
     req_arg_dict = dict(req_arg_dict)
     with open('resources/unused/AllReqArgValues.json', 'w') as f:
-        json.dump(req_arg_dict, f, indent=2, default=convert)
+        json.dump(req_arg_dict, f, indent=2, default=convert, sort_keys=True)
     return req_arg_dict
 
 
@@ -365,7 +386,8 @@ def map_requirement_type_objects(db_dict, manual_collection_classification, Tabl
     req_all_types = None
     for db, engine in db_dict.items():
         df = pd.read_sql(
-            f"""SELECT RequirementId, RequirementType FROM Requirements r;""",
+            f"""SELECT r.RequirementId, RequirementType, Name FROM Requirements r
+                    LEFT OUTER JOIN RequirementArguments ra ON ra.RequirementId = r.RequirementId """,
             engine
         )
         req_all_types = combine_db_df(req_all_types, df)
@@ -385,10 +407,10 @@ def map_requirement_type_objects(db_dict, manual_collection_classification, Tabl
                 object_requirement_mapper[my_obj] = []
             object_requirement_mapper[my_obj].append(req)
     with open('resources/unused/RequirementObjectMap.json', 'w') as f:
-        json.dump(requirement_object_mapper, f, indent=2)
+        json.dump(requirement_object_mapper, f, indent=2, sort_keys=True)
     with open('resources/unused/ObjectRequirementMap.json', 'w') as f:
-        json.dump(object_requirement_mapper, f, indent=2)
-    return requirement_object_mapper
+        json.dump(object_requirement_mapper, f, indent=2, sort_keys=True)
+    return requirement_object_mapper, req_all_types
 
 def derive_owner_attach_modifier_reqset(db_dict, both_owners):
     owner_mod_attach_table = None
@@ -665,7 +687,7 @@ def mine_empty_effects():
             tables_data[table_name] = df.to_dict('records')
 
     with open('resources/mined/PreBuiltData.json', 'w') as f:
-        json.dump(tables_data, f, indent=2)
+        json.dump(tables_data, f, indent=2, sort_keys=True)
 
 
 def is_nan(x):
@@ -859,7 +881,7 @@ def deal_with_defaults(info_map, type_map):
                                 info_map[k]['Arguments'][key]['DefaultValue'] = casted_val
                     else:
                         log.warning(f'oh no, when converting arg {key} default value {default_val} to correct type, had '
-                              f'unhandled argument {arg_type}, skipping')
+                                    f'unhandled argument {arg_type}, skipping')
     for k, key in delete_refs:
         del info_map[k]['Arguments'][key]
 
@@ -951,3 +973,63 @@ def update_possible_vals_spec(db_dict, metadata):
 
     db_spec.update_possible_vals(db_spec.possible_vals)
     db_spec.update_all_vals(db_spec.all_possible_vals)
+
+
+def extract_argument_stats(agg_df, game_effect, effect_id_name):
+    # get all modifierIds and group by id
+    counts = agg_df.groupby(effect_id_name)[game_effect].nunique()
+    bad = counts[counts != 1]           # 0 for effects, 3 for reqs, likely due to age shift.
+    # ensures we can use first agg
+
+    modifier_id_agg = agg_df[[effect_id_name, game_effect, 'Name']].groupby(
+        effect_id_name, as_index=True).agg({game_effect: 'first', 'Name': frozenset})
+
+    required = {}
+
+    for effect, df in modifier_id_agg.groupby(game_effect):
+        sets = list(map(set, df['Name']))
+        required[effect] = set.intersection(*sets)
+
+    exclusionary = {}
+
+    for effect, df in modifier_id_agg.groupby(game_effect):
+        sets = list(map(set, df['Name']))
+        all_names = set.union(*sets)
+
+        pairs = []
+        for a, b in combinations(all_names, 2):
+            covers_all = all((a in s) or (b in s) for s in sets)
+            never_together = all(not ({a, b} <= s) for s in sets)
+
+            if covers_all and never_together:
+                pairs.append({a, b})
+
+        exclusionary[effect] = pairs
+
+    exclusion_stats = {}
+
+    for effect, df in modifier_id_agg.groupby(game_effect):
+        sets = list(map(set, df['Name']))
+        total = len(sets)
+        all_names = set.union(*sets)
+
+        stats = {}
+        for a, b in combinations(all_names, 2):
+            only_a = sum((a in s) and (b not in s) for s in sets)
+            only_b = sum((b in s) and (a not in s) for s in sets)
+            both = sum((a in s) and (b in s) for s in sets)
+            neither = total - only_a - only_b - both
+
+            stats[(a, b)] = {
+                'total': total,
+                'only_a': only_a,
+                'only_b': only_b,
+                'both': both,
+                'neither': neither,
+                'coverage': 1 - neither / total,
+                'exclusivity': 1 - both / total,
+            }
+
+        exclusion_stats[effect] = stats
+
+    return required, exclusionary

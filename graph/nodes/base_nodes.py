@@ -96,12 +96,6 @@ class BasicDBNode(BaseNode):
         text_widget = self.get_widget(col)
         text_widget.get_custom_widget().setMinimumHeight(24)
 
-    def migrate_extra_params(self):
-        return
-
-    def restore_extra_params(self, migrated_properties):
-        return
-
     def update_model(self):
         """
         Update the node model from view. Ensure we dont update hidden properties
@@ -128,11 +122,22 @@ class BasicDBNode(BaseNode):
             self.set_color(*self._default_color)        # Restore original color
             self.test_error = False
 
+    def _update_field_style(self, field_name, is_valid):
+        widget = self.get_widget(field_name)
+        if widget:
+            widget.adjust_color(widget.get_custom_widget(), is_valid)
+
     def get_properties_to_sql(self):
         custom_properties = {k: v for k, v in self.properties()['custom'].items() if k != 'sql_form'}
         custom_properties = SQLValidator.normalize_node_bools(custom_properties, self.get_property('table_name'))
         custom_properties = {k: v for k, v in custom_properties.items() if v is not None}
         return custom_properties
+
+    def migrate_extra_params(self):
+        return
+
+    def restore_extra_params(self, migrated_properties):
+        return
 
 
 def backlink_port_get(original_table, connect_table):
