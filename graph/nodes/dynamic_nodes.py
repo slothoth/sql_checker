@@ -187,6 +187,10 @@ def create_table_node_class(table_name, graph):
                 self.add_custom_widget(custom_widget,
                                        widget_type=NodePropWidgetEnum.QDOUBLESPIN_BOX.value, tab='fields')
             elif col_poss_vals is not None:
+                if 'vals' in col_poss_vals:
+                    col_poss_vals = col_poss_vals['vals']
+                if default_val is None:
+                    default_val = ''
                 if col in self._extra_fields:
                     lazy_params[col] = default_val
                     self.create_property(col, default_val, widget_type=NodePropWidgetEnum.QLINE_EDIT.value)

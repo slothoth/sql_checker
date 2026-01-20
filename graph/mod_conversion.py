@@ -29,24 +29,138 @@ def build_imported_mod(mod_folder_path, graph):
 
     modinfo_dict = parse_modinfo(modinfo_list[0], mod_folder_path)
     sql_info_dict = modinfo_into_jobs(modinfo_dict)
-    possible_workloads = retry_file_permutations(modinfo_dict)
-    mod_set = set()
-    for crit_name, crit_info in modinfo_dict['criteria'].items():
-        for crit_type, crit_list in crit_info.items():
-            if 'Mods' in crit_type:
-                for mod in crit_list:
-                    mod_set.add(mod)
-
+    user_knobs = extract_user_controls(modinfo_dict)
     # make a decision on which ORM to build
-    age, mod_dict = get_combo_value(graph.viewer(), ages, list(mod_set))
-    if age is None:
-        return
-    age_dict = {i: False if i != age else True for i in ages }
-    mod_dict.update(age_dict)
-    file_list = get_files(possible_workloads, mod_dict)
-    orm_list, update_delete_list = mod_info_into_orm(sql_info_dict, file_list, age=age)
+    age, mods_enabled, config_params_enabled = get_combo_value(graph.viewer(), user_knobs)
+    if age is None:     # user clicked x/decline rather than accept
+        return False
+    user_switches = [k for k, v in mods_enabled.items() if v]
+    user_switches.append(age)
+    file_list = resolve_files(sql_info_dict, user_switches, config_params_enabled)      # TODO matts ireland missed file in sql_info_dict
+    orm_list, update_delete_list, bad_instances = mod_info_into_orm(sql_info_dict, file_list, age=age)
     build_graph_from_orm(graph, orm_list, update_delete_list, age)
     return True
+
+
+def extract_user_controls(data):
+    criteria = data.get('criteria', {})
+
+    # 1. Initialize buckets for our controls
+    # Use sets to automatically remove duplicates
+    ages_ = set()
+    mods = set()
+    configs = {}  # Key = Config ID, Value = Set of possible options
+
+    # 2. Scan every criteria block
+    for crit_name, rules in criteria.items():
+
+        # --- Handle Ages ---
+        if "AgeOn" in rules:
+            # Add every mentioned age to the set
+            for age in rules["AgeOn"]:
+                ages_.add(age)
+
+        # --- Handle Mods ---
+        if "ModsOn" in rules:
+            # Add every mentioned mod to the set
+            for mod in rules["ModsOn"]:
+                mods.add(mod)
+
+        # --- Handle Configuration/Game Settings ---
+        if "ConfigurationValueMatches" in rules:
+            # The structure is usually {"Game": ["ConfigKey", "ConfigValue"]}
+            for context, val_list in rules["ConfigurationValueMatches"].items():
+                # val_list looks like ["EOH-SwitchType", "EOH_SWITCH_TYPE_ALL_AI"]
+                if len(val_list) >= 2:
+                    config_key = val_list[0]
+                    config_val = val_list[1]
+
+                    if config_key not in configs:
+                        configs[config_key] = set()
+                    configs[config_key].add(config_val)
+
+    # 3. Format the output for the user
+    return {
+        "switches": {
+            "Ages": sorted(list(ages)),
+            "Mods": sorted(list(mods))
+        },
+        "configurations": {
+            k: sorted(list(v)) for k, v in configs.items()
+        }
+    }
+
+
+def resolve_files(data, active_switches, active_configs):
+    """
+    Calculates the final file list based on user selections.
+
+    Args:
+        data (dict): The main data dictionary containing 'criteria' and 'action_groups'.
+        active_switches (set): A set of strings for all enabled booleans (Ages, Mods).
+                               Example: {'AGE_ANTIQUITY', 'asia-wonders'}
+        active_configs (dict): A dict of selected values for configurations.
+                               Example: {'EOH-SwitchType': 'EOH_SWITCH_TYPE_ALL_AI'}
+
+    Returns:
+        list: A sorted list of unique filepaths to load.
+    """
+    criteria_def = data.get('criteria', {})
+    actions = data.get('action_groups', {})
+
+    loaded_files = set()
+
+    # Iterate over every possible action group
+    for action_name, action in actions.items():
+        criteria_name = action.get('criteria')
+
+        # If there is no criteria (or it's "always"), we load it.
+        # (Assuming "always" is a criteria name that implies true, or empty criteria implies true)
+        if not criteria_name or criteria_name not in criteria_def:
+            # Fallback: if 'always' criteria is defined in dictionary, check it,
+            # otherwise assume safe to load if criteria key is missing.
+            # Based on your data, 'always' is an empty dict {}, which implies True.
+            pass
+
+        rules = criteria_def.get(criteria_name, {})
+
+        # We start assuming the criteria is Met (True), and look for a reason to fail it (False)
+        is_met = True
+
+        # 1. Check Age Requirements
+        if "AgeOn" in rules:
+            required_ages = rules["AgeOn"]  # e.g. ["AGE_ANTIQUITY"]
+            # Logic: At least ONE of the required ages must be in the active switches
+            if not any(age in active_switches for age in required_ages):
+                is_met = False
+
+        # 2. Check Mod Requirements
+        if is_met and "ModsOn" in rules:
+            required_mods = rules["ModsOn"]
+            # Logic: At least ONE of the required mods must be active
+            if not any(mod in active_switches for mod in required_mods):
+                is_met = False
+
+        # 3. Check Configuration Requirements
+        if is_met and "ConfigurationValueMatches" in rules:
+            # Structure: {"Game": ["ConfigKey", "TargetValue"]}
+            for context, config_rule in rules["ConfigurationValueMatches"].items():
+                if len(config_rule) >= 2:
+                    cfg_key = config_rule[0]
+                    target_val = config_rule[1]
+
+                    # Logic: The user's selected value must match the target value
+                    user_val = active_configs.get(cfg_key)
+                    if user_val != target_val:
+                        is_met = False
+                        break
+
+        # If all checks passed, add the files
+        if is_met:
+            # Use .update to add multiple files at once
+            loaded_files.update(action.get("filepaths", []))
+
+    return sorted(list(loaded_files))
 
 
 def parse_modinfo(modinfo_path, mod_folder_path):
@@ -59,31 +173,43 @@ def parse_modinfo(modinfo_path, mod_folder_path):
     for criteria_info in criterias:
         criteria_dict[criteria_info['@id']] = {}
         specific_criteria = criteria_dict[criteria_info['@id']]
+        any_check = '@any' in criteria_info and criteria_info['@any'] == 'true'
         for key, val in criteria_info.items():
             if key == '@id':
                 continue
             if 'ModInUse' in key:
                 if isinstance(val, dict):
                     if val.get('@inverse') == '1':
-                        if 'ModsOff' in specific_criteria:
-                            specific_criteria['ModsOff'].append(val['#text'])
-                        else:
-                            specific_criteria['ModsOff'] = [val['#text']]
+                        specific_criteria.setdefault('ModsOff', []).extend(val['#text'])
                     else:
                         add_mods_on(specific_criteria, val['#text'])
                 elif isinstance(val, str):
                     add_mods_on(specific_criteria, val)
                 else:
-                    raise Exception('Unknown type for xml handler')
+                    raise Exception(f'Unknown type for xml handler {val} for mod {mod_id}')
 
-            if 'AgeInUse' in key:
+            elif 'AgeInUse' in key:
                 if isinstance(val, dict):
                     log.warning('skipping xml dict while parsing criteria as Age in Use but is dict')
                 elif isinstance(val, str):
-                    if 'AgeOn' in specific_criteria:
-                        specific_criteria['AgeOn'].append(val)
-                    else:
-                        specific_criteria['AgeOn'] = [val]
+                    specific_criteria.setdefault('AgeOn', []).append(val)
+                elif isinstance(val, list):
+                    specific_criteria.setdefault('AgeOn', []).extend(val)
+                else:
+                    raise Exception(f'Unknown type for xml handler {val} for mod {mod_id}')
+            elif 'ConfigurationValueMatch' in key:
+                if isinstance(val, dict):
+                    config_group = val['{ModInfo}Group']
+                    config_id = val['{ModInfo}ConfigurationId']
+                    config_value = val['{ModInfo}Value']
+                    config_tuple = (config_id, config_value)
+                    specific_criteria.setdefault('ConfigurationValueMatches', {}).setdefault(config_group, []).extend(
+                        config_tuple)
+
+            elif 'AlwaysMet' in key:
+                continue
+            else:
+                log.critical(f'Trying to parse modinfo of {mod_id} and met new criteria! {key}. skipping but this bad')
 
     # criterias
     # do we handle dependencies?
@@ -135,10 +261,12 @@ def modinfo_into_jobs(mod_info_dict):
                     statements, xml_errors = convert_xml_to_sql(db_file_path)
                     if isinstance(statements, str):
                         log.info(f'{db_file_path} was an empty file. Skipping it.')
+                        mod_info_dict['sql'][short_name] = []
                         continue
                     mod_info_dict['sql'][short_name], xml_errors = convert_xml_to_sql(db_file_path)
                 except ET.ParseError as e:
                     log.error(f'could not parse file {db_file_path}.. skipping')
+                    mod_info_dict['sql'][short_name] = []
 
             elif db_file_path.endswith('.sql'):
                 try:
@@ -156,23 +284,24 @@ def modinfo_into_jobs(mod_info_dict):
 
 
 def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY'):
-    orm_list, update_delete_list = [], []
+    orm_list, update_delete_list, bad_instances_list = [], [], []
     for file_path in file_path_list:
         short_path = file_path.replace(f'{sql_info_dict["base_folder"]}/', '')
         sql_commands = sql_info_dict['sql'][short_path]
         for sql_text in sql_commands:
             try:
-                instance_list, list_type = create_instances_from_sql(sql_text, age)
+                instance_list, bad_instances, list_type = create_instances_from_sql(sql_text, age)
                 if list_type is None:
                     continue
                 elif list_type == 'insert':
                     orm_list.extend(instance_list)
                 elif list_type == 'update_delete':
                     update_delete_list.append(instance_list)
+                bad_instances_list.extend(bad_instances)
             except ParseError as e:
                 log.error(f'while importing mod could not parse sql file text from {short_path}: {e}')
 
-    return orm_list, update_delete_list
+    return orm_list, update_delete_list, bad_instances_list
 
 # technically we cant get the value of the child port with just fk_index. Consider
 # parent Types.Type and child DynamicModifiers. All 3 columns in DynamicModifiers could link to Types.
@@ -262,7 +391,7 @@ def retry_file_permutations(data):
     check_keys = sorted(check_keys)
     states = []
     for bits in product([False, True], repeat=len(check_keys)):
-        states.append(dict(zip(check_keys, bits)))
+        states.append(dict(zip(check_keys, bits)))                  # china echoes 2 million states?, 2'097'152
     results = {}
     for state in states:
         loaded = set()
@@ -489,7 +618,7 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
     for sql_command, change_strings in update_delete_list:
         node = graph.create_node('db.where.WhereNode')
         node.sql_output_triggerable = False
-        node.set_property('sql', sql_command)
+        node.set_property('sql_form', sql_command)
         node.set_property('changes', change_strings)
         node.sql_output_triggerable = True
     graph.blockSignals(False)

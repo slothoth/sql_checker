@@ -5,9 +5,13 @@ from threading import Lock
 import os
 import sys
 from pathlib import Path
+import glob
+import re
 
 if sys.platform == 'win32':
     import winreg
+
+from graph.no_context_widgets import Toast
 
 import logging
 
@@ -39,6 +43,7 @@ class ResourceLoader:
     patch_change = False
     _files = {}
     metadata = {}
+    dlc_mod_ids = []
 
     def __new__(cls):
         if not cls._instance:
@@ -54,6 +59,7 @@ class ResourceLoader:
             'arg_param_map': self.resource_path('arg_param_map.json'),
             'collection_effect_map': self.resource_path('CollectionEffectMap.json'),
             'collections_list': self.resource_path('CollectionsList.json'),
+            'dlc_mod_ids': self.resource_path('DLCModIds.json'),
             'dynamic_mod_info': self.resource_path('DynamicModifierMap.json'),
             'localized_tags': self.resource_path('LocalizedTags.json'),
             'metadata': self.resource_path('metadata.json'),
@@ -86,12 +92,14 @@ class ResourceLoader:
             self.patch_time = self.metadata['patch_time']
         new_patch_occurred, latest = self.check_firaxis_patched()
         if new_patch_occurred:
-            log.info('new patch! rebuild all files')                        # TODO show toast for user
+            log.info('new patch! rebuild all files')        # cant toast as dont have application yet
             self.update_database_spec()
             self.modifier_argument_info = self._read_file(self._files['modifier_argument_info'])
             self.requirement_argument_info = self._read_file(self._files['requirement_argument_info'])
             self.metadata['patch_time'] = latest
             self._write_file(self._files['metadata'], self.metadata)
+        mod_ids = get_dlc_mod_ids(self.civ_install)
+        self.update_mod_ids(mod_ids)
         self.node_templates = self._read_file(self._files['node_templates'])
         self.possible_vals = self._read_file(self._files['possible_vals'])
         self.all_possible_vals = self._read_file(self._files['all_possible_vals'])
@@ -111,6 +119,7 @@ class ResourceLoader:
         [self.modifier_argument_list.update(list(v.keys())) for k, v in self.mod_type_arg_map.items()]
         self.req_argument_list = set()
         [self.req_argument_list.update(list(v.keys())) for k, v in self.req_type_arg_map.items()]
+        self.dlc_mod_ids = self._read_file(self._files['dlc_mod_ids'])
 
     @staticmethod
     def _read_file(path):
@@ -134,6 +143,9 @@ class ResourceLoader:
         self.all_possible_vals = data
         self._write_file(self._files['all_possible_vals'], data)
 
+    def update_mod_ids(self, data):
+        self.dlc_mod_ids = data
+        self._write_file(self._files['dlc_mod_ids'], data)
 
     def update_civ_config(self,data):
         self.civ_config = data
@@ -173,15 +185,17 @@ class ResourceLoader:
         return self.patch_change, latest
 
     def update_database_spec(self):
+        mod_ids = get_dlc_mod_ids(self.civ_install)
+        self.update_mod_ids(mod_ids)
         database_path = 'gameplay-copy-cached-base-content.sqlite'
         full_path = f"resources/{database_path}"
         db = BaseDB(full_path)
         db.setup_table_infos()
         db.fix_firaxis_missing_bools()
-        db.fix_firaxis_missing_fks()
-        self.update_node_templates(db.table_data)        # a concern is the
+        db.fix_firaxis_missing_fks()                # a concern is these rely on being built by SQLvalidator
+        self.update_node_templates(db.table_data)   # which comes later. should be fine if we ship these db tho
         possible_vals, all_possible_vals = db.dump_unique_pks({'gameplay-base_AGE_ANTIQUITY.sqlite': 'AGE_ANTIQUITY',
-                                                            'gameplay-base_AGE_EXPLORATION.sqlite': 'AGE_EXPLORATION',
+                                                               'gameplay-base_AGE_EXPLORATION.sqlite': 'AGE_EXPLORATION',
                                                                'gameplay-base_AGE_MODERN.sqlite': 'AGE_MODERN'})
         self.update_possible_vals(possible_vals)
         self.update_all_vals(all_possible_vals)
@@ -551,6 +565,19 @@ def ensure_text_column(conn, table, col):
     vals = cur.fetchall()
     all_string = all(isinstance(i[0], str) for i in vals)
     return all_string
+
+
+def get_dlc_mod_ids(civ_install):
+    dlc_modinfo_fp_list = [f for f in glob.glob(f"{civ_install}/**/*.modinfo*", recursive=True)]
+    dlc_mod_ids = []
+    for filepath in dlc_modinfo_fp_list:
+        with open(filepath, 'r', encoding='utf-8', errors='replace') as f:
+            text = f.read()
+        match = re.search(r'<Mod id="([^"]+)"', text)
+        if match:
+            uuid = match.group(1)
+            dlc_mod_ids.append(uuid)
+    return dlc_mod_ids
 
 
 db_spec = ResourceLoader()

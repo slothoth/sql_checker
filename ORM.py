@@ -39,17 +39,17 @@ def create_instances_from_sql(sql_text, age):
             changed_entries = update_delete_transform(cleaned_sql, parsed, age)
         except (TypeError, KeyError, sqlite3.Warning, ValueError) as e:
             changed_entries = []
-        return (cleaned_sql, changed_entries), 'update_delete'
+        return (cleaned_sql, changed_entries), [], 'update_delete'
 
     if not isinstance(parsed, exp.Insert):
         log.info(f"Weird SQL that isnt INSERT, UPDATE or DELETE, treating like update delete node: {cleaned_sql}")
-        return (cleaned_sql, []), 'update_delete'         # TODO same as other weird sql
+        return (cleaned_sql, []), [], 'update_delete'         # TODO same as other weird sql
 
     table_nodes = list(parsed.find_all(exp.Table))
     if len(table_nodes) != 1:               # TODO currently just sending other weird sql to update node, make new holder
         log.info(f"statement had multiple Table mentions. this is probably a INSERT:SELECT. "
                  f"treating like update delete: {sql_text}")
-        return (cleaned_sql, []), 'update_delete'
+        return (cleaned_sql, []), [], 'update_delete'
 
     table_name = table_nodes[0].name
 
@@ -61,7 +61,7 @@ def create_instances_from_sql(sql_text, age):
 
     sql_columns = [col.name for col in parsed.this.expressions]
 
-    instance_list = []
+    instance_list, bad_instances = [], []
     for value_list in parsed.expression.expressions:
         sql_values = []
         for val in value_list.expressions:
@@ -73,10 +73,16 @@ def create_instances_from_sql(sql_text, age):
                 sql_values.append(val.name)
 
         colmap = {c.key.lower(): c.key for c in TargetClass.__table__.columns}
-        kwargs = {colmap[k.lower()]: v for k, v in zip(sql_columns, sql_values)}
+        missed_cols = [k for k in sql_columns if colmap.get(k.lower()) is None]
+        col_dict = zip(sql_columns, sql_values)
+        if not all(colmap.get(k.lower()) is not None for k in sql_columns):
+            log.error(f"when translating mod, found bad values {missed_cols} on entry: {col_dict}")
+            bad_instances.append({'missed_cols': missed_cols, 'entry': col_dict})
+            continue
+        kwargs = {colmap[k.lower()]: v for k, v in col_dict}
         instance_list.append(TargetClass(**kwargs))
 
-    return instance_list, 'insert'
+    return instance_list, bad_instances, 'insert'
 
 
 def clean_sql(sql_text):

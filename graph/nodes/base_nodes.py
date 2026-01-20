@@ -23,9 +23,9 @@ class BasicDBNode(BaseNode):
         self.test_error = False
         self.can_validate = False
         self._default_color = self.color()
-        self.create_property('sql_form', '', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
-        self.create_property('loc_sql_form', '', widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
-        self.create_property('dict_sql', {}, widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
+        self.create_property('sql_form', '') # skipping widget type, as causes weirdness when editing other node vals
+        self.create_property('loc_sql_form', '')    # in propBin Widget
+        self.create_property('dict_sql', {})        # would be , widget_type=NodePropWidgetEnum.QTEXT_EDIT.value
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
         connection_spec = db_spec.node_templates.get(connect_table, {})

@@ -1,7 +1,8 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QCheckBox, QLabel, QWidget, QApplication)
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QCheckBox, QLabel, QGridLayout)
 from graph.db_node_support import sync_node_options_all, set_nodes_visible_by_type
 from schema_generator import SQLValidator
+from graph.db_spec_singleton import db_spec
 
 
 class MetaStore:
@@ -100,86 +101,52 @@ def open_metadata_dialog(graph, parent=None):
 
 
 class ComboDialog(QDialog):
-    def __init__(self, age_list, mod_list, parent=None):
+    def __init__(self, parent=None, user_knobs={}):
         super().__init__(parent)
         layout = QVBoxLayout(self)
         age_combo = QComboBox(self)
-        age_combo.addItems(age_list)
+        age_combo.addItems(user_knobs.get('switches', {}).get('Ages', []))
         layout.addWidget(age_combo)
+        self.age = age_combo
+        if len(user_knobs.get('configurations', {})) > 0:
+            log_label = QLabel("ConfigurationParams")
+            layout.addWidget(log_label)
+
+        two_column_grid = QGridLayout()
+        self.config_values = {}
+        for idx, (configId, configValueList) in enumerate(user_knobs.get('configurations', {}).items()):
+            config_combo_box = QComboBox(self)
+            config_combo_box.addItems(configValueList)
+            two_column_grid.addWidget(QLabel(configId), idx, 0)
+            two_column_grid.addWidget(config_combo_box, idx, 1)
+            self.config_values[configId] = config_combo_box
+        layout.addLayout(two_column_grid)
+
         buttons = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
             parent=self
         )
         layout.addWidget(buttons)
 
+        two_col_checkbox = QGridLayout()
         self.mod_items = []
-        for mod in mod_list:
-            mod_tick = QCheckBox(self)
-            mod_tick.setText(mod)
-            layout.addWidget(mod_tick)
-            self.mod_items.append(mod_tick)
-
+        content = user_knobs.get('switches', {}).get('Mods', [])
+        dlc = [i for i in content if i in db_spec.dlc_mod_ids]
+        mods = [i for i in content if i not in db_spec.dlc_mod_ids]
+        for col, id_list in enumerate((dlc, mods)):
+            for idx, mod in enumerate(id_list):
+                mod_tick = QCheckBox(self)
+                mod_tick.setText(mod)
+                two_col_checkbox.addWidget(mod_tick, idx, col)
+                self.mod_items.append(mod_tick)
+        layout.addLayout(two_col_checkbox)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        self.age = age_combo
 
 
-class Toast(QWidget):
-    def __init__(self, message, parent=None, duration=2000):
-        super().__init__(parent)
-
-        self.setWindowFlags(
-            QtCore.Qt.Tool |
-            QtCore.Qt.FramelessWindowHint |
-            QtCore.Qt.WindowStaysOnTopHint
-        )
-        self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
-        self.setAttribute(QtCore.Qt.WA_ShowWithoutActivating)
-
-        label = QLabel(message)
-        label.setStyleSheet("""
-            QLabel {
-                color: white;
-                background-color: rgba(40, 40, 40, 220);
-                padding: 10px 14px;
-                border-radius: 6px;
-            }
-        """)
-        label.setFont(QtGui.QFont("Arial", 10))
-
-        layout = QVBoxLayout(self)
-        layout.addWidget(label)
-        layout.setContentsMargins(0, 0, 0, 0)
-
-        self.adjustSize()
-        self.setWindowOpacity(0.0)
-
-        self.anim = QtCore.QPropertyAnimation(self, b"windowOpacity")
-        self.anim.setDuration(250)
-        self.anim.setStartValue(0.0)
-        self.anim.setEndValue(1.0)
-        self.anim.start()
-
-        QtCore.QTimer.singleShot(duration, self.fade_out)
-
-    def fade_out(self):
-        self.anim = QtCore.QPropertyAnimation(self, b"windowOpacity")
-        self.anim.setDuration(300)
-        self.anim.setStartValue(1.0)
-        self.anim.setEndValue(0.0)
-        self.anim.finished.connect(self.close)
-        self.anim.start()
-
-    def show_at_bottom_right(self, margin=20):
-        screen = QApplication.primaryScreen().availableGeometry()
-        x = screen.right() - self.width() - margin
-        y = screen.bottom() - self.height() - margin
-        self.move(x, y)
-        self.show()
-
-
-def get_combo_value(parent, age_list, mod_list):
-    dlg = ComboDialog(age_list, mod_list, parent)
+def get_combo_value(parent, user_knobs):
+    dlg = ComboDialog(parent, user_knobs)
     if dlg.exec() == QDialog.Accepted:
-        return dlg.age.currentText(), {i.text(): i.isChecked() for i in dlg.mod_items}
-    return None, None
+        return (dlg.age.currentText(), {i.text(): i.isChecked() for i in dlg.mod_items},
+                {k: v.currentText() for k, v in dlg.config_values.items()})
+    return None, None, None

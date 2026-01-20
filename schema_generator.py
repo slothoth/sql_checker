@@ -17,8 +17,6 @@ from sqlalchemy.sql.elements import TextClause, ClauseElement
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects import sqlite
 
-import sqlglot
-
 from model import query_mod_db, organise_entries, load_files, make_hash
 from graph.db_spec_singleton import db_spec, ages
 from stats import gather_effects
@@ -201,7 +199,7 @@ class SchemaInspector:
             all_data: Optional dictionary of all field values (for context-dependent validation)
 
         Returns:
-            tuple: (is_valid: bool, error_message: str or None)     TODO currently returning error if any val in insert fails
+            tuple: (is_valid: bool, error_message: str or None)
         """  # not just itself
         if all_data is None:
             all_data = {}
@@ -213,7 +211,7 @@ class SchemaInspector:
         data.update(all_data)  # Merge with all_data for context
         data[field_name] = field_value  # Ensure our field value takes precedence
 
-        # Remove empty string values from all_data for cleaner validation  # TODO remove the '' as sometimes valid, but need better solution
+        # Remove empty string values from all_data for cleaner validation
         cleaned_data = {k: (None if v == '' else v) for k, v in data.items()
                         if k == field_name or v is not None or v == ''}
         # deal with checkbox bools
@@ -318,7 +316,7 @@ class SchemaInspector:
     def state_validation_mod_setup(self, age):               # same but for mods
         database_entries = query_mod_db(age=age)
         modded_short, modded_files, dlc, dlc_files = organise_entries(database_entries)
-        # if mod setup is different, so should we we need to reset db
+        # if mod setup is different, so should we need to reset db
         database_entries = query_mod_db(age=age)
         modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
         engine = self.engine_dict[age]
@@ -444,7 +442,6 @@ class SchemaInspector:
             pks = self.pk_map[origin_table]
             port_output = pks[0]
             self.port_color_map['output'][origin_table][port_output] = color
-
 
     @staticmethod
     def make_base_db(db_path):

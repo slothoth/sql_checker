@@ -3,10 +3,25 @@ from collections import defaultdict
 import os
 
 import graph.windows
-def new_combo_value(parent, age_list, mod_list):            # TODO override to stop me havng to choose age, dont work
-    return 'AGE_ANTIQUITY', {}
+def new_combo_value(parent, age_list):            # TODO override to stop me havng to choose age, dont work
+    return 'AGE_ANTIQUITY', {}, {}
 
 graph.windows.get_combo_value = new_combo_value
+
+import graph.mod_conversion
+from ORM import get_table_and_key_vals
+mods = defaultdict(dict)
+integer_mod = 0
+
+def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
+    for count, orm_instance in enumerate(orm_list):
+        table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
+        if table_name in mods[integer_mod]:
+            mods[integer_mod][table_name] += 1
+        else:
+            mods[integer_mod][table_name] = 1
+
+graph.mod_conversion.build_graph_from_orm = build_graph_from_orm
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
@@ -20,7 +35,9 @@ from utils import check_test_against_expected_sql, save
 def test_all_table_nodes(qtbot):            # all nodes buildable, and dont crash out
     window = NodeEditorWindow()
     qtbot.addWidget(window)
-    for i in window.graph.registered_nodes():
+    for idx, i in enumerate(window.graph.registered_nodes()):
+        if idx in [50, 100, 150, 200, 250, 300, 350, 400, 450]:
+            window.graph.clear_session()
         if i == 'nodeGraphQt.nodes.BackdropNode':
             continue
         window.graph.create_node(i)
@@ -76,7 +93,7 @@ def test_all_req_args(qtbot):
 
 
 def test_against_all_mods(qtbot):
-    return
+    # return
     window = NodeEditorWindow()
     qtbot.addWidget(window)
     qtbot.waitExposed(window)
@@ -85,7 +102,9 @@ def test_against_all_mods(qtbot):
     local_mods = [f'{local_folder}/{i}' for i in os.listdir(local_folder)]
     workshop_mods = [f'{db_spec.workshop}/{i}' for i in os.listdir(db_spec.workshop)]
     hit_mods = []
-    for idx, workshop_mod in enumerate(workshop_mods):
+    global integer_mod
+    for idx, workshop_mod in enumerate(workshop_mods[-1:]):
+        integer_mod += 1
         mod_info_found = build_imported_mod(workshop_mod, window.graph)
         qtbot.wait(1)
         window.graph.clear_session()
@@ -94,7 +113,7 @@ def test_against_all_mods(qtbot):
         with open('test.log', 'w') as f:
             f.writelines([i + '\n' for i in hit_mods])
 
-    for local_mod in local_mods:
+    for idx, local_mod in enumerate(local_mods):
         mod_info_found = build_imported_mod(local_mod, window.graph)
         qtbot.wait(1)
         window.graph.clear_session()
@@ -102,6 +121,10 @@ def test_against_all_mods(qtbot):
         hit_mods.append(local_mod)
         with open('test.log', 'w') as f:
             f.writelines(hit_mods)
+
+
+# sizes = [(k, v) for k, v in Counter(uh).items()]
+# sizes.sort(key=lambda x: x[1], reverse=True)
 
 
 def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up

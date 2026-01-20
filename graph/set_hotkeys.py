@@ -10,7 +10,7 @@ from schema_generator import check_valid_sql_against_db
 from graph.db_spec_singleton import db_spec
 from graph.nodes.effect_nodes import BaseEffectNode
 from graph.mod_conversion import build_imported_mod, extract_state_test, push_to_log, error_node_tracker
-from graph.windows import Toast
+from graph.no_context_widgets import Toast
 
 # This file exists because the convenience method for doing hotkeys dies in packaged executables
 
@@ -127,7 +127,6 @@ def save_session(graph):
     """
     Prompts a file save dialog to serialize a session if required.
     """
-    from graph.windows import Toast
     current = graph.current_session()
     if current:
         # we should format any custom nodes extra params
@@ -276,7 +275,6 @@ def expand_group_node(graph):
     """
     Expand selected group node.
     """
-    from graph.windows import Toast
     selected_nodes = graph.selected_nodes()
     if not selected_nodes:
         t = Toast('Please select a "GroupNode" to expand.')
@@ -486,7 +484,6 @@ def save_session_to_mod(graph, parent=None):
     Saves the session, converts to SQL, and packages into a new folder with a template .modinfo
     with a unique uuid? For this i assume we will need to
     """
-    from graph.windows import Toast
     current = graph.current_session()
     if not current:
         current = 'resources/graph.json'
@@ -533,7 +530,7 @@ def import_mod(graph):
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
     if path is not None:
         mod_info_found = build_imported_mod(path, graph)
-        if mod_info_found is not None:
+        if mod_info_found is not None and mod_info_found:
             layout_graph_down(graph)
             graph.auto_layout_nodes()           # layout centre
             graph.select_all()
