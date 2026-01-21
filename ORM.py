@@ -32,6 +32,8 @@ for table in SQLValidator.metadata.tables.values():
 
 def create_instances_from_sql(sql_text, age):
     cleaned_sql = clean_sql(sql_text)
+    if 'PRAGMA foreign_keys' in cleaned_sql:
+        return ([], []), [sql_text], 'pragma_discard'
     parsed = sqlglot.parse_one(cleaned_sql, dialect="sqlite")
 
     if isinstance(parsed, (exp.Update, exp.Delete)):
@@ -43,10 +45,10 @@ def create_instances_from_sql(sql_text, age):
 
     if not isinstance(parsed, exp.Insert):
         log.info(f"Weird SQL that isnt INSERT, UPDATE or DELETE, treating like update delete node: {cleaned_sql}")
-        return (cleaned_sql, []), [], 'update_delete'         # TODO same as other weird sql
+        return (cleaned_sql, []), [], 'update_delete'
 
     table_nodes = list(parsed.find_all(exp.Table))
-    if len(table_nodes) != 1:               # TODO currently just sending other weird sql to update node, make new holder
+    if len(table_nodes) != 1:
         log.info(f"statement had multiple Table mentions. this is probably a INSERT:SELECT. "
                  f"treating like update delete: {sql_text}")
         return (cleaned_sql, []), [], 'update_delete'
@@ -57,7 +59,7 @@ def create_instances_from_sql(sql_text, age):
         proper_tbl = canonical_mapper[table_name.lower()]
         TargetClass = classes[proper_tbl]
     except KeyError:
-        raise ValueError(f"Table '{proper_tbl}' found in SQL but not in the database schema.")
+        raise ValueError(f"Table '{table_name}' found in SQL but not in the database schema.")
 
     sql_columns = [col.name for col in parsed.this.expressions]
 

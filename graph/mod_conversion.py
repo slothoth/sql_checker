@@ -27,7 +27,7 @@ def build_imported_mod(mod_folder_path, graph):
     if len(modinfo_list) != 1:
         return False
 
-    modinfo_dict = parse_modinfo(modinfo_list[0], mod_folder_path)
+    modinfo_dict, mod_id = parse_modinfo(modinfo_list[0], mod_folder_path)
     sql_info_dict = modinfo_into_jobs(modinfo_dict)
     user_knobs = extract_user_controls(modinfo_dict)
     # make a decision on which ORM to build
@@ -37,7 +37,7 @@ def build_imported_mod(mod_folder_path, graph):
     user_switches = [k for k, v in mods_enabled.items() if v]
     user_switches.append(age)
     file_list = resolve_files(sql_info_dict, user_switches, config_params_enabled)      # TODO matts ireland missed file in sql_info_dict
-    orm_list, update_delete_list, bad_instances = mod_info_into_orm(sql_info_dict, file_list, age=age)
+    orm_list, update_delete_list, bad_instances = mod_info_into_orm(sql_info_dict, file_list, age=age, mod_id=mod_id)
     build_graph_from_orm(graph, orm_list, update_delete_list, age)
     return True
 
@@ -111,15 +111,12 @@ def resolve_files(data, active_switches, active_configs):
     loaded_files = set()
 
     # Iterate over every possible action group
+    action_list = [(action_name, action) for action_name, action in actions.items()]
+    action_list.sort(key=lambda x: x[1]['priority'])
     for action_name, action in actions.items():
         criteria_name = action.get('criteria')
 
-        # If there is no criteria (or it's "always"), we load it.
-        # (Assuming "always" is a criteria name that implies true, or empty criteria implies true)
         if not criteria_name or criteria_name not in criteria_def:
-            # Fallback: if 'always' criteria is defined in dictionary, check it,
-            # otherwise assume safe to load if criteria key is missing.
-            # Based on your data, 'always' is an empty dict {}, which implies True.
             pass
 
         rules = criteria_def.get(criteria_name, {})
@@ -180,11 +177,13 @@ def parse_modinfo(modinfo_path, mod_folder_path):
             if 'ModInUse' in key:
                 if isinstance(val, dict):
                     if val.get('@inverse') == '1':
-                        specific_criteria.setdefault('ModsOff', []).extend(val['#text'])
+                        specific_criteria.setdefault('ModsOff', []).append(val['#text'])
                     else:
-                        add_mods_on(specific_criteria, val['#text'])
+                        specific_criteria.setdefault('ModsOn', []).append(val['#text'])
+                elif isinstance(val, list):
+                    specific_criteria.setdefault('ModsOn', []).extend(val)
                 elif isinstance(val, str):
-                    add_mods_on(specific_criteria, val)
+                    specific_criteria.setdefault('ModsOn', []).append(val)
                 else:
                     raise Exception(f'Unknown type for xml handler {val} for mod {mod_id}')
 
@@ -205,6 +204,8 @@ def parse_modinfo(modinfo_path, mod_folder_path):
                     config_tuple = (config_id, config_value)
                     specific_criteria.setdefault('ConfigurationValueMatches', {}).setdefault(config_group, []).extend(
                         config_tuple)
+                else:
+                    raise Exception(f'Unknown type for xml handler {val} for mod {mod_id}')
 
             elif 'AlwaysMet' in key:
                 continue
@@ -224,9 +225,12 @@ def parse_modinfo(modinfo_path, mod_folder_path):
             elif scope == 'game':
                 action_group_id = action_group['@id']
                 action_groups_dict[action_group_id] = {'criteria': action_group.get('@criteria', 'always'),
-                                                       'filepaths': []}
+                                                       'filepaths': [],
+                                                       'priority': int(action_group.get('{ModInfo}Properties', {}).get('{ModInfo}LoadOrder', -1))}
                 actions = action_group.get('{ModInfo}Actions', {})
                 for action_type, action_dict in actions.items():
+                    if action_dict == '':       # empty xml. We should fix this earlier, but we didnt.
+                        continue
                     if 'UpdateDatabase' in action_type:
                         for item_name, file_path_list in action_dict.items():
                             if isinstance(file_path_list, str):
@@ -240,14 +244,7 @@ def parse_modinfo(modinfo_path, mod_folder_path):
                 raise Exception(f'scope on mod {mod_id},'
                       f' with action {action_group.get("@id", "unknown")} had unregistered scope: {scope}')
     mod_info_dict = {'criteria': criteria_dict, 'action_groups': action_groups_dict, 'base_folder': mod_folder_path}
-    return mod_info_dict
-
-
-def add_mods_on(criteria_dict, val):
-    if 'ModsOn' in criteria_dict:
-        criteria_dict['ModsOn'].append(val)
-    else:
-        criteria_dict['ModsOn'] = [val]
+    return mod_info_dict, mod_id
 
 
 def modinfo_into_jobs(mod_info_dict):
@@ -283,7 +280,7 @@ def modinfo_into_jobs(mod_info_dict):
     return mod_info_dict
 
 
-def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY'):
+def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY', mod_id=''):
     orm_list, update_delete_list, bad_instances_list = [], [], []
     for file_path in file_path_list:
         short_path = file_path.replace(f'{sql_info_dict["base_folder"]}/', '')
@@ -297,9 +294,11 @@ def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY'):
                     orm_list.extend(instance_list)
                 elif list_type == 'update_delete':
                     update_delete_list.append(instance_list)
+                elif list_type == 'pragma_discard':
+                    log.warning(f'Discarding Pragma when importing mod {mod_id}: {sql_text}')
                 bad_instances_list.extend(bad_instances)
-            except ParseError as e:
-                log.error(f'while importing mod could not parse sql file text from {short_path}: {e}')
+            except (ParseError, ValueError) as e:
+                log.error(f'When importing mod {mod_id}, couldnt parse sql file {short_path}: {sql_text} as: {e}')
 
     return orm_list, update_delete_list, bad_instances_list
 
