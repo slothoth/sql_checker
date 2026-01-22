@@ -5,6 +5,7 @@ from itertools import combinations
 from sqlalchemy import create_engine, text, select, Text
 
 from graph.utils import flatten_avoid_string, to_number
+from graph.singletons.filepaths import LocalFilePaths
 
 import logging
 
@@ -32,7 +33,7 @@ def gather_effects(db_dict, metadata, database_spec):
         for row in result:
             collection_types.append(dict(zip(column_names, row)))
     collection_types = [i['Type'] for i in collection_types]
-    with open('resources/db_spec/CollectionsList.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/CollectionsList.json'), 'w') as f:
         json.dump(collection_types, f, sort_keys=True, separators=(',', ':'))
 
     with open('resources/manual_assigned/CollectionObjectManualAssignment.json') as f:
@@ -120,24 +121,24 @@ def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwn
     collect_attach_map = {k: sorted(v) for k, v in collect_attach_map.items()}
     collect_effect_map = {k: sorted(v) for k, v in collect_effect_map.items()}
 
-    with open('resources/db_spec/ModifierArgumentTypes.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/ModifierArgumentTypes.json'), 'w') as f:
         json.dump(mod_type_map, f, separators=(',', ':'), default=convert, sort_keys=True)
-    with open('resources/db_spec/ModifierArgumentDatabaseTypes.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/ModifierArgumentDatabaseTypes.json'), 'w') as f:
         json.dump(mod_database_references, f, separators=(',', ':'), default=convert, sort_keys=True)
 
-    with open('resources/unused/AllModArgValues.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('unused/AllModArgValues.json'), 'w') as f:
         json.dump(mod_arg_dict, f, separators=(',', ':'), default=convert, sort_keys=True)
 
-    with open('resources/db_spec/ModArgInfo.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/ModArgInfo.json'), 'w') as f:
         json.dump(mod_map, f, separators=(',', ':'), default=convert, sort_keys=True)
 
-    with open('resources/unused/CollectionAttachMap.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('unused/CollectionAttachMap.json'), 'w') as f:
         json.dump(collect_attach_map, f, separators=(',', ':'), sort_keys=True)
 
-    with open('resources/db_spec/CollectionEffectMap.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/CollectionEffectMap.json'), 'w') as f:
         json.dump(collect_effect_map, f, separators=(',', ':'), sort_keys=True)
 
-    with open('resources/db_spec/DynamicModifierMap.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/DynamicModifierMap.json'), 'w') as f:
         json.dump(dynamicModifiers, f, separators=(',', ':'), sort_keys=True)
 
 
@@ -174,16 +175,16 @@ def mine_requirements(db_dict, manual_collection_classification, mod_tables, Tab
     req_map = {k: {key: sorted(val) if isinstance(val, list) else val for key, val in v.items()} for k, v in
                req_map.items()}
 
-    with open('resources/db_spec/RequirementInfo.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/RequirementInfo.json'), 'w') as f:
         json.dump(req_map, f, separators=(',', ':'), default=convert, sort_keys=True)
 
-    with open('resources/db_spec/RequirementArgumentTypes.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/RequirementArgumentTypes.json'), 'w') as f:
         json.dump(req_type_map, f, separators=(',', ':'), default=convert, sort_keys=True)
 
-    with open('resources/db_spec/RequirementArgumentDatabaseTypes.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('db_spec/RequirementArgumentDatabaseTypes.json'), 'w') as f:
         json.dump(req_database_references, f, separators=(',', ':'), default=convert, sort_keys=True)
 
-    with open('resources/unused/GossipInfo.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('unused/GossipInfo.json'), 'w') as f:
         json.dump(gossips, f, separators=(',', ':'), default=convert, sort_keys=True)
 
 
@@ -420,9 +421,9 @@ def map_requirement_type_objects(db_dict, manual_collection_classification, Tabl
         for my_obj in obj_list:
             object_requirement_mapper[my_obj].append(req)
     object_requirement_mapper = {obj: sorted(list(set(reqs))) for obj, reqs in object_requirement_mapper.items()}
-    with open('resources/unused/RequirementObjectMap.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('unused/RequirementObjectMap.json'), 'w') as f:
         json.dump(requirement_object_mapper, f, separators=(',', ':'), sort_keys=True)
-    with open('resources/unused/ObjectRequirementMap.json', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('unused/ObjectRequirementMap.json'), 'w') as f:
         json.dump(object_requirement_mapper, f, separators=(',', ':'), sort_keys=True)
     return requirement_object_mapper, req_all_types
 
@@ -749,7 +750,7 @@ def map_effect_type_objects(db_dict, mod_tables, manual_collection_classificatio
 
 
 def mine_empty_effects():
-    engine = create_engine(f"sqlite:///resources/created-db.sqlite")
+    engine = create_engine(f"sqlite:///{LocalFilePaths.app_data_path_form('created-db.sqlite')}")
     tables_data = {}
 
     with engine.connect() as conn:
@@ -771,7 +772,7 @@ def mine_empty_effects():
             if rows:
                 tables_data[table_name] = rows
 
-    with open('resources/mined/PreBuiltData.json', 'w') as f:
+    with open('resources/mined/PreBuiltData.json', 'w') as f:       # TODO should this be in AppData
         json.dump(tables_data, f, separators=(',', ':'), sort_keys=True)
 
 
@@ -976,7 +977,7 @@ def deal_with_defaults(info_map, type_map):
 
 def update_loc_spec(db_dict, database_spec):
 
-    with open('resources/db_spec/LocalizedTags.json') as f:
+    with open('resources/mined/LocalizedTags.json') as f:
         localised = json.load(f)
 
     localised = set(localised)

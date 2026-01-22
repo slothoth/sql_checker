@@ -54,7 +54,7 @@ class SqlChecker:
 
     def setup_db_existing(self):
         logging.debug("setup_db_existing start")
-        copy_db_path = resource_path("resources/created-db.sqlite")
+        copy_db_path = resource_path(LocalFilePaths.app_data_path_form('created-db.sqlite'))
         self.db_path = os.path.join(tempfile.gettempdir(), 'discardable-gameplay-copy.sqlite')
         try:
             shutil.copy(copy_db_path, self.db_path)
@@ -587,7 +587,7 @@ def model_run(log_queue, extra_sql, age):
         checker.test_db(sql_statements_mods, modded_short, False)
         log_message("Finished running Modded Files", wrapped_q)
         if extra_sql:
-            with open('resources/main.sql', 'r') as f:
+            with open(LocalFilePaths.app_data_path_form('main.sql'), 'r') as f:
                 graph_sql = f.readlines()
             logger.info(graph_sql)
             extra_statements = {'graph_main.sql': graph_sql}

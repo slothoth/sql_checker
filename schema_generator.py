@@ -67,7 +67,7 @@ class SchemaInspector:
 
     def __init__(self):
         # setup simple entry validation
-        self.Base, self.session, self.empty_engine = self.engine_instantiation('resources/created-db.sqlite')
+        self.Base, self.session, self.empty_engine = self.engine_instantiation(LocalFilePaths.app_data_path_form('created-db.sqlite'))
 
         tables = self.Base.metadata.tables
         self.metadata = self.Base.metadata
@@ -287,7 +287,7 @@ class SchemaInspector:
         if age in self.engine_dict:     # setup db state validation
             return False
         else:
-            path = f"resources/gameplay-base"
+            path = LocalFilePaths.app_data_path_form('gameplay-base')
             if database_spec.patch_change:
                 # we do all 3 ages
                 for age_type in ages:

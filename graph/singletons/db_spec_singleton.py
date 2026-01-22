@@ -49,22 +49,21 @@ class ResourceLoader:
 
     def _load_resources(self):
         self._files = {
-            'all_possible_vals': self.resource_path('all_possible_vals.json'),
-            'arg_param_map': self.resource_path('arg_param_map.json'),
-            'collection_effect_map': self.resource_path('CollectionEffectMap.json'),
-            'collections_list': self.resource_path('CollectionsList.json'),
-            'dlc_mod_ids': self.resource_path('DLCModIds.json'),
-            'dynamic_mod_info': self.resource_path('DynamicModifierMap.json'),
             'localized_tags': self.resource_path('LocalizedTags.json'),
-            'metadata': self.resource_path('metadata.json'),
-            'mod_arg_type_list_map': self.resource_path('ModifierArgumentTypes.json'),
-            'mod_arg_database_types': self.resource_path('ModifierArgumentDatabaseTypes.json'),
-            'modifier_argument_info': self.resource_path('ModArgInfo.json'),
-            'node_templates': self.resource_path("db_spec.json"),
-            'possible_vals': self.resource_path('db_possible_vals.json'),
-            'requirement_argument_info': self.resource_path('RequirementInfo.json'),
-            'req_type_arg_map': self.resource_path('RequirementArgumentTypes.json'),
-            'req_arg_database_types': self.resource_path('RequirementArgumentDatabaseTypes.json'),
+            'all_possible_vals': self.appdata_path('all_possible_vals.json'),
+            'collection_effect_map': self.appdata_path('CollectionEffectMap.json'),
+            'collections_list': self.appdata_path('CollectionsList.json'),
+            'dlc_mod_ids': self.appdata_path('DLCModIds.json'),
+            'dynamic_mod_info': self.appdata_path('DynamicModifierMap.json'),
+            'metadata': self.appdata_path('metadata.json'),
+            'mod_arg_type_list_map': self.appdata_path('ModifierArgumentTypes.json'),
+            'mod_arg_database_types': self.appdata_path('ModifierArgumentDatabaseTypes.json'),
+            'modifier_argument_info': self.appdata_path('ModArgInfo.json'),
+            'node_templates': self.appdata_path("node_templates.json"),
+            'possible_vals': self.appdata_path('possible_vals.json'),
+            'requirement_argument_info': self.appdata_path('RequirementInfo.json'),
+            'req_type_arg_map': self.appdata_path('RequirementArgumentTypes.json'),
+            'req_arg_database_types': self.appdata_path('RequirementArgumentDatabaseTypes.json'),
         }
         if not os.path.exists(self._files['metadata']):
             self.age = 'AGE_ANTIQUITY'
@@ -157,7 +156,8 @@ class ResourceLoader:
 
     def check_firaxis_patched(self):
         root = Path(LocalFilePaths.civ_install)       # find the most recent changed file and the time it was changed.
-        file_changes = [(p, p.stat().st_mtime) for p in root.rglob("*") if p.is_file() and '/.' not in str(p)]
+        file_changes = [(p, p.stat().st_mtime) for p in root.rglob("*") if p.is_file()
+                        and '/.' not in str(p) and '\.' not in str(p)]
         file_changes.sort(key=lambda x: x[1], reverse=True)
         latest = file_changes[0][1]
         current = self.metadata.get('patch_time')
@@ -174,22 +174,29 @@ class ResourceLoader:
         mod_ids = get_dlc_mod_ids()
         self.update_mod_ids(mod_ids)
         SQLValidator.state_validation_setup('AGE_ANTIQUITY', self)
-        database_path = 'resources/gameplay-base_AGE_ANTIQUITY.sqlite'
+
+        database_path = LocalFilePaths.app_data_path_form('gameplay-base_AGE_ANTIQUITY.sqlite')
         db = BaseDB(database_path)
         db.setup_table_infos()
         db.fix_firaxis_missing_bools()
         db.fix_firaxis_missing_fks()                # a concern is these rely on being built by SQLvalidator
         self.update_node_templates(db.table_data)   # which comes later. should be fine if we ship these db tho
-        possible_vals, all_possible_vals = db.dump_unique_pks({'gameplay-base_AGE_ANTIQUITY.sqlite': 'AGE_ANTIQUITY',
-                                                               'gameplay-base_AGE_EXPLORATION.sqlite': 'AGE_EXPLORATION',
-                                                               'gameplay-base_AGE_MODERN.sqlite': 'AGE_MODERN'})
+        db_paths = { LocalFilePaths.app_data_path_form('gameplay-base_AGE_ANTIQUITY.sqlite'): 'AGE_ANTIQUITY',
+                     LocalFilePaths.app_data_path_form('gameplay-base_AGE_EXPLORATION.sqlite'): 'AGE_EXPLORATION',
+                     LocalFilePaths.app_data_path_form('gameplay-base_AGE_MODERN.sqlite'): 'AGE_MODERN'}
+        possible_vals, all_possible_vals = db.dump_unique_pks(db_paths)
         self.update_possible_vals(possible_vals)
         self.update_all_vals(all_possible_vals)
         gather_effects(SQLValidator.engine_dict, SQLValidator.metadata, self)
 
     @staticmethod
     def resource_path(relative_path):
-        rsc_path = os.path.join(os.getcwd(), 'resources/db_spec')
+        rsc_path = os.path.join(os.getcwd(), 'resources/mined')
+        return os.path.join(rsc_path, relative_path)
+
+    @staticmethod
+    def appdata_path(relative_path):
+        rsc_path = LocalFilePaths.app_data_path_form('db_spec')
         return os.path.join(rsc_path, relative_path)
 
 
@@ -243,10 +250,9 @@ class BaseDB:
 
     def dump_unique_pks(self, db_path_list):
         possible_firaxis_pks, double_keys, possible_vals, all_possible_vals = {}, [], {}, {}
-        for db_path, db_name in db_path_list.items():
+        for full_path, db_name in db_path_list.items():
             possible_vals[db_name] = {}
             possible_vals_age = possible_vals[db_name]
-            full_path = f"resources/{db_path}"
             conn = sqlite3.connect(full_path)
             cursor = conn.cursor()
             for table in self.tables:
@@ -305,7 +311,7 @@ class BaseDB:
     def fix_firaxis_missing_fks(self):
         # find all primary key columns where theres only one PK.
         # get the example database of antiquity
-        conn = sqlite3.connect("resources/gameplay-base_AGE_ANTIQUITY.sqlite")
+        conn = sqlite3.connect(LocalFilePaths.app_data_path_form('gameplay-base_AGE_ANTIQUITY.sqlite'))
         unique_pks = {}
         for table in self.tables:
             pk_list = self.table_data[table]['primary_keys']
@@ -439,7 +445,7 @@ class BaseDB:
 
     def fix_firaxis_missing_bools(self):
         result = {}
-        conn = sqlite3.connect("resources/gameplay-base_AGE_ANTIQUITY.sqlite")
+        conn = sqlite3.connect(LocalFilePaths.app_data_path_form('gameplay-base_AGE_ANTIQUITY.sqlite'))
         for table in self.tables:
             cols = conn.execute(f"PRAGMA table_info({table})").fetchall()
             int_cols = [c[1] for c in cols if "INT" in c[2].upper() or "BOOL" in c[2].upper()]

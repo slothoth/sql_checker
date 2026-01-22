@@ -24,7 +24,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-with open('resources/mod_metadata.json') as f:
+with open('resources/template_mod_metadata.json') as f:
     default_meta = json.load(f)
 
 

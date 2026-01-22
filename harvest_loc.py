@@ -7,5 +7,5 @@ conn = sqlite3.connect(f'{LocalFilePaths.civ_config}/Debug/localization-copy.sql
 cursor = conn.cursor()
 cursor.execute("SELECT Tag FROM LocalizedText;")
 localised = [i[0] for i in cursor.fetchall()]
-with open('resources/db_spec/LocalizedTags.json', 'w') as f:
+with open('resources/mined/LocalizedTags.json', 'w') as f:
     json.dump(localised, f, separators=(',', ':'), sort_keys=True)

@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, select
 import json
 
 from graph.singletons.db_spec_singleton import db_spec
+from graph.singletons.filepaths import LocalFilePaths
 from constants import ages
 from stats import gather_effects, mine_empty_effects, mine_requirements
 from schema_generator import SQLValidator
@@ -11,11 +12,11 @@ from graph.node_controller import NodeEditorWindow
 
 def test_effects_harvest():
     mine_empty_effects()
-    path = f"resources/gameplay-base"
     for age_type in ages:
-        engine = create_engine(f"sqlite:///{path}_{age_type}.sqlite")  # already built
+        new_path = LocalFilePaths.app_data_path_form(f'gameplay-base_{age_type}.sqlite')
+        engine = create_engine(f"sqlite:///{new_path}")  # already built
         SQLValidator.engine_dict[age_type] = engine
-    gather_effects(SQLValidator.engine_dict, SQLValidator.metadata)
+    gather_effects(SQLValidator.engine_dict, SQLValidator.metadata, db_spec)
 
 
 def test_setup_all_unique_nodes(qtbot):
@@ -51,17 +52,17 @@ def test_req_harvest():
 
     with open('resources/manual_assigned/modifier_tables.json') as f:
         mod_tables = json.load(f)
-    path = f"resources/gameplay-base"
     for age_type in ages:
-        engine = create_engine(f"sqlite:///{path}_{age_type}.sqlite")  # already built
+        new_path = LocalFilePaths.app_data_path_form(f'gameplay-base_{age_type}.sqlite')
+        engine = create_engine(f"sqlite:///{new_path}")
         SQLValidator.engine_dict[age_type] = engine
 
     mine_requirements(SQLValidator.engine_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap)
 
 
 def test_possible_vals_harvest():
-    path = f"resources/gameplay-base"
     for age_type in ages:
-        engine = create_engine(f"sqlite:///{path}_{age_type}.sqlite")  # already built
+        new_path = LocalFilePaths.app_data_path_form(f'gameplay-base_{age_type}.sqlite')
+        engine = create_engine(f"sqlite:///{new_path}")
         SQLValidator.engine_dict[age_type] = engine
 

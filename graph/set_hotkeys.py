@@ -470,7 +470,7 @@ def mod_test_session(graph):
     Tests the given graph against the database by converting it to SQL. During this process,
     we save it to serialise to JSON, so we can use that structure to build SQL form.
     """
-    current = graph.current_session() or 'resources/graph.json'
+    current = graph.current_session() or LocalFilePaths.app_data_path_form('graph.json')
     graph.save_session(current)
     sql_lines, dict_form_list, loc_lines, incompletes_ordered = transform_json(current)
     age = graph.property('meta').get('Age')
@@ -488,7 +488,7 @@ def save_session_to_mod(graph, parent=None):
     """
     current = graph.current_session()
     if not current:
-        current = 'resources/graph.json'
+        current = LocalFilePaths.app_data_path_form('graph.json')
 
     graph.save_session(current)
     sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
@@ -510,8 +510,8 @@ def save_session_to_mod(graph, parent=None):
     target = os.path.join(civ_mods_path, mod_name)
     os.makedirs(target, exist_ok=True)
 
-    shutil.copy('resources/main.sql', os.path.join(target, "main.sql"))
-    shutil.copy('resources/loc.sql', os.path.join(target, "loc.sql"))
+    shutil.copy(LocalFilePaths.app_data_path_form('main.sql'), os.path.join(target, "main.sql"))
+    shutil.copy(LocalFilePaths.app_data_path_form('loc.sql'), os.path.join(target, "loc.sql"))
 
     with open(os.path.join(target, f"{mod_name}.modinfo"), "w", encoding="utf-8") as f:
         f.write(template)
@@ -575,13 +575,13 @@ def get_previous_error_node(graph):
 
 def write_sql(sql_dict_list):                               # save SQL, then trigger main run model
     sql_lines = [i['sql'] + '\n' for i in sql_dict_list]
-    with open('resources/main.sql', 'w') as f:
+    with open(LocalFilePaths.app_data_path_form('main.sql'), 'w') as f:
         f.writelines(sql_lines)
 
 
 def write_loc_sql(loc_lines):
     if loc_lines is not None:
-        with open('resources/loc.sql', 'w') as f:
+        with open(LocalFilePaths.app_data_path_form('loc.sql'), 'w') as f:
             f.writelines(loc_lines)
 
 

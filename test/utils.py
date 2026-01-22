@@ -2,6 +2,7 @@ from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
 from graph.set_hotkeys import write_sql, save_session, write_loc_sql
 from graph.singletons.db_spec_singleton import db_spec
+from graph.singletons.filepaths import LocalFilePaths
 
 
 def make_window(qtbot):
@@ -29,7 +30,7 @@ def setup_types_node(qtbot):
 def save(window):
     current = window.graph.current_session()
     if not current:
-        current = 'resources/graph.json'
+        current = LocalFilePaths.app_data_path_form('graph.json')
     window.graph._model.session = current
     save_session(window.graph)
     return current
@@ -40,7 +41,7 @@ def mod_output_check(window, test_sql_path):
     sql_lines, dict_form_list, loc_lines, incompletes_full = transform_json(current)
     write_sql(sql_lines)
     write_loc_sql(loc_lines)
-    check_test_against_expected_sql(test_sql_path, 'resources/main.sql')
+    check_test_against_expected_sql(test_sql_path, LocalFilePaths.app_data_path_form('main.sql'))
 
 
 arg_type_map = {}

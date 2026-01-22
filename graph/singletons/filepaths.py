@@ -1,12 +1,18 @@
 import os
 from pathlib import Path
+from platformdirs import user_data_dir
+import logging
+from logging.handlers import RotatingFileHandler
+from PyQt5.QtCore import QStandardPaths
 import sys
 if sys.platform == 'win32':
     import winreg
 
 
+
 class FilePaths:
     def __init__(self):
+        self.save_appdata_path = self.setup_appdata(civ_type='CivVII')               #  for when we include VI
         self.civ_config = self._find_civ_config()
         self.civ_install = self._find_civ_install()
         self.workshop = self._find_workshop()
@@ -57,5 +63,49 @@ class FilePaths:
             return None
         return civ_config
 
+    @staticmethod
+    def setup_appdata(civ_type):
+        app_name = 'CivSQLChecker'
+        save_appdata_path = user_data_dir(civ_type, app_name)
+        os.makedirs(save_appdata_path, exist_ok=True)
+        base_dir = Path(save_appdata_path)
+        folders = ["db_spec", "mined", "unused", "logs"]
+        for folder in folders:
+            folder_path = base_dir / folder
+            folder_path.mkdir(parents=True, exist_ok=True)
+        return save_appdata_path
+
+    def app_data_path_form(self, filename):
+        file_path = os.path.join(self.save_appdata_path, filename)
+        return file_path
+
 
 LocalFilePaths = FilePaths()
+
+# logger setup
+
+logger = logging.getLogger("SQLCheckerLogger")
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+
+info_handler = logging.handlers.RotatingFileHandler(Path(LocalFilePaths.app_data_path_form('logs')) / "app.log",
+                                                    maxBytes=1_000_000, backupCount=5)
+info_handler.setLevel(logging.INFO)
+info_handler.setFormatter(formatter)
+
+error_handler = logging.handlers.RotatingFileHandler(Path(LocalFilePaths.app_data_path_form('logs')) / "errors.log",
+                                                     maxBytes=1_000_000, backupCount=5)
+error_handler.setLevel(logging.ERROR)
+error_handler.setFormatter(formatter)
+
+console_handler = logging.StreamHandler()       # terminal only
+console_handler.setLevel(logging.DEBUG)
+console_handler.setFormatter(formatter)
+
+if logger.hasHandlers():
+    logger.handlers.clear()
+
+logger.addHandler(info_handler)
+logger.addHandler(error_handler)
+logger.addHandler(console_handler)
