@@ -272,8 +272,12 @@ def modinfo_into_jobs(mod_info_dict):
                         sql_contents = file.read()
                 except UnicodeDecodeError as e:
                     log.debug(f'Bad unicode, trying windows-1252: {e}')
-                    with open(db_file_path, 'r', encoding='windows-1252') as file:
-                        sql_contents = file.read()
+                    try:
+                        with open(db_file_path, 'r', encoding='windows-1252') as file:
+                            sql_contents = file.read()
+                    except UnicodeDecodeError as e:
+                        with open(db_file_path, 'r', encoding='utf-8') as file:
+                            sql_contents = file.read()
                 comment_cleaned = re.sub(r'--.*?\n', '', sql_contents, flags=re.DOTALL)
                 mod_info_dict['sql'][short_name] = sqlparse.split(comment_cleaned)
             else:

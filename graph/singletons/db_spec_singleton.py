@@ -79,7 +79,7 @@ class ResourceLoader:
             self.age = self.metadata['age']
             self.patch_time = self.metadata['patch_time']
         new_patch_occurred, latest = self.check_firaxis_patched()
-        if True:
+        if new_patch_occurred:
             log.info('new patch! rebuild all files')        # cant toast as dont have application yet
             self.update_database_spec()
             self.modifier_argument_info = self._read_file(self._files['modifier_argument_info'])
