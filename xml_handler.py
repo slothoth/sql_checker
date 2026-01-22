@@ -26,31 +26,6 @@ def dict_to_etree(d, root):
                 sub_elem = ET.SubElement(root, k)
                 sub_elem.text = str(v)
 
-
-def dict_to_xml(d):
-    if len(d) != 1:
-        raise ValueError("Dictionary must have exactly one root key")
-
-    root_key = next(iter(d))
-    root = ET.Element(root_key)
-    dict_to_etree(d[root_key], root)
-    return root
-
-
-def xml_to_string(root):
-    return ET.tostring(root, encoding='unicode')
-
-
-def pretty_print_xml(xml_string):
-    parsed_xml = minidom.parseString(xml_string)
-    return parsed_xml.toprettyxml(indent="    ")
-
-
-def save_pretty_xml_to_file(xml_string, filename):
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(xml_string)
-
-
 def read_xml(filepath):
     try:
         tree = ET.parse(filepath)
@@ -97,7 +72,10 @@ def read_xml(filepath):
             parse_gameeffects_to_dict(fp)
 
     t = tree.getroot()
-    return etree_to_dict(t)
+    xml_dict = etree_to_dict(t)
+    cleaned_dict, removed = clean_and_track(xml_dict)
+    log.info(f'removed empty values in xml handler for {filepath}: {removed}')
+    return cleaned_dict
 
 
 def etree_to_dict(t):
@@ -170,3 +148,34 @@ def parse_gameeffects_to_dict(path):
         out[local(root.tag)]["Modifier"].append(m)
 
     return out
+
+
+def clean_and_track(data, path="", removed_paths=None):
+    """
+    Recursively removes keys where the value is an empty string ("")
+    and tracks the path of removed items.
+    """
+    if removed_paths is None:
+        removed_paths = []
+
+    if not isinstance(data, dict):
+        return data, removed_paths
+
+    keys_to_delete = []
+
+    for key, value in data.items():
+        current_path = f"{path} > {key}" if path else key
+        if value == "":
+            keys_to_delete.append(key)
+            removed_paths.append(current_path)
+        elif isinstance(value, dict):
+            _, _ = clean_and_track(value, current_path, removed_paths)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    _, _ = clean_and_track(item, current_path, removed_paths)
+
+    for key in keys_to_delete:
+        del data[key]
+
+    return data, removed_paths

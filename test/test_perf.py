@@ -102,26 +102,34 @@ def test_against_all_mods(qtbot):
     local_folder = f'{LocalFilePaths.civ_config}/Mods'
     local_mods = [f'{local_folder}/{i}' for i in os.listdir(local_folder)]
     workshop_mods = [f'{LocalFilePaths.workshop}/{i}' for i in os.listdir(LocalFilePaths.workshop)]
-    hit_mods = []
+    errors = {}
     global integer_mod
     for idx, workshop_mod in enumerate(workshop_mods):
         integer_mod += 1
-        mod_info_found = build_imported_mod(workshop_mod, window.graph)
+        try:
+            mod_info_found = build_imported_mod(workshop_mod, window.graph)
+        except NotImplementedError as e:
+            print(e)
+            errors[idx] = str(e)
         qtbot.wait(1)
         window.graph.clear_session()
         qtbot.wait(1)
-        hit_mods.append(workshop_mod)
-        with open('test.log', 'w') as f:
-            f.writelines([i + '\n' for i in hit_mods])
 
+
+    local_errors = {}
     for idx, local_mod in enumerate(local_mods):
-        mod_info_found = build_imported_mod(local_mod, window.graph)
+        try:
+            mod_info_found = build_imported_mod(local_mod, window.graph)
+        except Exception as e:
+            print(e)
+            local_errors[idx] = str(e)
         qtbot.wait(1)
         window.graph.clear_session()
         qtbot.wait(1)
-        hit_mods.append(local_mod)
-        with open('test.log', 'w') as f:
-            f.writelines(hit_mods)
+
+    assert len(errors) == 0, errors
+    assert len(local_errors) == 0, local_errors
+
 
 
 def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up

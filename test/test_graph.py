@@ -198,9 +198,10 @@ def test_update_delete_node_error_not_existing_col_case(qtbot):
     assert 'no such column: WrongCol', full_error
 
 
-def test_import_mod(qtbot):     # failing
+def test_import_mod(qtbot):
     window = NodeEditorWindow()
     qtbot.addWidget(window)
+    window.show()
     cwd = os.getcwd()
 
     mod_info_found = build_imported_mod(f'{cwd}/test/test_data/test_mod_import', window.graph)
