@@ -1,14 +1,12 @@
-import pytest
-
 from graph.transform_json_to_sql import transform_json
 from graph.set_hotkeys import mod_test_session, check_valid_sql_against_db
-from utils import (check_test_against_expected_sql, create_node, setup_types_node, save, mod_output_check,
-                   cast_test_input, make_window, update_delete_node_setup, setup_effect_req)
+from graph.singletons.db_spec_singleton import db_spec
+from utils import create_node, make_window
 
 
 def test_state_validation_fail_fk():
     sql_commands, dict_form_list, loc_lines, incompletes_full = transform_json('test/test_data/test_graph.json')
-    result = check_valid_sql_against_db('AGE_ANTIQUITY', sql_commands)
+    result = check_valid_sql_against_db('AGE_ANTIQUITY', sql_commands, db_spec)
     expected_mod_trait_error = "There wasn't a reference entry in Modifiers that had ModifierId = MISSING_MOD_TRAIT."
     expected_mod_ability_error = "There wasn't a reference entry in Modifiers that had ModifierId = MISSING_MOD_ABILITY."
     assert len(result['foreign_key_errors']) == 2

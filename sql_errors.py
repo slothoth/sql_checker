@@ -4,6 +4,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
+
 def get_query_details(script):
     table_name_pattern = r'\b(\w+)\s*\('
     columns_pattern = r'\(([^)]+)\)'

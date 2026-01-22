@@ -12,7 +12,8 @@ import xml.etree.ElementTree as ET
 from model import convert_xml_to_sql
 from ORM import create_instances_from_sql, get_table_and_key_vals, build_fk_index
 from graph.windows import get_combo_value
-from graph.db_spec_singleton import db_spec, modifier_system_tables, ages
+from graph.singletons.db_spec_singleton import db_spec
+from constants import modifier_system_tables, ages
 
 import logging
 

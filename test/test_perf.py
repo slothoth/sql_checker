@@ -1,9 +1,8 @@
-import pytest
 from collections import defaultdict
 import os
 
 import graph.windows
-def new_combo_value(parent, age_list):            # TODO override to stop me havng to choose age, dont work
+def new_combo_value(parent, age_list):
     return 'AGE_ANTIQUITY', {}, {}
 
 graph.windows.get_combo_value = new_combo_value
@@ -12,6 +11,7 @@ import graph.mod_conversion
 from ORM import get_table_and_key_vals
 mods = defaultdict(dict)
 integer_mod = 0
+
 
 def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
     for count, orm_instance in enumerate(orm_list):
@@ -25,11 +25,11 @@ graph.mod_conversion.build_graph_from_orm = build_graph_from_orm
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
-from graph.set_hotkeys import write_sql, write_loc_sql, save_session_to_mod, mod_test_session
-from graph.db_spec_singleton import db_spec
-from graph.mod_conversion import build_imported_mod
+from graph.set_hotkeys import write_sql, write_loc_sql, mod_test_session
+from graph.singletons.filepaths import LocalFilePaths
 
-from utils import check_test_against_expected_sql, save
+from graph.mod_conversion import build_imported_mod
+from utils import save
 
 
 def test_all_table_nodes(qtbot):            # all nodes buildable, and dont crash out
@@ -56,6 +56,7 @@ def test_all_table_empty_log_nodes(qtbot):
     log_output = window.graph.side_panel.log_display.toPlainText()
     log_lines = log_output.split('\n')
     assert 'Node Adjacency_YieldChanges had problem MISSING REQUIRED COLUMNS: ID, YieldType;' in log_lines
+
 
 def test_all_effect_args(qtbot):
     window = NodeEditorWindow()
@@ -98,12 +99,12 @@ def test_against_all_mods(qtbot):
     qtbot.addWidget(window)
     qtbot.waitExposed(window)
     qtbot.wait(1)
-    local_folder = f'{db_spec.civ_config}/Mods'
+    local_folder = f'{LocalFilePaths.civ_config}/Mods'
     local_mods = [f'{local_folder}/{i}' for i in os.listdir(local_folder)]
-    workshop_mods = [f'{db_spec.workshop}/{i}' for i in os.listdir(db_spec.workshop)]
+    workshop_mods = [f'{LocalFilePaths.workshop}/{i}' for i in os.listdir(LocalFilePaths.workshop)]
     hit_mods = []
     global integer_mod
-    for idx, workshop_mod in enumerate(workshop_mods[-1:]):
+    for idx, workshop_mod in enumerate(workshop_mods):
         integer_mod += 1
         mod_info_found = build_imported_mod(workshop_mod, window.graph)
         qtbot.wait(1)
@@ -121,10 +122,6 @@ def test_against_all_mods(qtbot):
         hit_mods.append(local_mod)
         with open('test.log', 'w') as f:
             f.writelines(hit_mods)
-
-
-# sizes = [(k, v) for k, v in Counter(uh).items()]
-# sizes.sort(key=lambda x: x[1], reverse=True)
 
 
 def test_correct_ports(qtbot):          # extremely slow test, move to perf and probably split up

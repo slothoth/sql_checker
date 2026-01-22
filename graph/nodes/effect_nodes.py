@@ -1,6 +1,7 @@
 from NodeGraphQt.constants import NodePropWidgetEnum, PortTypeEnum
 
-from graph.db_spec_singleton import db_spec, effect_system_tables
+from graph.singletons.db_spec_singleton import db_spec
+from constants import effect_system_tables
 from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, ExpandingLineEdit, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints
@@ -43,6 +44,7 @@ class BaseEffectNode(BasicDBNode):
 
         if name in self.get_property('arg_params') and self.graph is not None:
             self.get_property('arg_params')[name] = value
+            print(f'name: {name} value: {value}')
             arg_info = self.argument_info_map[self.get_property(self.arg_setter_prop)]['Arguments'][name]
             if arg_info.get('MinedNeeded', False):
                 if self.arg_prop_map[self.get_property(self.arg_setter_prop)][name] in ['database', 'text']:
@@ -104,7 +106,7 @@ class BaseEffectNode(BasicDBNode):
             if preset_val is not None:
                 widget.set_value(preset_val)
             else:
-                if initial_value != default_val:
+                if initial_value != default_val and default_val is not None:
                     self.set_widget_and_prop(widget_name, default_val)
 
         else:
@@ -248,8 +250,7 @@ class GameEffectNode(BaseEffectNode):
         self.create_property('ModifierType', '', widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
         self.output_port_tables['ModifierId'] = set_output_port_constraints(self, 'Modifiers',
                                                               SQLValidator.pk_ref_map.get('Modifiers'))
-        self.output_port_tables['ModifierId'] = {k: v for k, v in self.output_port_tables['ModifierId'].items()
-                                   if SQLValidator.class_table_name_map.get(k, k) not in effect_system_tables}
+        self.output_port_tables['ModifierId'] = {k: v for k, v in self.output_port_tables['ModifierId'].items()if SQLValidator.class_table_name_map.get(k, k) not in effect_system_tables}
         reqset_connection_info = {'db.game_effects.RequirementEffectNode': ['ReqSet'],
                                   'db.table.requirementsets.RequirementsetsNode': ['ReqSet']}
         self.output_port_tables['SubjectReq'] = reqset_connection_info

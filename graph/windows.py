@@ -2,7 +2,7 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QCheckBox, QLabel, QGridLayout)
 from graph.db_node_support import sync_node_options_all, set_nodes_visible_by_type
 from schema_generator import SQLValidator
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
 
 
 class MetaStore:
@@ -86,8 +86,7 @@ class MetadataDialog(QtWidgets.QDialog):
 
         if old_age != self.mod_age.currentText():
             sync_node_options_all(self.graph)
-            SQLValidator.state_validation_setup(self.mod_age.currentText())
-            # SQLValidator.state_validation_mod_setup(self.mod_age.currentText())
+            SQLValidator.state_validation_setup(self.mod_age.currentText(), db_spec)
         hide = self.hide_types.isChecked()
         set_nodes_visible_by_type(self.graph, 'db.table.types.TypesNode', not hide)
         super().accept()

@@ -1,7 +1,8 @@
-from sqlalchemy import create_engine, select, Text
+from sqlalchemy import create_engine, select
 import json
 
-from graph.db_spec_singleton import ages
+from graph.singletons.db_spec_singleton import db_spec
+from constants import ages
 from stats import gather_effects, mine_empty_effects, mine_requirements
 from schema_generator import SQLValidator
 from graph.node_controller import NodeEditorWindow
@@ -24,7 +25,7 @@ def test_setup_all_unique_nodes(qtbot):
     current = graph.current_session()
     possible_nodes = {k: v[0] for k, v in graph.node_factory.names.items()
                       if k not in ['Backdrop', 'CustomRequirement', 'CustomGameEffect']}
-    SQLValidator.state_validation_setup('AGE_ANTIQUITY')
+    SQLValidator.state_validation_setup('AGE_ANTIQUITY', db_spec)
     engine = SQLValidator.engine_dict['AGE_ANTIQUITY']
     example_dicts = {}
     with engine.connect() as conn:

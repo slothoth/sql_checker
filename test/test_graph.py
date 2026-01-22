@@ -1,13 +1,11 @@
-import pytest
-import json
 import os
 from PyQt5 import QtGui
 
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import make_modinfo
-from graph.set_hotkeys import import_session_set_params, save_session_to_mod, mod_test_session
-from graph.db_spec_singleton import db_spec
+from graph.set_hotkeys import import_session_set_params, save_session_to_mod
+from graph.singletons.db_spec_singleton import db_spec
 from graph.mod_conversion import build_imported_mod
 
 from utils import (check_test_against_expected_sql, create_node, setup_types_node, save, mod_output_check,
@@ -30,8 +28,9 @@ def test_node_value_change(qtbot):
     qtbot.addWidget(window)
     node = window.graph.create_node('db.game_effects.GameEffectNode')
     missed = []
-    for i in db_spec.modifier_argument_info:
+    for i in db_spec.modifier_argument_info:    # EFFECT_ATTACH_MODIFIERS
         try:
+            print(f'arg: {i}')       # TRIGGER_PLAYER_GRANT_YIELD_ON_UNIT_CREATED, ModifierId_arg,
             node.set_property('EffectType', i)
         except TypeError as e:
             missed.append(i)

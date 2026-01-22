@@ -1,5 +1,5 @@
 from PyQt5 import QtWidgets, QtCore
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
 
 subsets = {}
 

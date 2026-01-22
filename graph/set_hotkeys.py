@@ -7,7 +7,8 @@ import shutil
 from graph.db_node_support import NodeCreationDialog
 from graph.transform_json_to_sql import transform_json, make_modinfo
 from schema_generator import check_valid_sql_against_db
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
+from graph.singletons.filepaths import LocalFilePaths
 from graph.nodes.effect_nodes import BaseEffectNode
 from graph.mod_conversion import build_imported_mod, extract_state_test, push_to_log, error_node_tracker
 from graph.no_context_widgets import Toast
@@ -474,7 +475,8 @@ def mod_test_session(graph):
     sql_lines, dict_form_list, loc_lines, incompletes_ordered = transform_json(current)
     age = graph.property('meta').get('Age')
     push_to_log(graph, f'Testing mod for: {age}')
-    result = check_valid_sql_against_db(age, sql_lines, dict_form_list, incompletes=incompletes_ordered) # need to do loc test too
+    result = check_valid_sql_against_db(age, sql_lines, db_spec, dict_form_list, incompletes=incompletes_ordered)
+    # need to do loc test too
     extract_state_test(graph, result)
     # make the collapsible panel be shown
 
@@ -493,7 +495,7 @@ def save_session_to_mod(graph, parent=None):
     write_sql(sql_lines)
     write_loc_sql(loc_lines)
 
-    civ_mods_path = db_spec.civ_config + '/Mods'             # if local mod dir exists, use that
+    civ_mods_path = LocalFilePaths.civ_config + '/Mods'             # if local mod dir exists, use that
     if not os.path.exists(civ_mods_path):
         civ_mods_path = QtWidgets.QFileDialog.getExistingDirectory(
             parent,
@@ -524,7 +526,7 @@ def import_mod(graph):
     dlg = QtWidgets.QFileDialog(graph.viewer(), "Select Folder")
     dlg.setFileMode(QtWidgets.QFileDialog.Directory)
     dlg.setOption(QtWidgets.QFileDialog.ShowDirsOnly, True)
-    mod_dir = db_spec.civ_config + '/Mods'
+    mod_dir = LocalFilePaths.civ_config + '/Mods'
     dlg.setDirectoryUrl(QtCore.QUrl.fromLocalFile(mod_dir))
     dlg.exec()
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None

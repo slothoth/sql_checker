@@ -1,7 +1,7 @@
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import transform_json
 from graph.set_hotkeys import write_sql, save_session, write_loc_sql
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
 
 
 def make_window(qtbot):

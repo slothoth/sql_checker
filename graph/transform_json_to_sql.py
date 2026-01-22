@@ -1,7 +1,7 @@
 import json
 from collections import defaultdict
 
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
 
 excludes = ['toggle_extra', 'table_name']

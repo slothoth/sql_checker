@@ -7,7 +7,9 @@ from PyQt5.QtWidgets import (
 
 from model import model_run
 from syntax_highlighter import LogHighlighter
-from graph.db_spec_singleton import db_spec, ages
+from graph.singletons.db_spec_singleton import db_spec
+from constants import ages
+from graph.singletons.filepaths import LocalFilePaths
 
 
 class CollapsiblePanel(QWidget):
@@ -34,21 +36,21 @@ class CollapsiblePanel(QWidget):
         content_layout = QVBoxLayout(self.content)
         # Civ Config
         self.entry1, btn1 = self.create_file_row(
-            "Civ Config Location:", default_value=db_spec.civ_config, browse_func=self.set_civ_config
+            "Civ Config Location:", default_value=LocalFilePaths.civ_config, browse_func=self.set_civ_config
         )
         content_layout.addLayout(self.entry1)
         content_layout.addWidget(btn1)
 
         # Workshop Folder
         self.entry2, btn2 = self.create_file_row(
-            "Workshop Folder:", default_value=db_spec.workshop, browse_func=self.set_workshop
+            "Workshop Folder:", default_value=LocalFilePaths.workshop, browse_func=self.set_workshop
         )
         content_layout.addLayout(self.entry2)
         content_layout.addWidget(btn2)
 
         # Civ Install
         self.entry3, btn3 = self.create_file_row(
-            "Civ Install:", default_value=db_spec.civ_install, browse_func=self.set_civ_install
+            "Civ Install:", default_value=LocalFilePaths.civ_install, browse_func=self.set_civ_install
         )
         content_layout.addLayout(self.entry3)
         content_layout.addWidget(btn3)

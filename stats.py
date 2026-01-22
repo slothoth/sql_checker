@@ -4,7 +4,6 @@ from collections import defaultdict, Counter
 from itertools import combinations
 from sqlalchemy import create_engine, text, select, Text
 
-from graph.db_spec_singleton import db_spec, attach_tables
 from graph.utils import flatten_avoid_string, to_number
 
 import logging
@@ -25,7 +24,7 @@ def get_unique_rows(data, key_columns):
     return unique_data
 
 
-def gather_effects(db_dict, metadata):
+def gather_effects(db_dict, metadata, database_spec):
     collection_types = []
     with db_dict['AGE_ANTIQUITY'].connect() as conn:
         result = conn.execute(text("SELECT Type FROM Types WHERE Kind='KIND_COLLECTION'"))
@@ -34,7 +33,7 @@ def gather_effects(db_dict, metadata):
             collection_types.append(dict(zip(column_names, row)))
     collection_types = [i['Type'] for i in collection_types]
     with open('resources/db_spec/CollectionsList.json', 'w') as f:
-        json.dump(collection_types, f, indent=2, sort_keys=True)
+        json.dump(collection_types, f, sort_keys=True, separators=(',', ':'))
 
     with open('resources/manual_assigned/CollectionObjectManualAssignment.json') as f:
         manual_collection_classification = json.load(f)
@@ -45,13 +44,13 @@ def gather_effects(db_dict, metadata):
     with open('resources/manual_assigned/modifier_tables.json') as f:
         mod_tables = json.load(f)
 
-    mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap)
-    mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap)
-    update_loc_spec(db_dict)
-    update_possible_vals_spec(db_dict, metadata)
+    mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap, database_spec)
+    mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap, database_spec)
+    update_loc_spec(db_dict, database_spec)
+    update_possible_vals_spec(db_dict, metadata, database_spec)
 
 
-def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap):
+def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap, database_spec):
     modifier_arguments_name_df = harvest_modifier_arguments(db_dict)
 
     mod_arg_dict = defaultdict(lambda: defaultdict(list))
@@ -103,7 +102,8 @@ def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwn
 
     mod_examples = process_arg_examples(mod_arg_dict)
     mod_type_map, mod_database_references, mod_undiagnosible, mod_missed_database = mine_type_arg_map(mod_examples,
-                                                                                                      mod_map)
+                                                                                                      mod_map,
+                                                                                                      database_spec)
     deal_with_defaults(mod_map, mod_type_map)
     eff_required_args, eff_exclusionary_args = extract_argument_stats(modifier_arguments_name_df,
                                                                                          'EffectType',
@@ -121,30 +121,33 @@ def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwn
     collect_effect_map = {k: sorted(v) for k, v in collect_effect_map.items()}
 
     with open('resources/db_spec/ModifierArgumentTypes.json', 'w') as f:
-        json.dump(mod_type_map, f, indent=2, default=convert, sort_keys=True)
+        json.dump(mod_type_map, f, separators=(',', ':'), default=convert, sort_keys=True)
     with open('resources/db_spec/ModifierArgumentDatabaseTypes.json', 'w') as f:
-        json.dump(mod_database_references, f, indent=2, default=convert, sort_keys=True)
+        json.dump(mod_database_references, f, separators=(',', ':'), default=convert, sort_keys=True)
 
     with open('resources/unused/AllModArgValues.json', 'w') as f:
-        json.dump(mod_arg_dict, f, indent=2, default=convert, sort_keys=True)
+        json.dump(mod_arg_dict, f, separators=(',', ':'), default=convert, sort_keys=True)
 
     with open('resources/db_spec/ModArgInfo.json', 'w') as f:
-        json.dump(mod_map, f, indent=2, default=convert, sort_keys=True)
+        json.dump(mod_map, f, separators=(',', ':'), default=convert, sort_keys=True)
 
     with open('resources/unused/CollectionAttachMap.json', 'w') as f:
-        json.dump(collect_attach_map, f, indent=2, sort_keys=True)
+        json.dump(collect_attach_map, f, separators=(',', ':'), sort_keys=True)
 
     with open('resources/db_spec/CollectionEffectMap.json', 'w') as f:
-        json.dump(collect_effect_map, f, indent=2, sort_keys=True)
+        json.dump(collect_effect_map, f, separators=(',', ':'), sort_keys=True)
 
     with open('resources/db_spec/DynamicModifierMap.json', 'w') as f:
-        json.dump(dynamicModifiers, f, indent=2, sort_keys=True)
+        json.dump(dynamicModifiers, f, separators=(',', ':'), sort_keys=True)
 
 
-def mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap):
+def mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap, database_spec):
     reqset_no_modifiers = no_modifier_reqset_harvest(db_dict)
-    requirement_object_mapper, req_args_name_df = map_requirement_type_objects(db_dict, manual_collection_classification,
-                                                             TableOwnerObjectMap, mod_tables, reqset_no_modifiers)
+    requirement_object_mapper, req_args_name_df = map_requirement_type_objects(db_dict,
+                                                                               manual_collection_classification,
+                                                                               TableOwnerObjectMap, mod_tables,
+                                                                               reqset_no_modifiers,
+                                                                               database_spec)
 
     # now a simpler task. Get all possible Requirement Arguments Names, Values, Extra, Extra2 and Type
     # combine with GameEffectArguments to get extra info on each if possible
@@ -154,7 +157,8 @@ def mine_requirements(db_dict, manual_collection_classification, mod_tables, Tab
 
     req_examples = process_arg_examples(req_arg_dict)
     req_type_map, req_database_references, req_undiagnosible, req_missed_database = mine_type_arg_map(req_examples,
-                                                                                                      req_map)
+                                                                                                      req_map,
+                                                                                                      database_spec)
 
     req_required_args, req_exclusionary_args = extract_argument_stats(req_args_name_df, 'RequirementType',
                                                                                            'RequirementId')
@@ -171,16 +175,16 @@ def mine_requirements(db_dict, manual_collection_classification, mod_tables, Tab
                req_map.items()}
 
     with open('resources/db_spec/RequirementInfo.json', 'w') as f:
-        json.dump(req_map, f, indent=2, default=convert, sort_keys=True)
+        json.dump(req_map, f, separators=(',', ':'), default=convert, sort_keys=True)
 
     with open('resources/db_spec/RequirementArgumentTypes.json', 'w') as f:
-        json.dump(req_type_map, f, indent=2, default=convert, sort_keys=True)
+        json.dump(req_type_map, f, separators=(',', ':'), default=convert, sort_keys=True)
 
     with open('resources/db_spec/RequirementArgumentDatabaseTypes.json', 'w') as f:
-        json.dump(req_database_references, f, indent=2, default=convert, sort_keys=True)
+        json.dump(req_database_references, f, separators=(',', ':'), default=convert, sort_keys=True)
 
     with open('resources/unused/GossipInfo.json', 'w') as f:
-        json.dump(gossips, f, indent=2, default=convert, sort_keys=True)
+        json.dump(gossips, f, separators=(',', ':'), default=convert, sort_keys=True)
 
 
 def modifier_req_set_harvest(db_dict, mod_tables):
@@ -323,7 +327,7 @@ def complex_attach_modifiers_reqset(db_dict):
 
 
 def map_requirement_type_objects(db_dict, manual_collection_classification, TableOwnerObjectMap, mod_tables,
-                                 reqset_no_modifiers):
+                                 reqset_no_modifiers, database_spec):
     total_subject_req_df, total_owner_req_df = modifier_req_set_harvest(db_dict, mod_tables)
     modifiers_full = complex_attach_modifiers_reqset(db_dict)
     owner_attached_final, not_owner_attached_final, one_owner, both_owners = [], [], [], []
@@ -346,7 +350,7 @@ def map_requirement_type_objects(db_dict, manual_collection_classification, Tabl
         else:
             not_owner_attached_final.append(row)
 
-    owner_mod_attach_table = derive_owner_attach_modifier_reqset(db_dict, both_owners)
+    owner_mod_attach_table = derive_owner_attach_modifier_reqset(db_dict, both_owners, database_spec)
     both_owner_map = {}
     for row in owner_mod_attach_table:
         tbl = row['AttachTable']
@@ -417,20 +421,20 @@ def map_requirement_type_objects(db_dict, manual_collection_classification, Tabl
             object_requirement_mapper[my_obj].append(req)
     object_requirement_mapper = {obj: sorted(list(set(reqs))) for obj, reqs in object_requirement_mapper.items()}
     with open('resources/unused/RequirementObjectMap.json', 'w') as f:
-        json.dump(requirement_object_mapper, f, indent=2, sort_keys=True)
+        json.dump(requirement_object_mapper, f, separators=(',', ':'), sort_keys=True)
     with open('resources/unused/ObjectRequirementMap.json', 'w') as f:
-        json.dump(object_requirement_mapper, f, indent=2, sort_keys=True)
+        json.dump(object_requirement_mapper, f, separators=(',', ':'), sort_keys=True)
     return requirement_object_mapper, req_all_types
 
 
-def derive_owner_attach_modifier_reqset(db_dict, both_owners):
+def derive_owner_attach_modifier_reqset(db_dict, both_owners, database_spec):
     owner_mod_attach_results = []
     missing_mods = [row['ModifierId'] for row in both_owners]
     if not missing_mods:
         return []
 
-    for tbl in attach_tables:
-        node = db_spec.node_templates.get(tbl, {})
+    for tbl in database_spec.attach_tables:
+        node = database_spec.node_templates.get(tbl, {})
         col_list = [k for k, v in node.get('foreign_keys', {}).items() if v == 'Modifiers']
         col_list += [k for k, v in node.get('extra_fks', {}).items() if v['ref_table'] == 'Modifiers']
 
@@ -745,7 +749,7 @@ def map_effect_type_objects(db_dict, mod_tables, manual_collection_classificatio
 
 
 def mine_empty_effects():
-    engine = create_engine(f"sqlite:///resources/gameplay-copy-cached-base-content.sqlite")
+    engine = create_engine(f"sqlite:///resources/created-db.sqlite")
     tables_data = {}
 
     with engine.connect() as conn:
@@ -768,7 +772,7 @@ def mine_empty_effects():
                 tables_data[table_name] = rows
 
     with open('resources/mined/PreBuiltData.json', 'w') as f:
-        json.dump(tables_data, f, indent=2, sort_keys=True)
+        json.dump(tables_data, f, separators=(',', ':'), sort_keys=True)
 
 
 def is_nan(x):
@@ -808,7 +812,7 @@ def process_arg_examples(data_examples):
     return dict(examples)
 
 
-def mine_type_arg_map(mined_examples, effect_arg_info):
+def mine_type_arg_map(mined_examples, effect_arg_info, database_spec):
     by_type_by_effect = defaultdict(lambda: defaultdict(set))
     arg_examples = defaultdict(set)
 
@@ -868,14 +872,14 @@ def mine_type_arg_map(mined_examples, effect_arg_info):
     type_map.update(numbered)   # todo deals with number. defaulting int but maybe should override for float in future?
     remaining = {k: v for k, v in remaining.items() if k not in numbered}
 
-    origins = [k for k, v in db_spec.node_templates.items() if v.get('origin_pk') is not None]
+    origins = [k for k, v in database_spec.node_templates.items() if v.get('origin_pk') is not None]
     missed_database, databased, database_references, fxs_defines, plural_find_table = {}, {}, {}, {}, False
     for k, v in remaining.items():
         if k in flattened_examples:
             examples = flattened_examples[k]
         else:
             examples = flattened_arg_examples[k]
-        find_table = {key: val for key, val in db_spec.all_possible_vals.items()
+        find_table = {key: val for key, val in database_spec.all_possible_vals.items()
                       if len(set(examples) - set(val['_PK_VALS'])) != len(set(examples))
                       and len(set(examples) - set(val['_PK_VALS'])) / len(set(examples)) < 0.05}
         # ensure at least 95% of the argument values are in a given table, there can be some fails by firaxis
@@ -890,16 +894,16 @@ def mine_type_arg_map(mined_examples, effect_arg_info):
             find_table = {k: v for k, v in find_table.items() if k in origins}
             if len(find_table) > 1:
                 find_table = {k: v for k, v in find_table.items() if
-                              db_spec.node_templates[k]['foreign_keys'].get(db_spec.node_templates[k]['primary_keys'][0],
-                                                                            'Types') == 'Types'}
+                              database_spec.node_templates[k]['foreign_keys'].get(
+                                  database_spec.node_templates[k]['primary_keys'][0], 'Types') == 'Types'}
             if len(find_table) > 1:
                 find_table = {k: v for k, v in find_table.items() if
-                              db_spec.node_templates[k].get(
-                    'extra_fks', {}).get(db_spec.node_templates[k]['primary_keys'][0], 'Types') == 'Types'}
+                              database_spec.node_templates[k].get(
+                    'extra_fks', {}).get(database_spec.node_templates[k]['primary_keys'][0], 'Types') == 'Types'}
             # now iterate to see if any values are extra_fks or foreign keys
             if len(find_table) > 1:
-                fks = {k: list(db_spec.node_templates[k]['foreign_keys'].values()) + [j['ref_table']
-                    for j in db_spec.node_templates[k].get('extra_fks', {}).values()] for k, v in find_table.items()}
+                fks = {k: list(database_spec.node_templates[k]['foreign_keys'].values()) + [j['ref_table']
+                    for j in database_spec.node_templates[k].get('extra_fks', {}).values()] for k, v in find_table.items()}
                 find_table = {k: v for k, v in find_table.items() if not any(i in find_table for i in fks[k])}
             # gets rid of tables that are not in origins
         if len(find_table) == 1:
@@ -970,7 +974,7 @@ def deal_with_defaults(info_map, type_map):
         del info_map[k]['Arguments'][key]
 
 
-def update_loc_spec(db_dict):
+def update_loc_spec(db_dict, database_spec):
 
     with open('resources/db_spec/LocalizedTags.json') as f:
         localised = json.load(f)
@@ -980,7 +984,7 @@ def update_loc_spec(db_dict):
     localise_table_cols = defaultdict(list)
     for db, engine in db_dict.items():
 
-        for table_name, info in db_spec.node_templates.items():
+        for table_name, info in database_spec.node_templates.items():
             for column_name in info['all_cols']:
                 with engine.connect() as conn:
                     trans = conn.begin()
@@ -997,26 +1001,26 @@ def update_loc_spec(db_dict):
                     if column_name in ['Name', 'Description']:
                         log.info(f'missed localisation on these rows for {table_name}.{column_name}:', rows)
     for table_name, table_cols in localise_table_cols.items():
-        db_spec.node_templates[table_name]['localised'] = []
+        database_spec.node_templates[table_name]['localised'] = []
         for col in table_cols:
-            db_spec.node_templates[table_name]['localised'].append(col)
-        db_spec.node_templates[table_name]['localised'] = list(set(db_spec.node_templates[table_name]['localised']))
+            database_spec.node_templates[table_name]['localised'].append(col)
+        database_spec.node_templates[table_name]['localised'] = list(set(database_spec.node_templates[table_name]['localised']))
 
-    db_spec.update_node_templates(db_spec.node_templates)
+    database_spec.update_node_templates(database_spec.node_templates)
 
 
-def update_possible_vals_spec(db_dict, metadata):
+def update_possible_vals_spec(db_dict, metadata, database_spec):
     age_possible_vals = {}
     for age_type, engine in db_dict.items():
         result = {}
         with engine.connect() as conn:
             for table_name, table in metadata.tables.items():
                 table_dict = {}
-                spec = db_spec.node_templates[table_name]
+                spec = database_spec.node_templates[table_name]
                 for column in table.c:
                     if table_name in ['ModifierArguments', 'RequirementArguments'] and column.name == 'Value':
                         continue
-                    not_covered = column.name not in db_spec.all_possible_vals[table_name]
+                    not_covered = column.name not in database_spec.all_possible_vals[table_name]
                     not_covered = not_covered and column.name not in spec.get('localised', [])
                     not_covered = not_covered and column.name not in spec.get('foreign_keys')
                     if isinstance(column.type, Text) and not column.primary_key and not_covered:
@@ -1037,26 +1041,26 @@ def update_possible_vals_spec(db_dict, metadata):
                                      for val in age_possible_vals[age].get(table_name, {}).get(column.name, [])))
             if 400 > len(combined_vals) > 0:  # too many slows performance
                 all_possible_vals[table_name][column.name] = combined_vals
-                if table_name not in db_spec.all_possible_vals:
-                    db_spec.all_possible_vals[table_name] = {}
-                if column.name not in db_spec.all_possible_vals[table_name]:
-                    db_spec.all_possible_vals[table_name][column.name] = combined_vals
+                if table_name not in database_spec.all_possible_vals:
+                    database_spec.all_possible_vals[table_name] = {}
+                if column.name not in database_spec.all_possible_vals[table_name]:
+                    database_spec.all_possible_vals[table_name][column.name] = combined_vals
 
     for age, poss_val_dict in age_possible_vals.items():
         for table_name, table in poss_val_dict.items():
             for column, values in table.items():
                 if len(values) < 300:
-                    if table_name not in db_spec.possible_vals[age]:
-                        db_spec.possible_vals[age][table_name] = {}
-                    if column not in db_spec.possible_vals[age][table_name]:
-                        db_spec.possible_vals[age][table_name][column] = values
+                    if table_name not in database_spec.possible_vals[age]:
+                        database_spec.possible_vals[age][table_name] = {}
+                    if column not in database_spec.possible_vals[age][table_name]:
+                        database_spec.possible_vals[age][table_name][column] = values
 
     all_cols = {f'{k}_{col}': items for k, v in all_possible_vals.items() for col, items in v.items()}
     all_cols_tuples = [(k, v) for k, v in all_cols.items()]
     all_cols_tuples.sort(key=lambda t: len(t[1]), reverse=True)
 
-    db_spec.update_possible_vals(db_spec.possible_vals)
-    db_spec.update_all_vals(db_spec.all_possible_vals)
+    database_spec.update_possible_vals(database_spec.possible_vals)
+    database_spec.update_all_vals(database_spec.all_possible_vals)
 
 
 def extract_argument_stats(modifier_arguments_list, game_effect_col, effect_id_col):

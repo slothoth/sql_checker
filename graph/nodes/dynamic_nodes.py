@@ -1,7 +1,7 @@
 from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
 from PyQt5 import QtCore, QtGui
 
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, DropDownLineEdit
 from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints, index_label

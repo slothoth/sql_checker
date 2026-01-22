@@ -7,7 +7,7 @@ from sqlalchemy import inspect
 import sqlite3
 from collections import defaultdict
 from schema_generator import SQLValidator
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
 
 import logging
 
@@ -228,7 +228,7 @@ def update_delete_transform(update_sql: str, parsed=None, age='AGE_ANTIQUITY'):
     sel_sql = f"SELECT {sel_cols} FROM {canon_table_name}"
     if where_clause is not None:
         sel_sql = f"{sel_sql}  WHERE {where_clause}"
-    SQLValidator.state_validation_setup(age)
+    SQLValidator.state_validation_setup(age, db_spec)
     with SQLValidator.engine_dict[age].begin() as conn:
         try:
             before_rows = conn.execute(text(sel_sql)).mappings().all()

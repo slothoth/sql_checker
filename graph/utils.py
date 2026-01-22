@@ -1,4 +1,3 @@
-
 def to_number(x):
     if isinstance(x, (int, float)):
         return x

@@ -1,5 +1,5 @@
 from graph.db_node_support import sync_node_options
-from graph.db_spec_singleton import db_spec
+from graph.singletons.db_spec_singleton import db_spec
 
 import logging
 

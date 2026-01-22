@@ -13,7 +13,8 @@ import traceback
 from xml_handler import read_xml
 from gameeffects import game_effects, req_build, req_set_build
 from sql_errors import get_query_details, full_matcher_sql, primary_key_matcher, check_foreign_keys, foreign_key_check, foreign_key_pretty_notify
-from graph.db_spec_singleton import db_spec
+from graph.singletons.filepaths import LocalFilePaths
+
 
 # FOr getting the DB, its NOT just loading up civ and using the existing empty one in shell. as that misses collections
 # added  as types, What it ended up being was loading an antiquity civ game, except editing the modinfo for it so
@@ -53,7 +54,7 @@ class SqlChecker:
 
     def setup_db_existing(self):
         logging.debug("setup_db_existing start")
-        copy_db_path = resource_path("resources/gameplay-copy-cached-base-content.sqlite")
+        copy_db_path = resource_path("resources/created-db.sqlite")
         self.db_path = os.path.join(tempfile.gettempdir(), 'discardable-gameplay-copy.sqlite')
         try:
             shutil.copy(copy_db_path, self.db_path)
@@ -463,16 +464,16 @@ def query_mod_db(age, log_queue=None):
     with open(resource_path('resources/queries/query_VII_mods.sql'), 'r') as f:
         query = f.read()
     query = query.replace('AGE_ANTIQUITY', age)
-    conn = sqlite3.connect(f"{db_spec.civ_config}/Mods.sqlite")
+    conn = sqlite3.connect(f"{LocalFilePaths.civ_config}/Mods.sqlite")
     conn.row_factory = sqlite3.Row  # enables column access by name
     cur = conn.cursor()
     cur.execute(query)
     rows = cur.fetchall()
     files_to_apply = []
     # first we need the modinfos of each mod
-    filepath_dlc_mod_infos = [f for f in glob.glob(f"{db_spec.civ_install}/**/*.modinfo*", recursive=True)]
-    filepath_mod_mod_infos = ([f for f in glob.glob(f"{db_spec.workshop}/**/*.modinfo*", recursive=True)] +
-                              [f for f in glob.glob(f"{db_spec.civ_config}/**/*.modinfo*", recursive=True)])
+    filepath_dlc_mod_infos = [f for f in glob.glob(f"{LocalFilePaths.civ_install}/**/*.modinfo*", recursive=True)]
+    filepath_mod_mod_infos = ([f for f in glob.glob(f"{LocalFilePaths.workshop}/**/*.modinfo*", recursive=True)] +
+                              [f for f in glob.glob(f"{LocalFilePaths.civ_config}/**/*.modinfo*", recursive=True)])
     filepath_mod_infos = filepath_dlc_mod_infos + filepath_mod_mod_infos
     modinfo_uuids, err_string, dlc_mods, mod_mods = {}, '', [], []
 
@@ -551,7 +552,7 @@ def model_run(log_queue, extra_sql, age):
     start_time = time.time()
     wrapped_q = NonBlockingQueue(log_queue)
     logging.debug("model_run start civ_install=%s civ_config=%s workshop=%s",
-                  db_spec.civ_install, db_spec.civ_config, db_spec.workshop)
+                  LocalFilePaths.civ_install, LocalFilePaths.civ_config, LocalFilePaths.workshop)
     try:
         checker = SqlChecker(wrapped_q)
         checker.setup_db_existing()

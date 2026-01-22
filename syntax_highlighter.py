@@ -9,15 +9,20 @@ class LogHighlighter(QSyntaxHighlighter):
 
         fmt_error = QTextCharFormat()
         fmt_error.setForeground(QColor("#cc0000"))
-        self.rules.append((QRegularExpression(r"NOT NULL constraint failed.*", QRegularExpression.CaseInsensitiveOption), fmt_error))
-        self.rules.append((QRegularExpression(r"constraint failed.*", QRegularExpression.CaseInsensitiveOption), fmt_error))
-        self.rules.append((QRegularExpression(r"-{5,}\s*Error Summary\s*-{5,}", QRegularExpression.CaseInsensitiveOption), fmt_error))
+        red_rules = [r"NOT NULL constraint failed.*", r"constraint failed.*", r"-{5,}\s*Error Summary\s*-{5,}",
+                     r"There wasn't", r"FOREIGN KEY", r"There were ^[1-9][0-9]*$",
+                     r"had problem"]
+        for i in red_rules:
+            self.rules.append((QRegularExpression(i, QRegularExpression.CaseInsensitiveOption), fmt_error))
 
         fmt_sql = QTextCharFormat()
         fmt_sql.setForeground(QColor("#6a0dad"))
-        self.rules.append((QRegularExpression(r"\bINSERT INTO\b.*", QRegularExpression.CaseInsensitiveOption), fmt_sql))
-        self.rules.append((QRegularExpression(r"\bUPDATE\b.*", QRegularExpression.CaseInsensitiveOption), fmt_sql))
-        self.rules.append((QRegularExpression(r"\bDELETE FROM\b.*", QRegularExpression.CaseInsensitiveOption), fmt_sql))
+        syntax_rules = [r"\bINSERT INTO\b.*", r"\bUPDATE\b.*", r"\bDELETE FROM\b.*"]
+        for i in syntax_rules:
+            self.rules.append((QRegularExpression(i, QRegularExpression.CaseInsensitiveOption), fmt_sql))
+
+        # positive!
+        todo = ['Valid mod setup']
 
         fmt_header = QTextCharFormat()
         fmt_header.setForeground(QColor("#0047ab"))

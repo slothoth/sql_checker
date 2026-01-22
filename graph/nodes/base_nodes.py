@@ -3,7 +3,8 @@ from NodeGraphQt import BaseNode
 from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
 
 
-from graph.db_spec_singleton import db_spec, effect_system_tables, requirement_system_tables
+from graph.singletons.db_spec_singleton import db_spec
+from constants import effect_system_tables, requirement_system_tables
 from schema_generator import SQLValidator
 from graph.custom_widgets import ExpandingLineEdit, BoolCheckNodeWidget
 
