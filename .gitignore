@@ -6,3 +6,6 @@
 /build/*
 /resources/graph.json
 /resources/main.sql
+/resources/db_spec/*
+/resources/mined/*
+/resources/unused/*
