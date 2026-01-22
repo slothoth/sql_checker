@@ -206,6 +206,3 @@ def test_import_mod(qtbot):
     cwd = os.getcwd()
 
     mod_info_found = build_imported_mod(f'{cwd}/test/test_data/test_mod_import', window.graph)
-    print('test that the graph nodes exist, and they have the right connections')
-    for node in window.graph.all_nodes():
-        print('')

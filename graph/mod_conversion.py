@@ -6,7 +6,7 @@ import itertools
 from itertools import product
 from collections import defaultdict, deque
 
-
+from graph.singletons.filepaths import LocalFilePaths
 from xml_handler import read_xml
 import xml.etree.ElementTree as ET
 from model import convert_xml_to_sql
@@ -700,6 +700,10 @@ def extract_state_test(graph, data):
                 if no_errors:
                     no_errors = 'FOREIGN KEY' not in info["sql"]
                 incomplete_nodes.append(info["node_source"])
+
+    with open(LocalFilePaths.app_data_path_form('db.log'), 'w') as f:
+        f.write(graph.side_panel.log_display.toPlainText())
+
 
     error_node_tracker.empty_node_list()
     for node in all_nodes:

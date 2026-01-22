@@ -3,7 +3,6 @@ from pathlib import Path
 from platformdirs import user_data_dir
 import logging
 from logging.handlers import RotatingFileHandler
-from PyQt5.QtCore import QStandardPaths
 import sys
 if sys.platform == 'win32':
     import winreg
