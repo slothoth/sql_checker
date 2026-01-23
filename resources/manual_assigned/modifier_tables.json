@@ -1,0 +1,20 @@
+[
+  "EnterStageModifiers",
+  "EnvoysInActionModifiers",
+  "EnvoysInStageModifiers",
+  "GovernmentModifiers",
+  "MementoModifiers",
+  "TraditionModifiers",
+  "TraitModifiers",
+  "UnitAbilityModifiers",
+  "UnitPromotionModifiers",
+  "BeliefModifiers",
+  "CityStateBonusModifiers",
+  "ConstructibleModifiers",
+  "GameModifiers",
+  "GoldenAgeModifiers",
+  "MetaprogressionModifiers",
+  "NarrativeRewards",
+  "PlayerModifiers",
+  "ProjectModifiers"
+]

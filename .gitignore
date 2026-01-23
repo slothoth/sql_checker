@@ -1,0 +1,6 @@
+/UI/*
+.idea/*
+*.sqlite
+*.log
+/dist/*
+/build/*

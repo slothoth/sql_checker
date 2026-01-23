@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="$UUID$" version="1"
+	xmlns="ModInfo">
+	<Properties>
+		<Name>$MODNAME$</Name>
+		<Description>$MOD_DESCRIPTION$</Description>
+		<Authors>$YOUR_NAME$</Authors>
+		<ShowInBrowser>1</ShowInBrowser>
+		<Package>MOD</Package>
+	</Properties>
+	<Dependencies>
+		<Mod id="age-antiquity" title="LOC_MODULE_AGE_ANTIQUITY_NAME"/>
+	</Dependencies>
+	<ActionCriteria>
+		<Criteria id="always">
+			<AlwaysMet/>
+		</Criteria>
+        <Criteria id="antiquity-age-current">
+			<AgeInUse>AGE_ANTIQUITY</AgeInUse>
+		</Criteria>
+		<Criteria id="exploration-age-current">
+			<AgeInUse>AGE_EXPLORATION</AgeInUse>
+		</Criteria>
+		<Criteria id="modern-age-current">
+			<AgeInUse>AGE_MODERN</AgeInUse>
+		</Criteria>
+	</ActionCriteria>
+	<ActionGroups>
+		<ActionGroup id="$actionID$" scope="game" criteria="$actionCriteria$">
+			<Actions>
+				<UpdateDatabase>
+					<Item>main.sql</Item>
+				</UpdateDatabase>
+				<UpdateText>
+					<Item>loc.sql</Item>
+				</UpdateText>
+			</Actions>
+		</ActionGroup>
+	</ActionGroups>
+</Mod>

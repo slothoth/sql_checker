@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="slothoth-friedrich-no-commendation" version="1"
+	xmlns="ModInfo">
+	<Properties>
+		<Name>Friedrich Commendationless Commander AoE</Name>
+		<Description>Makes it so Friedrich, Oblique instead has larger AoE commanders, not just the commendation. Yes it stacks with the commendation.</Description>
+		<Authors>Slothoth</Authors>
+		<ShowInBrowser>1</ShowInBrowser>
+		<Package>MOD</Package>
+	</Properties>
+	<Dependencies>
+		<Mod id="age-antiquity" title="LOC_MODULE_AGE_ANTIQUITY_NAME"/>
+	</Dependencies>
+	<ActionCriteria>
+		<Criteria id="always">
+			<AlwaysMet/>
+		</Criteria>
+	</ActionCriteria>
+	<ActionGroups>
+		<ActionGroup id="slth-friedrich-comm" scope="game" criteria="always">
+			<Actions>
+				<UpdateDatabase>
+					<Item>data/main.sql</Item>
+				</UpdateDatabase>
+			</Actions>
+		</ActionGroup>
+	</ActionGroups>
+</Mod>

@@ -1,0 +1,1 @@
+INSERT INTO "Types" ("Type", "Kind") VALUES ('TYPE_TEST', 'KIND_ABILITY');

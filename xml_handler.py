@@ -1,6 +1,11 @@
 import xml.etree.ElementTree as ET
 from xml.dom import minidom
+from lxml import etree
 from collections import defaultdict
+import tempfile
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def dict_to_etree(d, root):
@@ -21,35 +26,56 @@ def dict_to_etree(d, root):
                 sub_elem = ET.SubElement(root, k)
                 sub_elem.text = str(v)
 
-
-def dict_to_xml(d):
-    if len(d) != 1:
-        raise ValueError("Dictionary must have exactly one root key")
-
-    root_key = next(iter(d))
-    root = ET.Element(root_key)
-    dict_to_etree(d[root_key], root)
-    return root
-
-
-def xml_to_string(root):
-    return ET.tostring(root, encoding='unicode')
-
-
-def pretty_print_xml(xml_string):
-    parsed_xml = minidom.parseString(xml_string)
-    return parsed_xml.toprettyxml(indent="    ")
-
-
-def save_pretty_xml_to_file(xml_string, filename):
-    with open(filename, 'w', encoding='utf-8') as f:
-        f.write(xml_string)
-
-
 def read_xml(filepath):
-    tree = ET.parse(filepath)
+    try:
+        tree = ET.parse(filepath)
+    except ET.ParseError as e:
+        with open(filepath, 'r') as f:
+            file = f.readlines()
+        current_error, pretty_file, test = None, None, None
+        new_error = e
+        line, position = e.position
+        tries = 0
+        while test is None and current_error != new_error and tries < 10:
+            try:
+                tries += 1
+                line_fail = file[line - 1]
+                new_file = file
+                if line_fail[position - 1] == '"':              # deals with no space between elements
+                    line_fail = line_fail[:position - 1] + '\t' + line_fail[position:]
+                    new_file[line - 1] = line_fail
+                main_tag_idx = [idx for idx, i in enumerate(new_file) if '<' in i and '>' in i][0]
+                if main_tag_idx != 0:
+                    new_file = new_file[main_tag_idx:]
+                bad_comments = [(idx, i) for idx, i in enumerate(new_file) if '-' in i and '<' not in i and '>' not in i]
+                for i in bad_comments:
+                    new_file[i[0]] = '$$$REMOVE$$$'
+                pretty_file = "".join(new_file)
+                pretty_file = pretty_file.replace('$$$REMOVE$$$', '')
+                test = ET.XML(pretty_file)
+            except ET.ParseError as e:
+                new_error = e
+                log.debug(f'on file: {filepath}\n {e}')
+                line, position = e.position
+        if test is None:
+            log.error('couldnt find a way to parse xml')
+            raise new_error
+        try:
+            with tempfile.TemporaryFile() as fp:
+                fp.write(pretty_file.encode('utf-8'))
+                fp.seek(0)
+                tree = ET.parse(fp)
+        except ET.ParseError as e:
+            log.info(f'poorly formed xml {filepath}, doing smart parse skipping malformed tags, jesus take the wheel,'
+                     f' hopefully its gameeffects. Full file:')
+            log.info(pretty_file)
+            parse_gameeffects_to_dict(fp)
+
     t = tree.getroot()
-    return etree_to_dict(t)
+    xml_dict = etree_to_dict(t)
+    cleaned_dict, removed = clean_and_track(xml_dict)
+    log.info(f'removed empty values in xml handler for {filepath}: {removed}')
+    return cleaned_dict
 
 
 def etree_to_dict(t):
@@ -75,3 +101,81 @@ def etree_to_dict(t):
             d[t.tag] = text
 
     return d
+
+
+def parse_gameeffects_to_dict(path):
+    parser = etree.XMLParser(recover=True, huge_tree=True)
+    tree = etree.parse(path, parser)
+    root = tree.getroot()
+
+    bad_lines = set()
+    for e in parser.error_log:
+        if getattr(e, "line", None):
+            bad_lines.add(e.line)
+            if e.line > 1:
+                bad_lines.add(e.line - 1)
+
+    def local(tag):
+        return tag.rsplit("}", 1)[-1] if "}" in tag else tag
+
+    def text(el):
+        return "".join(el.itertext()).strip() if el is not None else ""
+
+    out = {local(root.tag): {"_attrs": dict(root.attrib), "Modifier": []}}
+
+    for mod in root:
+        if local(mod.tag) != "Modifier":
+            continue
+        if mod.sourceline in bad_lines:
+            continue
+
+        m = {"_attrs": dict(mod.attrib), "Argument": {}, "String": {}}
+
+        for ch in mod:
+            if ch.sourceline in bad_lines:
+                continue
+
+            t = local(ch.tag)
+            if t == "Argument":
+                name = ch.get("name")
+                if name:
+                    m["Argument"][name] = text(ch)
+            elif t == "String":
+                ctx = ch.get("context")
+                if ctx:
+                    m["String"][ctx] = text(ch)
+
+        out[local(root.tag)]["Modifier"].append(m)
+
+    return out
+
+
+def clean_and_track(data, path="", removed_paths=None):
+    """
+    Recursively removes keys where the value is an empty string ("")
+    and tracks the path of removed items.
+    """
+    if removed_paths is None:
+        removed_paths = []
+
+    if not isinstance(data, dict):
+        return data, removed_paths
+
+    keys_to_delete = []
+
+    for key, value in data.items():
+        current_path = f"{path} > {key}" if path else key
+        if value == "":
+            keys_to_delete.append(key)
+            removed_paths.append(current_path)
+        elif isinstance(value, dict):
+            _, _ = clean_and_track(value, current_path, removed_paths)
+        elif isinstance(value, list):
+            for item in value:
+                if isinstance(item, dict):
+                    _, _ = clean_and_track(item, current_path, removed_paths)
+
+    for key in keys_to_delete:
+        del data[key]
+
+    return data, removed_paths
