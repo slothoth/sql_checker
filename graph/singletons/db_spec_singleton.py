@@ -3,14 +3,11 @@ import sqlite3
 from copy import deepcopy
 from threading import Lock
 import os
-import sys
 from pathlib import Path
 import glob
 import re
 import logging
 
-
-from constants import modifier_system_tables
 from graph.singletons.filepaths import LocalFilePaths
 from schema_generator import SQLValidator
 from stats import gather_effects
