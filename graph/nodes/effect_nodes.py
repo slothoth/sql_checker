@@ -44,8 +44,8 @@ class BaseEffectNode(BasicDBNode):
 
         if name in self.get_property('arg_params') and self.graph is not None:
             self.get_property('arg_params')[name] = value
-            print(f'name: {name} value: {value}')
-            arg_info = self.argument_info_map[self.get_property(self.arg_setter_prop)]['Arguments'][name]
+            arg_info = self.argument_info_map[self.get_property(self.arg_setter_prop)]['Arguments']
+            arg_info = arg_info.get(name, arg_info.get(name+'_arg', {}))
             if arg_info.get('MinedNeeded', False):
                 if self.arg_prop_map[self.get_property(self.arg_setter_prop)][name] in ['database', 'text']:
                     self._update_field_style(name, value != '')
