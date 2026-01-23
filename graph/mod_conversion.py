@@ -340,12 +340,13 @@ def connect_foreign_keys(fk_index, nodes_dict, effect_dict):
             primary_key = parent_pk[0]   # technically multiple pks possible, but ports system means just connect one
             src_ports = [i for i in parent_node.output_ports() if i.name() == parent_col]
             if len(src_ports) != 1:
-                raise Exception('plural primay key col somehow when trying to build graph of loaded mod foreign keys')
+                raise Exception('plural primary key col somehow when trying to build graph of loaded mod foreign keys')
             src_port = src_ports[0]
             connect_port_name = child_node.get_link_port(parent_node.get_property('table_name'), primary_key)
             if connect_port_name:
                 port_index = next((i for i, s in enumerate(child_node.input_ports()) if s.name() == connect_port_name), 0)
-                src_port.connect_to(child_node.input_ports()[port_index])
+                if len (child_node.input_ports()) > 0:
+                    src_port.connect_to(child_node.input_ports()[port_index])
 
 
 def criteria_matches(criteria, age):
