@@ -251,54 +251,42 @@
     "label":"&Graph",
     "items":[
       {
-        "type":"menu",
-        "label":"&Background",
-        "items":[
-          {
-            "type":"command",
-            "label":"None",
-            "file":"./hotkey_functions.py",
-            "function_name":"bg_grid_none",
-            "shortcut":"Alt+1"
-          },
-          {
-            "type":"command",
-            "label":"Lines",
-            "file":"./hotkey_functions.py",
-            "function_name":"bg_grid_lines",
-            "shortcut":"Alt+2"
-          },
-          {
-            "type":"command",
-            "label":"Dots",
-            "file":"./hotkey_functions.py",
-            "function_name":"bg_grid_dots",
-            "shortcut":"Alt+3"
-          }
-        ]
+          "type":"command",
+          "label":"None",
+          "file":"./hotkey_functions.py",
+          "function_name":"bg_grid_none",
+          "shortcut":"Alt+1"
+        },
+      {
+        "type":"command",
+        "label":"Lines",
+        "file":"./hotkey_functions.py",
+        "function_name":"bg_grid_lines",
+        "shortcut":"Alt+2"
       },
       {
-        "type":"menu",
-        "label":"&Layout",
-        "items":[
-          {
-            "type":"command",
-            "label":"Horizontal",
-            "file":"./hotkey_functions.py",
-            "function_name":"layout_h_mode",
-            "shortcut":"Shift+1"
-          },
-          {
-            "type":"command",
-            "label":"Vertical",
-            "file":"./hotkey_functions.py",
-            "function_name":"layout_v_mode",
-            "shortcut":"Shift+2"
-          }
-        ]
+        "type":"command",
+        "label":"Dots",
+        "file":"./hotkey_functions.py",
+        "function_name":"bg_grid_dots",
+        "shortcut":"Alt+3"
+      },
+      {
+        "type":"command",
+        "label":"Horizontal",
+        "file":"./hotkey_functions.py",
+        "function_name":"layout_h_mode",
+        "shortcut":"Shift+1"
+      },
+      {
+        "type":"command",
+        "label":"Vertical",
+        "file":"./hotkey_functions.py",
+        "function_name":"layout_v_mode",
+        "shortcut":"Shift+2"
       }
-    ]
-  },
+      ]
+    },
   {
     "type":"menu",
     "label":"&Nodes",
