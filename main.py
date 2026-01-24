@@ -6,11 +6,6 @@ from PyQt5.QtGui import QPixmap
 from graph.singletons.filepaths import LocalFilePaths       # needed because we want logger initialised
 from graph.utils import resource_path
 
-from graph.singletons.db_spec_singleton import db_spec
-
-db_spec.initialize()
-
-
 
 class SetupWorker(QThread):
     finished = pyqtSignal()
