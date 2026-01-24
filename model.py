@@ -8,6 +8,8 @@ import tempfile
 import time
 import sqlparse
 import traceback
+from collections import defaultdict
+
 
 from xml_handler import read_xml
 from gameeffects import game_effects, req_build, req_set_build
@@ -26,7 +28,7 @@ class NonBlockingQueue:
         try:
             self._q.put(item, block=False)
         except Exception as e:
-           pass
+            pass
 
 
 class SqlChecker:
@@ -39,15 +41,15 @@ class SqlChecker:
         self.db_path = ''
 
     def setup_db_existing(self):
-        logging.debug("setup_db_existing start")
+        log.debug("setup_db_existing start")
         copy_db_path = resource_path(LocalFilePaths.app_data_path_form('created-db.sqlite'))
         self.db_path = os.path.join(tempfile.gettempdir(), 'discardable-gameplay-copy.sqlite')
         try:
             shutil.copy(copy_db_path, self.db_path)
-            logging.debug("copied db from %s to %s size=%s", copy_db_path, self.db_path, os.path.getsize(self.db_path))
+            log.debug("copied db from %s to %s size=%s", copy_db_path, self.db_path, os.path.getsize(self.db_path))
             log_message(f"Copied DB to {self.db_path}", self.log_queue)
         except Exception as exc:
-            logging.exception("copy failed")
+            log.exception("copy failed")
             log_message(f"DB copy failed: {exc}", self.log_queue)
             raise
 
@@ -440,7 +442,6 @@ def validate_xml(xml_dict):
                     if isinstance(requirement_list, list):
                         msg = f'ERROR: Requirements list for {mod_name} had two requirement lists nested, due to bad xml. This will silently error on firaxis side, and only will use the first requirement.'
                         log.warning(msg)
-                        error_msgs.append(msg)
                         xml_skips[mod_name] = {'error_type': 'NestedRequirements', 'additional': 'subject'}
 
     return error_msgs, xml_skips
@@ -500,6 +501,18 @@ def query_mod_db(age, log_queue=None):
     index = {mod: i for i, mod in enumerate(custom_index)}
     files_to_apply = sorted(files_to_apply, key=lambda d: index.get(d["ModId"], len(custom_index)))
 
+    log.info('Mods to apply:')
+    db_by_mod_id = defaultdict(dict)
+
+    for i in files_to_apply:
+        db_by_mod_id[i['ModId']][i['File']] = i['full_path']
+
+    log.info([i for i in db_by_mod_id.keys()])
+    log.info('----------------------------------')
+    log.info('Full Files to apply:')
+    log.info({k: [key for key in v.keys()] for k, v in db_by_mod_id.items()})
+    log.info('Files to apply:')
+    log.info(dict(db_by_mod_id))
     log_message('Loading DLC:', log_queue)
     log_message(list({i['ModId'] for i in files_to_apply if i['ModId'] in dlc_mods}), log_queue)
     log_message('-------------------------------------------', log_queue)
@@ -512,7 +525,7 @@ def query_mod_db(age, log_queue=None):
 def log_message(message, log_queue):
     if log_queue is not None:
         log_queue.put(message)
-    logging.info(message)
+    log.info(message)
 
 
 def check_state(cursor):
@@ -533,7 +546,7 @@ def make_hash(value):       # SHA1 hash, copies how firaxis does insert into Typ
 def model_run(log_queue, extra_sql, age):
     start_time = time.time()
     wrapped_q = NonBlockingQueue(log_queue)
-    logging.debug("model_run start civ_install=%s civ_config=%s workshop=%s",
+    log.debug("model_run start civ_install=%s civ_config=%s workshop=%s",
                   LocalFilePaths.civ_install, LocalFilePaths.civ_config, LocalFilePaths.workshop)
     try:
         checker = SqlChecker(wrapped_q)
@@ -556,7 +569,7 @@ def model_run(log_queue, extra_sql, age):
                 file.write("\n".join(full_dump))
             log_message(f"Wrote transformed SQL as a single file to {log_path}", wrapped_q)
         except Exception:
-            logging.exception("failed to write sql_statements.log")
+            log.exception("failed to write sql_statements.log")
             log_message("failed to write sql_statements.log", wrapped_q)
         dlc_sql_dump = [j for i in sql_statements_dlc.values() for j in i]
         silly_parse_error = [j for j in dlc_sql_dump if ',;' in j] + [j for j in dlc_sql_dump if ', ;' in j]
@@ -637,4 +650,10 @@ def load_files(jobs, job_type, log_queue=None):
     # new logic for linting database entries relies on using a source node. As raw files dont have source,
     # we are just gonna use the filepath i guess
     dictified = {key: [{'sql': i, 'node_source': key} for i in val] for key, val in sql_statements.items()}
+    # metrics
+    log.info('Missed Files:')
+    log.info(missed_files)
+    log.info('Modinfo Files and Statements')
+    log.info({k: len(v) for k, v in sql_statements.items()})
+
     return dictified, missed_files
