@@ -90,7 +90,7 @@ class BaseEffectNode(BasicDBNode):
 
     def reapply_arg_params(self):
         mode = self.get_property(self.arg_setter_prop)
-        new_params = self.arg_prop_map.get(mode)
+        new_params = self.arg_prop_map.get(mode, {})
         for arg, prop in new_params.items():
             self.show_or_make_prop_widget(arg, prop, mode, True)
 
@@ -332,7 +332,6 @@ class GameEffectNode(BaseEffectNode):
         sql_code, dict_form_list, error_string = effect_custom_transform(custom_properties, node_id,
                                                                      sql_code, dict_form_list, error_string)
         return sql_code, dict_form_list, ''
-
 
 
 class RequirementEffectNode(BaseEffectNode):

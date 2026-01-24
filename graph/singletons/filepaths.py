@@ -8,7 +8,6 @@ if sys.platform == 'win32':
     import winreg
 
 
-
 class FilePaths:
     def __init__(self):
         self.save_appdata_path = self.setup_appdata(civ_type='CivVII')               #  for when we include VI

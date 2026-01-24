@@ -191,9 +191,9 @@ class ResourceLoader:
         db.fix_firaxis_missing_bools()
         db.fix_firaxis_missing_fks()                # a concern is these rely on being built by SQLvalidator
         self.update_node_templates(db.table_data)   # which comes later. should be fine if we ship these db tho
-        db_paths = { LocalFilePaths.app_data_path_form('gameplay-base_AGE_ANTIQUITY.sqlite'): 'AGE_ANTIQUITY',
-                     LocalFilePaths.app_data_path_form('gameplay-base_AGE_EXPLORATION.sqlite'): 'AGE_EXPLORATION',
-                     LocalFilePaths.app_data_path_form('gameplay-base_AGE_MODERN.sqlite'): 'AGE_MODERN'}
+        db_paths = {LocalFilePaths.app_data_path_form('gameplay-base_AGE_ANTIQUITY.sqlite'): 'AGE_ANTIQUITY',
+                    LocalFilePaths.app_data_path_form('gameplay-base_AGE_EXPLORATION.sqlite'): 'AGE_EXPLORATION',
+                    LocalFilePaths.app_data_path_form('gameplay-base_AGE_MODERN.sqlite'): 'AGE_MODERN'}
         possible_vals, all_possible_vals = db.dump_unique_pks(db_paths)
         self.update_possible_vals(possible_vals)
         self.update_all_vals(all_possible_vals)
