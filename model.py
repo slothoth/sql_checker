@@ -8,6 +8,8 @@ import tempfile
 import time
 import sqlparse
 import traceback
+from collections import defaultdict
+
 
 from xml_handler import read_xml
 from gameeffects import game_effects, req_build, req_set_build
@@ -15,35 +17,22 @@ from sql_errors import get_query_details, full_matcher_sql, primary_key_matcher,
 from graph.singletons.filepaths import LocalFilePaths
 from graph.utils import resource_path
 
-# FOr getting the DB, its NOT just loading up civ and using the existing empty one in shell. as that misses collections
-# added  as types, What it ended up being was loading an antiquity civ game, except editing the modinfo for it so
-# the criteria is AGE_EXPLORATION for those entries that arent always (those are needed for shell to start antiquity),
-# then copying the db after it fails to load.
-DEBUG_LOGFILE = os.path.expanduser('~/CivVII_backend_debug.log')
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename=DEBUG_LOGFILE, level=logging.WARNING, format='%(asctime)s %(levelname)s %(message)s')
+log = logging.getLogger(__name__)
 
 
 class NonBlockingQueue:
-    def __init__(self, q, fallback_path=DEBUG_LOGFILE):
+    def __init__(self, q):
         self._q = q
-        self._fallback = fallback_path
 
     def put(self, item):
         try:
             self._q.put(item, block=False)
-        except Exception:
-            try:
-                with open(self._fallback, 'a') as f:
-                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} QUEUE_FALLBACK: {repr(item)}\n")
-            except Exception:
-                pass
+        except Exception as e:
+            pass
 
 
 class SqlChecker:
     def __init__(self, log_queue=None):
-        logger = logging.getLogger('SqlChecker')
-        logger.setLevel(logging.WARNING)
         self.log_queue = log_queue
         self.errors = []
         self.known_errors_list, self.known_repeats = [], []
@@ -52,15 +41,15 @@ class SqlChecker:
         self.db_path = ''
 
     def setup_db_existing(self):
-        logging.debug("setup_db_existing start")
+        log.debug("setup_db_existing start")
         copy_db_path = resource_path(LocalFilePaths.app_data_path_form('created-db.sqlite'))
         self.db_path = os.path.join(tempfile.gettempdir(), 'discardable-gameplay-copy.sqlite')
         try:
             shutil.copy(copy_db_path, self.db_path)
-            logging.debug("copied db from %s to %s size=%s", copy_db_path, self.db_path, os.path.getsize(self.db_path))
+            log.debug("copied db from %s to %s size=%s", copy_db_path, self.db_path, os.path.getsize(self.db_path))
             log_message(f"Copied DB to {self.db_path}", self.log_queue)
         except Exception as exc:
-            logging.exception("copy failed")
+            log.exception("copy failed")
             log_message(f"DB copy failed: {exc}", self.log_queue)
             raise
 
@@ -372,11 +361,11 @@ def convert_xml_to_sql(xml_file, job_type=None, log_queue=None):
             continue                # some orphaned xml with no table
         if sql_commands is None:
             message = f'Table {table_name} was referenced, but did not contain any commands within.'
-            logger.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else logger.info('ignoring message for user', message)
+            log.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else log.info('ignoring message for user', message)
             continue
         if isinstance(sql_commands, str):
             message = f'Likely empty xml, this was the value found in table element: {sql_commands}. File: {xml_file}.'
-            logger.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else logger.info('ignoring message for user', message)
+            log.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else log.info('ignoring message for user', message)
             continue
         if not isinstance(sql_commands, list):
             sql_commands = [sql_commands]
@@ -452,8 +441,7 @@ def validate_xml(xml_dict):
                     requirement_list = modifier_dict['{GameEffects}SubjectRequirements']
                     if isinstance(requirement_list, list):
                         msg = f'ERROR: Requirements list for {mod_name} had two requirement lists nested, due to bad xml. This will silently error on firaxis side, and only will use the first requirement.'
-                        logger.warning(msg)
-                        error_msgs.append(msg)
+                        log.warning(msg)
                         xml_skips[mod_name] = {'error_type': 'NestedRequirements', 'additional': 'subject'}
 
     return error_msgs, xml_skips
@@ -512,6 +500,18 @@ def query_mod_db(age, log_queue=None):
     index = {mod: i for i, mod in enumerate(custom_index)}
     files_to_apply = sorted(files_to_apply, key=lambda d: index.get(d["ModId"], len(custom_index)))
 
+    log.info('Mods to apply:')
+    db_by_mod_id = defaultdict(dict)
+
+    for i in files_to_apply:
+        db_by_mod_id[i['ModId']][i['File']] = i['full_path']
+
+    log.info([i for i in db_by_mod_id.keys()])
+    log.info('----------------------------------')
+    log.info('Full Files to apply:')
+    log.info({k: [key for key in v.keys()] for k, v in db_by_mod_id.items()})
+    log.info('Files to apply:')
+    log.info(dict(db_by_mod_id))
     log_message('Loading DLC:', log_queue)
     log_message(list({i['ModId'] for i in files_to_apply if i['ModId'] in dlc_mods}), log_queue)
     log_message('-------------------------------------------', log_queue)
@@ -524,7 +524,7 @@ def query_mod_db(age, log_queue=None):
 def log_message(message, log_queue):
     if log_queue is not None:
         log_queue.put(message)
-    logging.info(message)
+    log.info(message)
 
 
 def check_state(cursor):
@@ -545,7 +545,7 @@ def make_hash(value):       # SHA1 hash, copies how firaxis does insert into Typ
 def model_run(log_queue, extra_sql, age):
     start_time = time.time()
     wrapped_q = NonBlockingQueue(log_queue)
-    logging.debug("model_run start civ_install=%s civ_config=%s workshop=%s",
+    log.debug("model_run start civ_install=%s civ_config=%s workshop=%s",
                   LocalFilePaths.civ_install, LocalFilePaths.civ_config, LocalFilePaths.workshop)
     try:
         checker = SqlChecker(wrapped_q)
@@ -568,7 +568,7 @@ def model_run(log_queue, extra_sql, age):
                 file.write("\n".join(full_dump))
             log_message(f"Wrote transformed SQL as a single file to {log_path}", wrapped_q)
         except Exception:
-            logging.exception("failed to write sql_statements.log")
+            log.exception("failed to write sql_statements.log")
             log_message("failed to write sql_statements.log", wrapped_q)
         dlc_sql_dump = [j for i in sql_statements_dlc.values() for j in i]
         silly_parse_error = [j for j in dlc_sql_dump if ',;' in j] + [j for j in dlc_sql_dump if ', ;' in j]
@@ -583,7 +583,7 @@ def model_run(log_queue, extra_sql, age):
         if extra_sql:
             with open(LocalFilePaths.app_data_path_form('main.sql'), 'r') as f:
                 graph_sql = f.readlines()
-            logger.info(graph_sql)
+            log.info(graph_sql)
             extra_statements = {'graph_main.sql': graph_sql}
             checker.test_db(extra_statements, ['Graph'], False)
             log_message("Finished running Graph mod", wrapped_q)
@@ -628,9 +628,9 @@ def load_files(jobs, job_type, log_queue=None):
             if isinstance(statements, str):
                 missed_files.append(short_name)
                 if job_type in ['DLC', 'vanilla']:
-                    logger.debug('ignore as its just firaxis')
+                    log.debug('ignore as its just firaxis')
                 else:
-                    logger.debug('ignore as its just modders having empty files')
+                    log.debug('ignore as its just modders having empty files')
                 continue
             sql_statements[short_name], xml_errors = convert_xml_to_sql(db_file, job_type, log_queue=log_queue)
             ensure_ordered_sql.append((short_name, sql_statements[short_name]))
@@ -649,4 +649,10 @@ def load_files(jobs, job_type, log_queue=None):
     # new logic for linting database entries relies on using a source node. As raw files dont have source,
     # we are just gonna use the filepath i guess
     dictified = {key: [{'sql': i, 'node_source': key} for i in val] for key, val in sql_statements.items()}
+    # metrics
+    log.info('Missed Files:')
+    log.info(missed_files)
+    log.info('Modinfo Files and Statements')
+    log.info({k: len(v) for k, v in sql_statements.items()})
+
     return dictified, missed_files

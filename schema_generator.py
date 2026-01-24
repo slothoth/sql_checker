@@ -293,6 +293,7 @@ class SchemaInspector:
                 # we do all 3 ages
                 for age_type in ages:
                     engine = self.make_base_db(f"{path}_{age_type}.sqlite", self.prebuilt)
+                    log.info(f'making base database on {age_type}')
                     database_entries = query_mod_db(age=age_type)
                     modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
                     sql_statements_dlc, missed_dlc = load_files(dlc_files, 'DLC')
