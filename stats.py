@@ -989,10 +989,9 @@ def update_loc_spec(db_dict, database_spec):
         for table_name, info in database_spec.node_templates.items():
             for column_name in info['all_cols']:
                 with engine.connect() as conn:
-                    trans = conn.begin()
-                    rows = {i[0] for i in conn.execute(text(f"""SELECT {column_name} FROM {table_name} 
-                                            t WHERE {column_name} IS NOT NULL""")).fetchall()}
-                trans.rollback()
+                    with conn.begin():
+                        rows = {i[0] for i in conn.execute(text(
+                            f"""SELECT {column_name} FROM {table_name} t WHERE {column_name} IS NOT NULL""")).fetchall()}
                 if len(rows) == 0:
                     continue
                 non_localised = rows - localised

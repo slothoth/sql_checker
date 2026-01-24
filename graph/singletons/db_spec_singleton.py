@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 class ResourceLoader:
     _instance = None
     _lock = Lock()
+    initialized = False
     node_templates = {}
     possible_vals = {}
     all_possible_vals = {}
@@ -43,10 +44,19 @@ class ResourceLoader:
             with cls._lock:
                 if not cls._instance:
                     cls._instance = super().__new__(cls)
-                    cls._instance._load_resources()
         return cls._instance
 
-    def _load_resources(self):
+
+    def initialize(self, patch_occurred, latest=None):
+        """Explicitly load resources once."""
+        with self._lock:
+            if not self.initialized:
+                SQLValidator.initialize()
+                self._load_resources(patch_occurred, latest)
+                self.initialized = True
+
+
+    def _load_resources(self, new_patch_occurred, latest=None):
         self._files = {
             'localized_tags': self.full_resource_path('LocalizedTags.json'),
             'all_possible_vals': self.appdata_path('all_possible_vals.json'),
@@ -64,19 +74,7 @@ class ResourceLoader:
             'req_type_arg_map': self.appdata_path('RequirementArgumentTypes.json'),
             'req_arg_database_types': self.appdata_path('RequirementArgumentDatabaseTypes.json'),
         }
-        if not os.path.exists(self._files['metadata']):
-            self.age = 'AGE_ANTIQUITY'
-            self.metadata = {'civ_config':  LocalFilePaths.civ_config,
-                             'workshop': LocalFilePaths.workshop,
-                             'civ_install': LocalFilePaths.civ_install,
-                             'age': self.age,
-                             'patch_time': self.patch_time
-                             }
-        else:
-            self.metadata = self._read_file(self._files['metadata'])
-            self.age = self.metadata['age']
-            self.patch_time = self.metadata['patch_time']
-        new_patch_occurred, latest = self.check_firaxis_patched()
+
         if new_patch_occurred:
             log.info('new patch! rebuild all files')        # cant toast as dont have application yet
             self.update_database_spec()
@@ -154,6 +152,19 @@ class ResourceLoader:
         self._write_file(self._files['metadata'],  self.metadata)
 
     def check_firaxis_patched(self):
+        if not os.path.exists(self.appdata_path('metadata.json')):
+            self.age = 'AGE_ANTIQUITY'
+            self.metadata = {'civ_config':  LocalFilePaths.civ_config,
+                             'workshop': LocalFilePaths.workshop,
+                             'civ_install': LocalFilePaths.civ_install,
+                             'age': self.age,
+                             'patch_time': self.patch_time
+                             }
+        else:
+            self.metadata = self._read_file(self.appdata_path('metadata.json'))
+            self.age = self.metadata['age']
+            self.patch_time = self.metadata['patch_time']
+
         root = Path(LocalFilePaths.civ_install)       # find the most recent changed file and the time it was changed.
         file_changes = [(p, p.stat().st_mtime) for p in root.rglob("*") if p.is_file()
                         and '/.' not in str(p) and '\.' not in str(p)]

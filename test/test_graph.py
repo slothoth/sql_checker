@@ -1,16 +1,20 @@
 import os
 from PyQt5 import QtGui
 
+from graph.singletons.db_spec_singleton import db_spec
+db_spec.initialize(False)
+
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import make_modinfo
 from graph.set_hotkeys import import_session_set_params, save_session_to_mod
-from graph.singletons.db_spec_singleton import db_spec
 from graph.singletons.filepaths import LocalFilePaths
 from graph.mod_conversion import build_imported_mod
 
 
 from utils import (check_test_against_expected_sql, create_node, setup_types_node, save, mod_output_check,
                    update_delete_node_setup, setup_effect_req)
+
+
 
 
 def test_write_graph_to_mod(qtbot):

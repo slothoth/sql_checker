@@ -1,5 +1,8 @@
 import pytest
 
+from graph.singletons.db_spec_singleton import db_spec
+db_spec.initialize(False)
+
 from graph.node_controller import NodeEditorWindow
 from utils import create_node
 
