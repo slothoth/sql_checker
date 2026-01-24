@@ -18,13 +18,14 @@ from graph.port import port_connect_transmit, update_widget_or_prop
 from graph.node_state import SuggestionHub
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
+from graph.utils import resource_path
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-with open('resources/template_mod_metadata.json') as f:
+with open(resource_path('resources/template_mod_metadata.json')) as f:
     default_meta = json.load(f)
 
 

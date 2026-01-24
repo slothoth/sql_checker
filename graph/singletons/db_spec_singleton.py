@@ -11,6 +11,7 @@ import logging
 from graph.singletons.filepaths import LocalFilePaths
 from schema_generator import SQLValidator
 from stats import gather_effects
+from graph.utils import resource_path
 
 
 log = logging.getLogger(__name__)
@@ -36,6 +37,7 @@ class ResourceLoader:
     dlc_mod_ids = []
     attach_tables = []
 
+
     def __new__(cls):
         if not cls._instance:
             with cls._lock:
@@ -46,7 +48,7 @@ class ResourceLoader:
 
     def _load_resources(self):
         self._files = {
-            'localized_tags': self.resource_path('LocalizedTags.json'),
+            'localized_tags': self.full_resource_path('LocalizedTags.json'),
             'all_possible_vals': self.appdata_path('all_possible_vals.json'),
             'collection_effect_map': self.appdata_path('CollectionEffectMap.json'),
             'collections_list': self.appdata_path('CollectionsList.json'),
@@ -187,8 +189,8 @@ class ResourceLoader:
         gather_effects(SQLValidator.engine_dict, SQLValidator.metadata, self)
 
     @staticmethod
-    def resource_path(relative_path):
-        rsc_path = os.path.join(os.getcwd(), 'resources/mined')
+    def full_resource_path(relative_path):
+        rsc_path = resource_path('resources/mined')
         return os.path.join(rsc_path, relative_path)
 
     @staticmethod

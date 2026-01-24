@@ -6,6 +6,7 @@ from sqlalchemy import create_engine, text, select, Text
 
 from graph.utils import flatten_avoid_string, to_number
 from graph.singletons.filepaths import LocalFilePaths
+from graph.utils import resource_path
 
 import logging
 
@@ -36,13 +37,13 @@ def gather_effects(db_dict, metadata, database_spec):
     with open(LocalFilePaths.app_data_path_form('db_spec/CollectionsList.json'), 'w') as f:
         json.dump(collection_types, f, sort_keys=True, separators=(',', ':'))
 
-    with open('resources/manual_assigned/CollectionObjectManualAssignment.json') as f:
+    with open(resource_path('resources/manual_assigned/CollectionObjectManualAssignment.json')) as f:
         manual_collection_classification = json.load(f)
 
-    with open('resources/manual_assigned/CollectionOwnerMap.json') as f:
+    with open(resource_path('resources/manual_assigned/CollectionOwnerMap.json')) as f:
         TableOwnerObjectMap = json.load(f)
 
-    with open('resources/manual_assigned/modifier_tables.json') as f:
+    with open(resource_path('resources/manual_assigned/modifier_tables.json')) as f:
         mod_tables = json.load(f)
 
     mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap, database_spec)
@@ -772,7 +773,7 @@ def mine_empty_effects():
             if rows:
                 tables_data[table_name] = rows
 
-    with open('resources/mined/PreBuiltData.json', 'w') as f:       # TODO should this be in AppData
+    with open(resource_path('resources/mined/PreBuiltData.json'), 'w') as f:       # TODO should this be in AppData
         json.dump(tables_data, f, separators=(',', ':'), sort_keys=True)
 
 
@@ -977,7 +978,7 @@ def deal_with_defaults(info_map, type_map):
 
 def update_loc_spec(db_dict, database_spec):
 
-    with open('resources/mined/LocalizedTags.json') as f:
+    with open(resource_path('resources/mined/LocalizedTags.json')) as f:
         localised = json.load(f)
 
     localised = set(localised)

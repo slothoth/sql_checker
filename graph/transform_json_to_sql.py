@@ -3,6 +3,8 @@ from collections import defaultdict
 
 from graph.singletons.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
+from graph.utils import resource_path
+
 
 excludes = ['toggle_extra', 'table_name']
 default_mapper = {'int': 0, 'float': 0.0, 'text': '', 'database': '', 'bool': False}
@@ -252,7 +254,7 @@ def make_modinfo(graph):
     mod_age = meta_info['Age']
     mod_age_criteria = criteria_names[mod_age]
 
-    with open('resources/template.modinfo', 'r') as f:
+    with open(resource_path('resources/template.modinfo'), 'r') as f:
         template = f.read()
     template = template.replace('$UUID$', mod_uuid)
     template = template.replace('$MODNAME$', mod_name)

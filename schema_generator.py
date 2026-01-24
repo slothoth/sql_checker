@@ -20,6 +20,7 @@ from sqlalchemy.dialects import sqlite
 from model import query_mod_db, organise_entries, load_files, make_hash
 from constants import ages
 from graph.singletons.filepaths import LocalFilePaths
+from graph.utils import resource_path
 
 log = logging.getLogger(__name__)
 

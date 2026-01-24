@@ -3,9 +3,10 @@ from collections import Counter
 import json
 
 from NodeGraphQt import NodeBaseWidget
+from graph.utils import resource_path
 
 
-with open('resources/style_sheets.json') as f:
+with open(resource_path('resources/style_sheets.json')) as f:
     styles = json.load(f)
 
 
