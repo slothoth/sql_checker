@@ -1,3 +1,7 @@
+import os
+import sys
+
+
 def to_number(x):
     if isinstance(x, (int, float)):
         return x
@@ -27,3 +31,9 @@ def flatten_avoid_string(items):
         else:
             out.append(x)
     return out
+
+
+def resource_path(relative_path):
+    if hasattr(sys, "_MEIPASS"):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)

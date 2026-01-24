@@ -3,17 +3,15 @@ import sqlite3
 from copy import deepcopy
 from threading import Lock
 import os
-import sys
 from pathlib import Path
 import glob
 import re
 import logging
 
-
-from constants import modifier_system_tables
 from graph.singletons.filepaths import LocalFilePaths
 from schema_generator import SQLValidator
 from stats import gather_effects
+from graph.utils import resource_path
 
 
 log = logging.getLogger(__name__)
@@ -22,6 +20,7 @@ log = logging.getLogger(__name__)
 class ResourceLoader:
     _instance = None
     _lock = Lock()
+    initialized = False
     node_templates = {}
     possible_vals = {}
     all_possible_vals = {}
@@ -39,17 +38,27 @@ class ResourceLoader:
     dlc_mod_ids = []
     attach_tables = []
 
+
     def __new__(cls):
         if not cls._instance:
             with cls._lock:
                 if not cls._instance:
                     cls._instance = super().__new__(cls)
-                    cls._instance._load_resources()
         return cls._instance
 
-    def _load_resources(self):
+
+    def initialize(self, patch_occurred, latest=None):
+        """Explicitly load resources once."""
+        with self._lock:
+            if not self.initialized:
+                SQLValidator.initialize()
+                self._load_resources(patch_occurred, latest)
+                self.initialized = True
+
+
+    def _load_resources(self, new_patch_occurred, latest=None):
         self._files = {
-            'localized_tags': self.resource_path('LocalizedTags.json'),
+            'localized_tags': self.full_resource_path('LocalizedTags.json'),
             'all_possible_vals': self.appdata_path('all_possible_vals.json'),
             'collection_effect_map': self.appdata_path('CollectionEffectMap.json'),
             'collections_list': self.appdata_path('CollectionsList.json'),
@@ -65,19 +74,7 @@ class ResourceLoader:
             'req_type_arg_map': self.appdata_path('RequirementArgumentTypes.json'),
             'req_arg_database_types': self.appdata_path('RequirementArgumentDatabaseTypes.json'),
         }
-        if not os.path.exists(self._files['metadata']):
-            self.age = 'AGE_ANTIQUITY'
-            self.metadata = {'civ_config':  LocalFilePaths.civ_config,
-                             'workshop': LocalFilePaths.workshop,
-                             'civ_install': LocalFilePaths.civ_install,
-                             'age': self.age,
-                             'patch_time': self.patch_time
-                             }
-        else:
-            self.metadata = self._read_file(self._files['metadata'])
-            self.age = self.metadata['age']
-            self.patch_time = self.metadata['patch_time']
-        new_patch_occurred, latest = self.check_firaxis_patched()
+
         if new_patch_occurred:
             log.info('new patch! rebuild all files')        # cant toast as dont have application yet
             self.update_database_spec()
@@ -155,6 +152,19 @@ class ResourceLoader:
         self._write_file(self._files['metadata'],  self.metadata)
 
     def check_firaxis_patched(self):
+        if not os.path.exists(self.appdata_path('metadata.json')):
+            self.age = 'AGE_ANTIQUITY'
+            self.metadata = {'civ_config':  LocalFilePaths.civ_config,
+                             'workshop': LocalFilePaths.workshop,
+                             'civ_install': LocalFilePaths.civ_install,
+                             'age': self.age,
+                             'patch_time': self.patch_time
+                             }
+        else:
+            self.metadata = self._read_file(self.appdata_path('metadata.json'))
+            self.age = self.metadata['age']
+            self.patch_time = self.metadata['patch_time']
+
         root = Path(LocalFilePaths.civ_install)       # find the most recent changed file and the time it was changed.
         file_changes = [(p, p.stat().st_mtime) for p in root.rglob("*") if p.is_file()
                         and '/.' not in str(p) and '\.' not in str(p)]
@@ -190,8 +200,8 @@ class ResourceLoader:
         gather_effects(SQLValidator.engine_dict, SQLValidator.metadata, self)
 
     @staticmethod
-    def resource_path(relative_path):
-        rsc_path = os.path.join(os.getcwd(), 'resources/mined')
+    def full_resource_path(relative_path):
+        rsc_path = resource_path('resources/mined')
         return os.path.join(rsc_path, relative_path)
 
     @staticmethod

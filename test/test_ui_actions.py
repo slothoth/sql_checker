@@ -3,8 +3,13 @@ import json
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtTest import QTest
 
-from utils import setup_types_node, create_node
+from graph.singletons.db_spec_singleton import db_spec
+db_spec.initialize(False)
+
+from graph.utils import resource_path
 from graph.node_controller import NodeEditorWindow
+
+from utils import setup_types_node, create_node
 
 
 def test_drag_port_to_empty_space_triggers_release(qtbot):
@@ -38,7 +43,7 @@ def test_menu_actions_exist(qtbot):
     shortcut_dict = {action.text(): action.menu().actions() for action in window.menuBar().actions()}
     named_shortcuts = {key: [action.text() for action in val] for key, val in shortcut_dict.items()}
     # get hot_keys.json
-    with open('resources/hotkeys.json') as f:
+    with open(resource_path('resources/hotkeys.json')) as f:
         hotkeys_setup = json.load(f)
     shortcut_correct_structure = {}
     for hotkey_info in hotkeys_setup:

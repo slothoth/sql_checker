@@ -47,7 +47,7 @@ class BaseEffectNode(BasicDBNode):
             arg_info = self.argument_info_map[self.get_property(self.arg_setter_prop)]['Arguments']
             arg_info = arg_info.get(name, arg_info.get(name+'_arg', {}))
             if arg_info.get('MinedNeeded', False):
-                if self.arg_prop_map[self.get_property(self.arg_setter_prop)][name] in ['database', 'text']:
+                if self.arg_prop_map.get(self.get_property(self.arg_setter_prop), {}).get(name, '') in ['database', 'text']:
                     self._update_field_style(name, value != '')
 
         super().set_property(name, value, push_undo=push_undo)
@@ -70,7 +70,7 @@ class BaseEffectNode(BasicDBNode):
         self.view.setVisible(False)
 
         if old_mode is not None:
-            old_params = self.arg_prop_map[old_mode]
+            old_params = self.arg_prop_map.get(old_mode, {})
             turn_off_params = list(set(old_params) - set(new_params))
             new_param_list = list(set(new_params) - set(old_params))
             new_params = {k: v for k, v in new_params.items() if k in new_param_list}
@@ -182,7 +182,7 @@ class BaseEffectNode(BasicDBNode):
         return arg_table
 
     def _update_ports(self, effect_type):
-        arg_table = self.arg_prop_map[effect_type]
+        arg_table = self.arg_prop_map.get(effect_type, {})
         new_ports = [k for k, v in arg_table.items() if v == 'database']
         old_ports = {k: v for k, v in self.inputs().items() if k not in self.reserved_inputs}
         remove_ports = {k: v for k, v in old_ports.items() if k not in new_ports}

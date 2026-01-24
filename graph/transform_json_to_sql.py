@@ -3,6 +3,8 @@ from collections import defaultdict
 
 from graph.singletons.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
+from graph.utils import resource_path
+
 
 excludes = ['toggle_extra', 'table_name']
 default_mapper = {'int': 0, 'float': 0.0, 'text': '', 'database': '', 'bool': False}
@@ -114,9 +116,12 @@ def req_custom_transform(custom_properties, node_id, sql_code, dict_form_list, e
     sql_code.append(sql)
     dict_form_list.append(dict_form)
     if req_type in db_spec.req_type_arg_map:
-        argument_transform(sql_code, error_string, dict_form_list, 'Requirement', req_id, custom_properties,
-                           db_spec.req_type_arg_map[req_type],
-                           db_spec.requirement_argument_info[req_type], node_id=node_id)
+        argument_transform(sql_code, error_string, dict_form_list,
+                           effect_string='Requirement',
+                           effect_id=req_id, custom_properties=custom_properties,
+                           type_arg=db_spec.req_type_arg_map.get(req_type, {}),
+                           effect_info=db_spec.requirement_argument_info.get(req_type, {}),
+                           node_id=node_id)
     return sql_code, dict_form_list, error_string
 
 
@@ -189,9 +194,12 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
         effect_type = db_spec.dynamic_mod_info[modifier_type]['EffectType']
         # collection_type = db_spec.dynamic_mod_info[modifier_type]['CollectionType']       # unneeded for now
 
-    argument_transform(sql_code, error_string, dict_form_list, 'Modifier', no_arg_params['ModifierId'],
-                       custom_properties, db_spec.mod_type_arg_map[effect_type],
-                       db_spec.modifier_argument_info[effect_type], node_id=node_id)
+    argument_transform(sql_code, error_string, dict_form_list,
+                       effect_string='Modifier', effect_id=no_arg_params['ModifierId'],
+                       custom_properties=custom_properties,
+                       type_arg=db_spec.mod_type_arg_map[effect_type],
+                       effect_info=db_spec.modifier_argument_info[effect_type],
+                       node_id=node_id)
 
     template = db_spec.node_templates['ModifierStrings']  # ModifierStrings
     mod_string_cols = template['all_cols']
@@ -246,7 +254,7 @@ def make_modinfo(graph):
     mod_age = meta_info['Age']
     mod_age_criteria = criteria_names[mod_age]
 
-    with open('resources/template.modinfo', 'r') as f:
+    with open(resource_path('resources/template.modinfo'), 'r') as f:
         template = f.read()
     template = template.replace('$UUID$', mod_uuid)
     template = template.replace('$MODNAME$', mod_name)

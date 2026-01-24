@@ -9,7 +9,7 @@ import logging
 from marshmallow_sqlalchemy import SQLAlchemyAutoSchema
 from marshmallow import EXCLUDE
 from marshmallow import pre_load
-from sqlalchemy import create_engine, insert, Integer, Boolean, inspect, text, event, Table, Integer
+from sqlalchemy import create_engine, insert, Boolean, inspect, text, event, Table, Integer
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.sql.schema import UniqueConstraint
@@ -20,11 +20,9 @@ from sqlalchemy.dialects import sqlite
 from model import query_mod_db, organise_entries, load_files, make_hash
 from constants import ages
 from graph.singletons.filepaths import LocalFilePaths
+from graph.utils import resource_path
 
 log = logging.getLogger(__name__)
-
-with open('resources/mined/PreBuiltData.json', 'r') as f:
-    prebuilt = json.load(f)
 
 
 @event.listens_for(Table, "column_reflect")
@@ -63,10 +61,13 @@ class SchemaInspector:
     port_color_map = {}
     engine_dict = {}
     mod_setup = {}
+    prebuilt = {}
     include_mods = False
 
-    def __init__(self):
-        # setup simple entry validation
+    def initialize(self):
+        with open(resource_path('resources/mined/PreBuiltData.json'), 'r') as f:
+            self.prebuilt = json.load(f)
+
         self.Base, self.session, self.empty_engine = self.engine_instantiation(LocalFilePaths.app_data_path_form('created-db.sqlite'))
 
         tables = self.Base.metadata.tables
@@ -167,7 +168,7 @@ class SchemaInspector:
                     self.pk_ref_map[k]['col_first'][col].append(tbl)
 
     def engine_instantiation(self, db_path):
-        empty_engine = self.make_base_db(db_path)
+        empty_engine = self.make_base_db(db_path, self.prebuilt)
         Base = automap_base()
 
         def no_relationships(*args, **kwargs):
@@ -291,7 +292,7 @@ class SchemaInspector:
             if database_spec.patch_change:
                 # we do all 3 ages
                 for age_type in ages:
-                    engine = self.make_base_db(f"{path}_{age_type}.sqlite")
+                    engine = self.make_base_db(f"{path}_{age_type}.sqlite", self.prebuilt)
                     database_entries = query_mod_db(age=age_type)
                     modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
                     sql_statements_dlc, missed_dlc = load_files(dlc_files, 'DLC')
@@ -436,7 +437,7 @@ class SchemaInspector:
             self.port_color_map['output'][origin_table][port_output] = color
 
     @staticmethod
-    def make_base_db(db_path):
+    def make_base_db(db_path, prebuilt):
         if os.path.exists(db_path):
             os.remove(db_path)
         conn = sqlite3.connect(db_path)
@@ -457,12 +458,7 @@ class SchemaInspector:
                 # anyways causes problems with GameEffects table since its PK is Type
                 columns = ", ".join(table_entries[0].keys())
                 params = ", ".join(f":{k}" for k in table_entries[0].keys())
-                sql = text(f"""
-                INSERT INTO {table_name}
-                ({columns})
-                VALUES
-                ({params})
-                """)
+                sql = text(f"""INSERT INTO {table_name}({columns}) VALUES ({params})""")
                 conn_engine.execute(sql, table_entries)
 
         conn.close()

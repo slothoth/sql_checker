@@ -607,7 +607,6 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
 
             # do modarg conversion
             mod_args = effects_info.get('Arguments', {})
-            effect_possible_args = db_spec.mod_type_arg_map[effect_type]
             for arg_name, arg_value in mod_args.items():        # currently only doing name value
                 if arg_name in new_props:
                     new_props[arg_name + '_arg'] = arg_value

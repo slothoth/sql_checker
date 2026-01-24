@@ -7,6 +7,8 @@ from constants import ages
 from stats import gather_effects, mine_empty_effects, mine_requirements
 from schema_generator import SQLValidator
 from graph.node_controller import NodeEditorWindow
+from graph.utils import resource_path
+
 # mostly just used to generate and save test data for other tests
 
 
@@ -44,13 +46,13 @@ def test_setup_all_unique_nodes(qtbot):
 
 
 def test_req_harvest():
-    with open('resources/manual_assigned/CollectionObjectManualAssignment.json') as f:
+    with open(resource_path('resources/manual_assigned/CollectionObjectManualAssignment.json')) as f:
         manual_collection_classification = json.load(f)
 
-    with open('resources/manual_assigned/CollectionOwnerMap.json') as f:
+    with open(resource_path('resources/manual_assigned/CollectionOwnerMap.json')) as f:
         TableOwnerObjectMap = json.load(f)
 
-    with open('resources/manual_assigned/modifier_tables.json') as f:
+    with open(resource_path('resources/manual_assigned/modifier_tables.json')) as f:
         mod_tables = json.load(f)
     for age_type in ages:
         new_path = LocalFilePaths.app_data_path_form(f'gameplay-base_{age_type}.sqlite')

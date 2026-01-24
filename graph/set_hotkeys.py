@@ -12,13 +12,14 @@ from graph.singletons.filepaths import LocalFilePaths
 from graph.nodes.effect_nodes import BaseEffectNode
 from graph.mod_conversion import build_imported_mod, extract_state_test, push_to_log, error_node_tracker
 from graph.no_context_widgets import Toast
+from graph.utils import resource_path
 
 # This file exists because the convenience method for doing hotkeys dies in packaged executables
 
 
 def set_hotkeys(window, menubar):
     context_menu = window.graph.get_context_menu('graph')
-    rsc_path = os.path.join(getattr(sys, "_MEIPASS", os.path.abspath(".")), "resources/hotkeys.json")
+    rsc_path = resource_path("resources/hotkeys.json")
     with open(rsc_path, "r") as f:
         hotkeys_list = json.load(f)
     for item in hotkeys_list:

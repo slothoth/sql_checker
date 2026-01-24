@@ -1,6 +1,7 @@
+from graph.singletons.db_spec_singleton import db_spec
+db_spec.initialize(False)
 from graph.transform_json_to_sql import transform_json
 from graph.set_hotkeys import mod_test_session, check_valid_sql_against_db
-from graph.singletons.db_spec_singleton import db_spec
 from utils import create_node, make_window
 
 

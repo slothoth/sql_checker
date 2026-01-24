@@ -4,7 +4,6 @@ import glob
 import sqlite3
 import shutil
 import logging
-import sys
 import tempfile
 import time
 import sqlparse
@@ -14,7 +13,7 @@ from xml_handler import read_xml
 from gameeffects import game_effects, req_build, req_set_build
 from sql_errors import get_query_details, full_matcher_sql, primary_key_matcher, check_foreign_keys, foreign_key_check, foreign_key_pretty_notify
 from graph.singletons.filepaths import LocalFilePaths
-
+from graph.utils import resource_path
 
 # FOr getting the DB, its NOT just loading up civ and using the existing empty one in shell. as that misses collections
 # added  as types, What it ended up being was loading an antiquity civ game, except editing the modinfo for it so
@@ -541,11 +540,6 @@ def make_hash(value):       # SHA1 hash, copies how firaxis does insert into Typ
         h -= 2 ** 32
     return h
 
-
-def resource_path(relative_path):
-    if hasattr(sys, "_MEIPASS"):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.join(os.path.abspath("."), relative_path)
 
 
 def model_run(log_queue, extra_sql, age):

@@ -1,6 +1,9 @@
 from collections import defaultdict
 import os
 
+from graph.singletons.db_spec_singleton import db_spec
+db_spec.initialize(False)
+
 import graph.windows
 def new_combo_value(parent, age_list):
     return 'AGE_ANTIQUITY', {}, {}
