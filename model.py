@@ -15,35 +15,22 @@ from sql_errors import get_query_details, full_matcher_sql, primary_key_matcher,
 from graph.singletons.filepaths import LocalFilePaths
 from graph.utils import resource_path
 
-# FOr getting the DB, its NOT just loading up civ and using the existing empty one in shell. as that misses collections
-# added  as types, What it ended up being was loading an antiquity civ game, except editing the modinfo for it so
-# the criteria is AGE_EXPLORATION for those entries that arent always (those are needed for shell to start antiquity),
-# then copying the db after it fails to load.
-DEBUG_LOGFILE = os.path.expanduser('~/CivVII_backend_debug.log')
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename=DEBUG_LOGFILE, level=logging.WARNING, format='%(asctime)s %(levelname)s %(message)s')
+log = logging.getLogger(__name__)
 
 
 class NonBlockingQueue:
-    def __init__(self, q, fallback_path=DEBUG_LOGFILE):
+    def __init__(self, q):
         self._q = q
-        self._fallback = fallback_path
 
     def put(self, item):
         try:
             self._q.put(item, block=False)
-        except Exception:
-            try:
-                with open(self._fallback, 'a') as f:
-                    f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} QUEUE_FALLBACK: {repr(item)}\n")
-            except Exception:
-                pass
+        except Exception as e:
+           pass
 
 
 class SqlChecker:
     def __init__(self, log_queue=None):
-        logger = logging.getLogger('SqlChecker')
-        logger.setLevel(logging.WARNING)
         self.log_queue = log_queue
         self.errors = []
         self.known_errors_list, self.known_repeats = [], []
@@ -372,11 +359,11 @@ def convert_xml_to_sql(xml_file, job_type=None, log_queue=None):
             continue                # some orphaned xml with no table
         if sql_commands is None:
             message = f'Table {table_name} was referenced, but did not contain any commands within.'
-            logger.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else logger.info('ignoring message for user', message)
+            log.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else log.info('ignoring message for user', message)
             continue
         if isinstance(sql_commands, str):
             message = f'Likely empty xml, this was the value found in table element: {sql_commands}. File: {xml_file}.'
-            logger.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else logger.info('ignoring message for user', message)
+            log.info('ignoring message for user as probably on firaxis', message) if (job_type is not None and job_type in ['DLC', 'vanilla']) else log.info('ignoring message for user', message)
             continue
         if not isinstance(sql_commands, list):
             sql_commands = [sql_commands]
@@ -452,7 +439,7 @@ def validate_xml(xml_dict):
                     requirement_list = modifier_dict['{GameEffects}SubjectRequirements']
                     if isinstance(requirement_list, list):
                         msg = f'ERROR: Requirements list for {mod_name} had two requirement lists nested, due to bad xml. This will silently error on firaxis side, and only will use the first requirement.'
-                        logger.warning(msg)
+                        log.warning(msg)
                         error_msgs.append(msg)
                         xml_skips[mod_name] = {'error_type': 'NestedRequirements', 'additional': 'subject'}
 
@@ -484,14 +471,15 @@ def query_mod_db(age, log_queue=None):
             folder_path = os.path.dirname(filepath)
             uuid = match.group(1)
             if uuid in modinfo_uuids:
-                err_string += (f'ERROR: Duplicate modinfo UUID:You likely have a local copy and a workshop copy of '
+                log.error(f'ERROR: Duplicate modinfo UUID:You likely have a local copy and a workshop copy of '
                                f'the same mod {uuid}.\nCurrent folder path: {folder_path},\nexistin'
                                f'g folder path: {modinfo_uuids[uuid]}\n----------------')
-            modinfo_uuids[uuid] = folder_path
-            if filepath in filepath_dlc_mod_infos:
-                dlc_mods.append(uuid)
             else:
-                mod_mods.append(uuid)
+                modinfo_uuids[uuid] = folder_path
+                if filepath in filepath_dlc_mod_infos:
+                    dlc_mods.append(uuid)
+                else:
+                    mod_mods.append(uuid)
 
     if len(err_string) > 0:
         raise Exception(err_string)
@@ -583,7 +571,7 @@ def model_run(log_queue, extra_sql, age):
         if extra_sql:
             with open(LocalFilePaths.app_data_path_form('main.sql'), 'r') as f:
                 graph_sql = f.readlines()
-            logger.info(graph_sql)
+            log.info(graph_sql)
             extra_statements = {'graph_main.sql': graph_sql}
             checker.test_db(extra_statements, ['Graph'], False)
             log_message("Finished running Graph mod", wrapped_q)
@@ -628,9 +616,9 @@ def load_files(jobs, job_type, log_queue=None):
             if isinstance(statements, str):
                 missed_files.append(short_name)
                 if job_type in ['DLC', 'vanilla']:
-                    logger.debug('ignore as its just firaxis')
+                    log.debug('ignore as its just firaxis')
                 else:
-                    logger.debug('ignore as its just modders having empty files')
+                    log.debug('ignore as its just modders having empty files')
                 continue
             sql_statements[short_name], xml_errors = convert_xml_to_sql(db_file, job_type, log_queue=log_queue)
             ensure_ordered_sql.append((short_name, sql_statements[short_name]))
