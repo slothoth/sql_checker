@@ -521,50 +521,20 @@ def lint_database(engine, sql_command_dict, database_spec, keep_changes=False, d
         finally:
             session.close()
             bad_inserts = {k: {idx: i for idx, i in enumerate(v) if not i['passed']} for k, v in results.items()}
-            insert_errors = defaultdict(dict)
             if any(len(i) > 0 for i in bad_inserts.values()):
-                mark_errors = []
-                for file_name, errors in bad_inserts.items():
-                    for idx, error_info in errors.items():
-                        mark_errors.append(error_info['node_source'])
-                        if dict_form_list is not None:
-                            dict_info = dict_form_list[idx]['sql']
-                            table_name = dict_info['table_name']
-                            primary_key_cols = database_spec.node_templates[table_name].get("primary_keys")
-                            pk_dict = {k: v for k, v in dict_info['columns'].items() if k in primary_key_cols}
-                            pk_string = ", ".join([f'{k}: {v}' for k, v in pk_dict.items()])
-                            pk_tuple = tuple([v for k, v in pk_dict.items()])
-                        else:       # planned last resort sqlglot
-                            log.error('insert error, but we havent handled parsing yet, skipping error')
-                            continue
-                        error_string = f'Entry {table_name} with primary key: {pk_string}'
-                        if isinstance(error_info['error_type'].orig, sqlite3.IntegrityError):
-                            simple_error = str(error_info['error_type'].orig)
-                            if 'UNIQUE constraint failed' in simple_error:
-                                error_string += (f' could not be inserted as that primary key {pk_string} was already'
-                                                 f' present.')
-                            elif 'NOT NULL constraint failed' in simple_error:
-                                col = simple_error.replace('NOT NULL constraint failed: ', '')
-                                col = col.replace(f'{table_name}.', '')
-                                error_string += f' could not be inserted as {col} was not specified.'
-                            elif 'CHECK constraint' in simple_error:
-                                uh = 'd'
-                                error_string += f' could not be inserted as column {uh}: {uh} is outside constraints.'
-                            else:
-                                error_string += 'weird error not covered.'
-                        else:
-                            error_string += f'Some cursed error that is likely not your fault: {str(error_info["error_type"].orig)}'
-                            log.error(f"non-user error on running sql statement: {error_info['sql']}\n"
-                                      f"{str(error_info['error_type'].orig)}")
-
-                        insert_errors[table_name][pk_tuple] = error_string
-
-                lint_info['insert_error_explanations'] = dict(insert_errors)
-                lint_info['marked_nodes'] = mark_errors
+                log.info('Insertion Errors:')
+                log.info(bad_inserts)
+                if not keep_changes:            # init database does keep changes. Cant explain errors before db_spec
+                    insert_errors, mark_errors = explain_statement_errors(bad_inserts, dict_form_list, database_spec)
+                    lint_info['insert_error_explanations'] = insert_errors
+                    lint_info['marked_nodes'] = mark_errors
 
             if len(lint_info['foreign_key_errors']) > 0 or lint_info['integrity'] != 'ok':
-                explained_error_dict = explain_errors(lint_info, session, database_spec)
-                lint_info['fk_error_explanations'] = {'title_errors': explained_error_dict}
+                log.info('Explaining Foreign Key Errors:')
+                log.info(lint_info['foreign_key_errors'])
+                if not keep_changes:
+                    explained_error_dict = explain_fk_errors(lint_info, session, database_spec)
+                    lint_info['fk_error_explanations'] = {'title_errors': explained_error_dict}
 
             if keep_changes:
                 trans.commit()
@@ -572,7 +542,7 @@ def lint_database(engine, sql_command_dict, database_spec, keep_changes=False, d
                 trans.rollback()
 
 
-def explain_errors(lint_info, session, database_spec):
+def explain_fk_errors(lint_info, session, database_spec):
     error_info_list = lint_info['foreign_key_errors']
     error_table_indices = defaultdict(list)
     for i in error_info_list:
@@ -622,6 +592,45 @@ def explain_errors(lint_info, session, database_spec):
                                              f"\nThere wasn't a reference entry in {primary_key_table} that had"
                                              f" {foreign_table_pk} = {row[fk_col]}.")
     return explained_error_dict
+
+
+def explain_statement_errors(bad_inserts, dict_form_list, database_spec):
+    insert_errors = defaultdict(dict)
+    mark_errors = []
+    for file_name, errors in bad_inserts.items():
+        for idx, error_info in errors.items():
+            mark_errors.append(error_info['node_source'])
+            if dict_form_list is not None:
+                dict_info = dict_form_list[idx]['sql']
+                table_name = dict_info['table_name']
+                primary_key_cols = database_spec.node_templates[table_name].get("primary_keys")
+                pk_dict = {k: v for k, v in dict_info['columns'].items() if k in primary_key_cols}
+                pk_string = ", ".join([f'{k}: {v}' for k, v in pk_dict.items()])
+                pk_tuple = tuple([v for k, v in pk_dict.items()])
+            else:  # planned last resort sqlglot
+                log.error('insert error, but we havent handled parsing yet, skipping error')
+                continue
+            error_string = f'Entry {table_name} with primary key: {pk_string}'
+            if isinstance(error_info['error_type'].orig, sqlite3.IntegrityError):
+                simple_error = str(error_info['error_type'].orig)
+                if 'UNIQUE constraint failed' in simple_error:
+                    error_string += (f' could not be inserted as that primary key {pk_string} was already'
+                                     f' present.')
+                elif 'NOT NULL constraint failed' in simple_error:
+                    col = simple_error.replace('NOT NULL constraint failed: ', '')
+                    col = col.replace(f'{table_name}.', '')
+                    error_string += f' could not be inserted as {col} was not specified.'
+                elif 'CHECK constraint' in simple_error:
+                    error_string += f' could not be inserted as column {"uh"}: {"uh"} is outside constraints.'
+                else:
+                    error_string += 'weird error not covered.'
+            else:
+                error_string += f'Some cursed error that is likely not your fault: {str(error_info["error_type"].orig)}'
+                log.error(f"non-user error on running sql statement: {error_info['sql']}\n"
+                          f"{str(error_info['error_type'].orig)}")
+
+            insert_errors[table_name][pk_tuple] = error_string
+    return dict(insert_errors), mark_errors
 
 
 def constraint_color(index, total,                  # living here as used for init setup so ports dont

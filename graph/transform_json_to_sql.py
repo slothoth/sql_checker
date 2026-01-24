@@ -197,7 +197,7 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
     argument_transform(sql_code, error_string, dict_form_list,
                        effect_string='Modifier', effect_id=no_arg_params['ModifierId'],
                        custom_properties=custom_properties,
-                       type_arg=db_spec.mod_type_arg_map[effect_type],
+                       type_arg=db_spec.mod_type_arg_map.get(effect_type, {}),
                        effect_info=db_spec.modifier_argument_info[effect_type],
                        node_id=node_id)
 
