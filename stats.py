@@ -1000,7 +1000,7 @@ def update_loc_spec(db_dict, database_spec):
                     localise_table_cols[table_name].append(column_name)
                 else:
                     if column_name in ['Name', 'Description']:
-                        log.info(f'missed localisation on these rows for {table_name}.{column_name}:', rows)
+                        log.info(f'missed localisation on these rows for {table_name}.{column_name}: {rows}')
     for table_name, table_cols in localise_table_cols.items():
         database_spec.node_templates[table_name]['localised'] = []
         for col in table_cols:

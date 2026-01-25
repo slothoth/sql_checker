@@ -107,3 +107,8 @@ if logger.hasHandlers():
 logger.addHandler(info_handler)
 logger.addHandler(error_handler)
 logger.addHandler(console_handler)
+
+
+logger.info(f'Civ Config Location resolved to: {LocalFilePaths.civ_config}')
+logger.info(f'Civ Install resolved to: {LocalFilePaths.civ_install}')
+logger.info(f'Civ Workshop folder resolved to: {LocalFilePaths.workshop}')
