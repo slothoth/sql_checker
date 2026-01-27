@@ -89,6 +89,13 @@
       },
       {
         "type":"command",
+        "label":"Test Current",
+        "file":"./hotkey_functions.py",
+        "function_name":"mod_test_current_config",
+        "shortcut":"Shift+T"
+      },
+      {
+        "type":"command",
         "label":"Save as Mod",
         "file":"./hotkey_functions.py",
         "function_name":"save_session_to_mod",

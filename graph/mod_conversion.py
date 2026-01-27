@@ -14,6 +14,7 @@ from ORM import create_instances_from_sql, get_table_and_key_vals, build_fk_inde
 from graph.windows import get_combo_value
 from graph.singletons.db_spec_singleton import db_spec
 from constants import modifier_system_tables, ages
+from graph.utils import LogPusher
 
 import logging
 
@@ -674,29 +675,29 @@ def extract_state_test(graph, data):
     if data.get('insert_error_explanations') is not None:
         no_errors = False
         insert_error_length = len([j for i in data['insert_error_explanations'].values() for j in i])
-        push_to_log(graph, f"There were {insert_error_length} failed Insertions:")
+        LogPusher.push_to_log(f"There were {insert_error_length} failed Insertions:", log)
         for table_name, errors in data['insert_error_explanations'].items():
-            push_to_log(graph, f'Missed Inserts for {table_name}:')
+            LogPusher.push_to_log(f'Missed Inserts for {table_name}:', log)
             for pk_tuple, error_string in errors.items():
-                push_to_log(graph, error_string)
+                LogPusher.push_to_log(error_string, log)
     num_fk_errors = len(data.get('fk_error_explanations', {}).get('title_errors', {}))
     if num_fk_errors > 0:
         no_errors = False
-        push_to_log(graph, f"There were {num_fk_errors}"
-                           f" Foreign Key Errors:")
+        LogPusher.push_to_log(f"There were {num_fk_errors}"
+                           f" Foreign Key Errors:", log)
         for tuple_key, val in data['fk_error_explanations']['title_errors'].items():
-            push_to_log(graph, val)
+            LogPusher.push_to_log(val, log)
     if no_errors:
-        push_to_log(graph, 'Valid mod setup')
+        LogPusher.push_to_log('Valid mod setup', log)
 
     num_incompletes = len(data.get('incomplete_dict', {}))
     all_nodes, incomplete_nodes = graph.all_nodes(), []
     if num_incompletes > 0:                     # this doesnt necessarily cause invalid state
         node_id_mapper = {i.id: i.get_property('table_name') for i in all_nodes}
-        push_to_log(graph, f'There were {num_incompletes} Invalid Nodes that were not run:')
+        LogPusher.push_to_log(f'There were {num_incompletes} Invalid Nodes that were not run:', log)
         for table_name, bad_entries in data['incomplete_dict'].items():
             for key, info in bad_entries.items():
-                push_to_log(graph, f'Node {node_id_mapper[info["node_source"]]} had problem {info["sql"]}')
+                LogPusher.push_to_log(f'Node {node_id_mapper[info["node_source"]]} had problem {info["sql"]}', log)
                 if no_errors:
                     no_errors = 'FOREIGN KEY' not in info["sql"]
                 incomplete_nodes.append(info["node_source"])
@@ -719,10 +720,3 @@ def extract_state_test(graph, data):
                 error_node_tracker.remove_node(node.id)
             else:
                 continue
-
-
-def push_to_log(graph, message):
-    log_display = graph.side_panel.log_display
-    log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
-    cursor = log_display.textCursor()  # keep view scrolled to bottom
-    log_display.setTextCursor(cursor)

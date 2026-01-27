@@ -5,11 +5,11 @@ from PyQt5.QtWidgets import (
     QFileDialog, QSizePolicy, QPlainTextEdit, QComboBox
 )
 
-from model import model_run
 from syntax_highlighter import LogHighlighter
 from graph.singletons.db_spec_singleton import db_spec
 from constants import ages
 from graph.singletons.filepaths import LocalFilePaths
+from graph.utils import LogPusher
 
 
 class CollapsiblePanel(QWidget):
@@ -61,9 +61,9 @@ class CollapsiblePanel(QWidget):
         content_layout.addWidget(self.ageComboBox)
 
         # Run Analysis button
-        self.run_button = QPushButton("Run Current Game Configuration")
+        self.run_button = QPushButton("Clear Log")
         self.run_button.setStyleSheet("background-color:#0078d7; color:#ffffff; font-weight:bold;")
-        self.run_button.clicked.connect(self.start_analysis)
+        self.run_button.clicked.connect(self.clear_log)
         content_layout.addWidget(self.run_button)
 
         # Log Output
@@ -76,6 +76,7 @@ class CollapsiblePanel(QWidget):
         content_layout.addWidget(self.log_display, stretch=1)
 
         content_layout.addStretch()
+        LogPusher.set_log_widget(self.log_display)
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -127,14 +128,8 @@ class CollapsiblePanel(QWidget):
             db_spec.update_civ_install(path)
             self.layout().itemAt(4).itemAt(1).widget().setText(path)
 
-    def start_analysis(self, extra_sql=None):
-        self.run_button.setEnabled(False)
-        if extra_sql is not None:
-            threading.Thread(target=model_run, args=(self.log_queue, True, self.ageComboBox.currentText()),
-                             daemon=True).start()
-        else:
-            threading.Thread(target=model_run, args=(self.log_queue, None, self.ageComboBox.currentText()),
-                             daemon=True).start()
+    def clear_log(self):
+        self.log_display.clear()
 
     def timerEvent(self, event):
         try:

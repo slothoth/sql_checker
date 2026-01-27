@@ -1,8 +1,9 @@
 from PyQt5 import QtGui, QtWidgets, QtCore
-import sys
 import os
 import json
 import shutil
+import time
+import logging
 
 from graph.db_node_support import NodeCreationDialog
 from graph.transform_json_to_sql import transform_json, make_modinfo
@@ -10,9 +11,16 @@ from schema_generator import check_valid_sql_against_db
 from graph.singletons.db_spec_singleton import db_spec
 from graph.singletons.filepaths import LocalFilePaths
 from graph.nodes.effect_nodes import BaseEffectNode
-from graph.mod_conversion import build_imported_mod, extract_state_test, push_to_log, error_node_tracker
+from graph.mod_conversion import build_imported_mod, error_node_tracker
 from graph.no_context_widgets import Toast
 from graph.utils import resource_path
+
+from model import query_mod_db, organise_entries, load_files
+from schema_generator import SQLValidator, lint_database
+from graph.mod_conversion import extract_state_test
+from graph.utils import LogPusher
+
+log = logging.getLogger(__name__)
 
 # This file exists because the convenience method for doing hotkeys dies in packaged executables
 
@@ -475,11 +483,15 @@ def mod_test_session(graph):
     graph.save_session(current)
     sql_lines, dict_form_list, loc_lines, incompletes_ordered = transform_json(current)
     age = graph.property('meta').get('Age')
-    push_to_log(graph, f'Testing mod for: {age}')
+    LogPusher.push_to_log(f'Testing mod for: {age}', log)
     result = check_valid_sql_against_db(age, sql_lines, db_spec, dict_form_list, incompletes=incompletes_ordered)
     # need to do loc test too
     extract_state_test(graph, result)
     # make the collapsible panel be shown
+
+
+def mod_test_current_config(graph):
+    run_current_config(graph.side_panel.ageComboBox.currentText(), None, graph)
 
 
 def save_session_to_mod(graph, parent=None):
@@ -586,3 +598,45 @@ def write_loc_sql(loc_lines):
             f.writelines(loc_lines)
 
 
+def run_current_config(age, extra_sql, graph):
+    LogPusher.push_to_log( f"Running current mod setup when civ last launched in {age}...", log)
+    start_time = time.time()
+    engine = SQLValidator.make_base_db(f"{LocalFilePaths.app_data_path_form('current.sqlite')}", SQLValidator.prebuilt)
+    database_entries = query_mod_db(age=age)
+    modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
+
+    with open(LocalFilePaths.app_data_path_form('cached_base_game_sql.json')) as f:
+        preloaded_sql = json.load(f)
+
+    not_preloaded_dlc = [i for i in dlc_files if i not in preloaded_sql]        # filter out preloaded?
+    preloaded_sql_statements_dlc = {k: v for k, v in preloaded_sql.items() if k in dlc_files}
+    sql_statements_dlc, _, missed_dlc = load_files(not_preloaded_dlc, 'DLC')
+    sql_statements_dlc.update(preloaded_sql_statements_dlc)
+    LogPusher.push_to_log(f"Loaded dlc files: {len(sql_statements_dlc)}. Excluded empty files: {len(not_preloaded_dlc)}",
+                          log)
+
+    sql_statements_mods, _, missed_mods = load_files(modded, 'Mod')
+    LogPusher.push_to_log(f"Loaded mod files: {len(sql_statements_mods)}. Missed: {len(missed_mods)}", log)
+    # needs conversion to dict info
+    sql_statements_dlc = {k: [{'sql': i} for i in v] for k, v in sql_statements_dlc.items()}
+    LogPusher.push_to_log("Running SQL on Vanilla civ files...", log)
+    dlc_status_info = lint_database(engine, sql_statements_dlc, keep_changes=True,
+                                    database_spec=db_spec)
+    extract_state_test(graph, dlc_status_info)
+    sql_statements_mods = {k: [{'sql': i} for i in v] for k, v in sql_statements_mods.items()}
+
+    LogPusher.push_to_log("Running SQL on Modded files...", log)
+    mod_status_info = lint_database(engine, sql_statements_mods, keep_changes=True,
+                                    database_spec=db_spec)
+    extract_state_test(graph, mod_status_info)
+    LogPusher.push_to_log("Finished running Modded Files", log)
+
+    if extra_sql:
+        with open(LocalFilePaths.app_data_path_form('main.sql'), 'r') as f:
+            graph_sql = f.readlines()
+        extra_statements = {'graph_main.sql': graph_sql}
+        mod_gui_status_info = lint_database(engine, extra_statements, keep_changes=False,
+                                            database_spec=db_spec)
+        extract_state_test(graph, mod_gui_status_info)
+        LogPusher.push_to_log("Finished running Graph mod", log)
+    LogPusher.push_to_log(f"model_run finished in {time.time() - start_time:.1f}s", log)

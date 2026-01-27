@@ -1,7 +1,8 @@
 SELECT DISTINCT
   T_Mods.ModId,
   T_Items.Item AS File,
-  T_Mods.Disabled
+  T_Mods.Disabled,
+  T_ActionGroups.ActionGroupId
 FROM
   Mods AS T_Mods
   LEFT JOIN ModProperties AS T_ModProps

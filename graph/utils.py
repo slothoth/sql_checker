@@ -1,5 +1,8 @@
 import os
 import sys
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def to_number(x):
@@ -37,3 +40,23 @@ def resource_path(relative_path):
     if hasattr(sys, "_MEIPASS"):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
+
+
+class LogPushSingleton:
+    def __init__(self):
+        self.log_widget = None
+
+    def set_log_widget(self, log_widget):
+        if self.log_widget is not None:
+            log.error('trying to reset log window, shouldnt happen')
+        else:
+            self.log_widget = log_widget
+
+    def push_to_log(self, message, other_log):
+        other_log.info(f'Pushed to log: {message}')
+        log_display = self.log_widget
+        log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
+        cursor = log_display.textCursor()  # keep view scrolled to bottom
+        log_display.setTextCursor(cursor)
+
+LogPusher = LogPushSingleton()

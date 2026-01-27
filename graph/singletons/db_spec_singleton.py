@@ -183,7 +183,7 @@ class ResourceLoader:
     def update_database_spec(self):
         mod_ids = get_dlc_mod_ids()
         self.update_mod_ids(mod_ids)
-        SQLValidator.state_validation_setup('AGE_ANTIQUITY', self)
+        SQLValidator.state_validation_setup('AGE_ANTIQUITY', self, first_run=True)
 
         database_path = LocalFilePaths.app_data_path_form('gameplay-base_AGE_ANTIQUITY.sqlite')
         db = BaseDB(database_path)

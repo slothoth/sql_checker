@@ -284,25 +284,32 @@ class SchemaInspector:
         _schema_cache[table_name] = TableSchema
         return TableSchema
 
-    def state_validation_setup(self, age, database_spec):
+    def state_validation_setup(self, age, database_spec, first_run=False, graph=None):
         if age in self.engine_dict:     # setup db state validation
             return False
         else:
             path = LocalFilePaths.app_data_path_form('gameplay-base')
             if database_spec.patch_change:
                 # we do all 3 ages
+                # because of the PAIN of XML parse/large storage objects failing in python threads, we are
+                # caching the results of each databases files. For the "default run" button.
+                base_files_as_sql = {}
                 for age_type in ages:
                     engine = self.make_base_db(f"{path}_{age_type}.sqlite", self.prebuilt)
                     log.info(f'making base database on {age_type}')
                     database_entries = query_mod_db(age=age_type)
                     modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
-                    sql_statements_dlc, missed_dlc = load_files(dlc_files, 'DLC')
+                    sql_statements_dlc, file_statement_dict, missed_dlc = load_files(dlc_files, 'DLC')
+                    base_files_as_sql.update(file_statement_dict)
                     dlc_status_info = lint_database(engine, sql_statements_dlc, keep_changes=True,
                                                     database_spec=database_spec)
                     if self.include_mods:
                         sql_statements_mods, missed_mods = load_files(modded, 'Mod')
                         mod_status_info = lint_database(engine, sql_statements_mods, keep_changes=True)
                     self.engine_dict[age_type] = engine
+                if first_run:
+                    with open(LocalFilePaths.app_data_path_form('cached_base_game_sql.json'), 'w') as f:
+                        json.dump(base_files_as_sql, f, separators=(',', ':'), sort_keys=True)
             else:
                 engine = create_engine(f"sqlite:///{path}_{age}.sqlite")     # already built
                 self.engine_dict[age] = engine
@@ -314,7 +321,7 @@ class SchemaInspector:
         database_entries = query_mod_db(age=age)
         modded_short, modded, dlc, dlc_files = organise_entries(database_entries)
         engine = self.engine_dict[age]
-        sql_statements_mods, missed_mods = load_files(modded, 'Mod')
+        sql_statements_mods, _, missed_mods = load_files(modded, 'Mod', graph)
         mod_status_info = lint_database(engine, sql_statements_mods, keep_changes=True, database_spec=database_spec)
 
     def filter_columns(self, table_name, data, skip_defaults=False):
