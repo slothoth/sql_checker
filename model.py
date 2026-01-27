@@ -210,14 +210,15 @@ def query_mod_db(age, log_queue=None):
             folder_path = os.path.dirname(filepath)
             uuid = match.group(1)
             if uuid in modinfo_uuids:
-                err_string += (f'ERROR: Duplicate modinfo UUID:You likely have a local copy and a workshop copy of '
+                log.error(f'ERROR: Duplicate modinfo UUID:You likely have a local copy and a workshop copy of '
                                f'the same mod {uuid}.\nCurrent folder path: {folder_path},\nexistin'
                                f'g folder path: {modinfo_uuids[uuid]}\n----------------')
-            modinfo_uuids[uuid] = folder_path
-            if filepath in filepath_dlc_mod_infos:
-                dlc_mods.append(uuid)
             else:
-                mod_mods.append(uuid)
+                modinfo_uuids[uuid] = folder_path
+                if filepath in filepath_dlc_mod_infos:
+                    dlc_mods.append(uuid)
+                else:
+                    mod_mods.append(uuid)
 
     if len(err_string) > 0:
         raise Exception(err_string)
