@@ -31,7 +31,6 @@ class CollapsiblePanel(QWidget):
         self.toggle_btn.clicked.connect(self.toggle)
 
         self.content = QWidget()
-        #self.content.setFixedWidth(220)
 
         content_layout = QVBoxLayout(self.content)
         # Civ Config
@@ -95,6 +94,13 @@ class CollapsiblePanel(QWidget):
             self.toggle_btn.setText("▶")
         else:
             self.toggle_btn.setText("◀")
+
+    def expand_panel(self):
+        if self.expanded:
+            return
+        self.expanded = True
+        self.content.setVisible(self.expanded)
+        self.toggle_btn.setText("▶")
 
     @staticmethod
     def create_file_row(label_text, default_value="", browse_func=None):
