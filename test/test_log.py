@@ -1,3 +1,5 @@
+from graph.singletons.filepaths import LocalFilePaths       # needed because we want logger initialised
+LocalFilePaths.initialize_paths()
 from graph.singletons.db_spec_singleton import db_spec
 db_spec.initialize(False)
 from graph.transform_json_to_sql import transform_json

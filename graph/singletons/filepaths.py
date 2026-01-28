@@ -11,11 +11,12 @@ from graph.utils import check_civ_install_works, check_civ_config_works
 
 
 class FilePaths:
+    civ_config = ''
+    civ_install = ''
+    workshop = ''
+
     def __init__(self):
-        self.save_appdata_path = self.setup_appdata(civ_type='CivVII')               # for when we include VI
-        self.civ_config = self._find_civ_config()
-        self.civ_install = self._find_civ_install()
-        self.workshop = self._find_workshop()
+        self.save_appdata_path = self.setup_appdata(civ_type='CivVII')  # for when we include VI
 
     @staticmethod
     def _find_steam_install():
@@ -67,7 +68,6 @@ class FilePaths:
         if check_civ_config_works(civ_config):
             return civ_config
 
-
     @staticmethod
     def setup_appdata(civ_type):
         app_name = 'CivSQLChecker'
@@ -83,6 +83,14 @@ class FilePaths:
     def app_data_path_form(self, filename):
         file_path = os.path.join(self.save_appdata_path, filename)
         return file_path
+
+    def initialize_paths(self):
+        self.civ_config = self._find_civ_config()
+        self.civ_install = self._find_civ_install()
+        self.workshop = self._find_workshop()
+        logger.info(f'Civ Config Location resolved to: {LocalFilePaths.civ_config}')
+        logger.info(f'Civ Install resolved to: {LocalFilePaths.civ_install}')
+        logger.info(f'Civ Workshop folder resolved to: {LocalFilePaths.workshop}')
 
 
 LocalFilePaths = FilePaths()
@@ -113,8 +121,3 @@ if logger.hasHandlers():
 logger.addHandler(info_handler)
 logger.addHandler(error_handler)
 logger.addHandler(console_handler)
-
-
-logger.info(f'Civ Config Location resolved to: {LocalFilePaths.civ_config}')
-logger.info(f'Civ Install resolved to: {LocalFilePaths.civ_install}')
-logger.info(f'Civ Workshop folder resolved to: {LocalFilePaths.workshop}')

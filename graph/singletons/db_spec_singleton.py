@@ -158,8 +158,8 @@ class ResourceLoader:
                              }
         else:
             self.metadata = self._read_file(self.appdata_path('metadata.json'))
-            self.age = self.metadata['age']
-            self.patch_time = self.metadata['patch_time']
+            self.age = self.metadata.get('age', 'AGE_ANTIQUITY')
+            self.patch_time = self.metadata.get('patch_time', -1)
 
         root = Path(LocalFilePaths.civ_install)       # find the most recent changed file and the time it was changed.
         file_changes = [(p, p.stat().st_mtime) for p in root.rglob("*") if p.is_file()

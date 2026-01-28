@@ -3,6 +3,8 @@ import json
 from PyQt5.QtCore import Qt, QPoint
 from PyQt5.QtTest import QTest
 
+from graph.singletons.filepaths import LocalFilePaths       # needed because we want logger initialised
+LocalFilePaths.initialize_paths()
 from graph.singletons.db_spec_singleton import db_spec
 db_spec.initialize(False)
 

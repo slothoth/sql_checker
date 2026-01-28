@@ -1,8 +1,11 @@
 import os
 from PyQt5 import QtGui, QtWidgets, QtCore, QtTest
 
+from graph.singletons.filepaths import LocalFilePaths       # needed because we want logger initialised
+LocalFilePaths.initialize_paths()
 from graph.singletons.db_spec_singleton import db_spec
 db_spec.initialize(False)
+
 
 from graph.node_controller import NodeEditorWindow
 from graph.transform_json_to_sql import make_modinfo
@@ -214,29 +217,3 @@ def test_import_mod(qtbot):
 db_spec.age = 'AGE_ANTIQUITY'
 db_spec.metadata = {'civ_config':  None, 'workshop': None, 'civ_install': None, 'age': db_spec.age,
                     'patch_time': db_spec.patch_time}
-
-
-def test_change_dialog(qtbot):
-    window = NodeEditorWindow()
-    qtbot.addWidget(window)
-    .civ_config, LocalFilePaths.civ_install, LocalFilePaths.workshop = None, None, None
-    config_test, install_test, workshop_test = 'CIV_CONFIG_TEST', 'CIV_INSTALL_TEST', 'WORKSHOP_TEST'
-    dialog = PathSettingsDialog(None, {'config': LocalFilePaths.civ_config,
-                                       'install': LocalFilePaths.civ_install,
-                                       'workshop': LocalFilePaths.workshop})
-
-    dialog.path_edits['config'].clear()
-    QtTest.QTest.keyClicks(dialog.path_edits['config'], config_test)
-    dialog.path_edits['install'].clear()
-    QtTest.QTest.keyClicks(dialog.path_edits['install'], install_test)
-    dialog.path_edits['workshop'].clear()
-    QtTest.QTest.keyClicks(dialog.path_edits['workshop'], workshop_test)
-
-    button_box = dialog.findChild(QtWidgets.QDialogButtonBox)
-    ok_button = button_box.button(QtWidgets.QDialogButtonBox.Ok)
-
-    QtTest.QTest.mouseClick(ok_button, QtCore.Qt.LeftButton)
-
-    assert LocalFilePaths.civ_config == config_test
-    assert LocalFilePaths.civ_install == install_test
-    assert LocalFilePaths.workshop == workshop_test

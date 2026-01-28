@@ -10,6 +10,7 @@ from graph.singletons.db_spec_singleton import db_spec
 from graph.utils import resource_path
 from graph.utils import check_civ_install_works, check_civ_config_works, check_workshop_works
 
+from graph.singletons.filepaths import LocalFilePaths
 
 class MetaStore:
     @staticmethod
@@ -162,29 +163,29 @@ with open(resource_path('resources/style_sheets.json')) as f:
 
 
 class PathSettingsDialog(QtWidgets.QDialog):
-    def __init__(self, parent=None, paths=None):
-        super().__init__(parent)
+    def __init__(self, paths=None):
+        super().__init__()
         self.ensure_valid_directory = paths is not None
+        if paths is None:
+            paths = {}
         self.setWindowTitle("Path Settings")
 
         layout = QtWidgets.QVBoxLayout(self)
         self.path_edits = {}
 
-        # Dictionary to hold buttons and text fields for easy access
         self.b_dict = {}
         self.text_fields = {}
 
-        # Create the UI rows
-        self.b_dict['config'], self.text_fields['config'] = self.add_path_row(
-            layout, "Civ Config Location:", db_spec.metadata.get('civ_config', ''), "config"
-        )
-        self.b_dict['workshop'], self.text_fields['workshop'] = self.add_path_row(
-            layout, "Workshop Folder:", db_spec.metadata.get('workshop', ''), "workshop"
-        )
-        self.b_dict['install'], self.text_fields['install'] = self.add_path_row(
-            layout, "Civ Install:", db_spec.metadata.get('civ_install', ''), "install"
-        )
+        config_current = db_spec.metadata.get('civ_config') or paths.get('config') or ''
+        self.b_dict['config'], self.text_fields['config'] = self.add_path_row(layout, "Civ Config Location:",
+                                                                              config_current, "config")
+        workshop_current = db_spec.metadata.get('workshop') or paths.get('workshop') or ''
+        self.b_dict['workshop'], self.text_fields['workshop'] = self.add_path_row(layout, "Workshop Folder:",
+                                                                                  workshop_current, "workshop")
+        install_current = db_spec.metadata.get('civ_install') or paths.get('install') or ''
 
+        self.b_dict['install'], self.text_fields['install'] = self.add_path_row(layout, "Civ Install:",
+                                                                                install_current, "install")
         # Connect Browse buttons
         self.b_dict['config'].clicked.connect(lambda: self.browse_file(self.text_fields['config'], "Select Civ Config Location"))
         self.b_dict['workshop'].clicked.connect(lambda: self.browse_folder(self.text_fields['workshop'], "Select Workshop Folder"))
@@ -205,7 +206,6 @@ class PathSettingsDialog(QtWidgets.QDialog):
 
         self._calculate_initial_width()
         if paths is not None:
-
             for key, path in paths.items():
                 if path is None:
                     self.text_fields[key].setStyleSheet(styles['basic_error'])
@@ -226,8 +226,14 @@ class PathSettingsDialog(QtWidgets.QDialog):
         ins_path = self.text_fields['install'].text()
 
         v1 = check_civ_config_works(cfg_path)
+        if v1:
+            self.text_fields['config'].setStyleSheet("background-color: #e1e1e1; color: #555;")
         v2 = check_workshop_works(wrk_path)
+        if v2:
+            self.text_fields['workshop'].setStyleSheet("background-color: #e1e1e1; color: #555;")
         v3 = check_civ_install_works(ins_path)
+        if v3:
+            self.text_fields['install'].setStyleSheet("background-color: #e1e1e1; color: #555;")
 
         self.ok_button.setEnabled(v1 and v2 and v3)
 
@@ -279,29 +285,26 @@ class PathSettingsDialog(QtWidgets.QDialog):
             line_edit.setText(path)
 
     def accept(self):
-        cfg = self.path_edits["config"].text()
-        work = self.path_edits["workshop"].text()
-        inst = self.path_edits["install"].text()
+        civ_config = self.path_edits["config"].text()
+        civ_workshop = self.path_edits["workshop"].text()
+        civ_install = self.path_edits["install"].text()
 
-        if cfg:
-            db_spec.update_civ_config(cfg)
-        if work:
-            db_spec.update_steam_workshop(work)
-        if inst:
-            db_spec.update_civ_install(inst)
+        if civ_config:
+            LocalFilePaths.civ_config = civ_config
+        if civ_workshop:
+            LocalFilePaths.workshop = civ_workshop
+        if civ_install:
+            LocalFilePaths.civ_install = civ_install
 
         super().accept()
 
     def reject(self):
         """If paths are mandatory and invalid, shut down the app."""
         if self.ensure_valid_directory:
-            # Check if paths are currently valid
             cfg = self.text_fields['config'].text()
             wrk = self.text_fields['workshop'].text()
             ins = self.text_fields['install'].text()
-
             valid = check_civ_config_works(cfg) and check_workshop_works(wrk) and check_civ_install_works(ins)
-
             if not valid:
                 msg = QtWidgets.QMessageBox()
                 msg.setIcon(QtWidgets.QMessageBox.Critical)
@@ -312,9 +315,3 @@ class PathSettingsDialog(QtWidgets.QDialog):
                 sys.exit()                  # Full application shutdown
 
         super().reject()
-
-
-def show_dialog_if_missed_path(paths, parent=None):
-    if not all(paths.values()):
-        dlg = PathSettingsDialog(parent, paths=paths)
-        dlg.exec_()

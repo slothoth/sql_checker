@@ -87,7 +87,7 @@ class CollapsiblePanel(QWidget):
         self.log_display.clear()
 
     def open_settings(self):
-        dlg = PathSettingsDialog(self)
+        dlg = PathSettingsDialog()
         dlg.exec_()
 
     def timerEvent(self, event):
