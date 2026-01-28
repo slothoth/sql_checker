@@ -62,6 +62,11 @@ def test_all_table_empty_log_nodes(qtbot):
     log_lines = log_output.split('\n')
     assert 'Node Adjacency_YieldChanges had problem MISSING REQUIRED COLUMNS: ID, YieldType;' in log_lines
 
+# TODO empty_log_nodes erroring:
+'''def push_to_log(self, message, other_log):
+>       log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
+E       RuntimeError: wrapped C/C++ object of type QPlainTextEdit has been deleted'''
+
 
 def test_all_effect_args(qtbot):
     window = NodeEditorWindow()

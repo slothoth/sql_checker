@@ -462,9 +462,6 @@ class SchemaInspector:
         with engine.begin() as conn_engine:
             conn_engine.connection.create_function("Make_Hash", 1, make_hash)  # setup hash
             for table_name, table_entries in prebuilt.items():
-                # I WISH i could use mallow-alchemy for this, but for some reason it clears entries
-                # due to a mismatch where the Type column isnt included in schema because its reserved?
-                # anyways causes problems with GameEffects table since its PK is Type
                 columns = ", ".join(table_entries[0].keys())
                 params = ", ".join(f":{k}" for k in table_entries[0].keys())
                 sql = text(f"""INSERT INTO {table_name}({columns}) VALUES ({params})""")
