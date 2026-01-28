@@ -47,6 +47,8 @@ class SchemaInspector:
     """ Class to handle inspect columns and data types """
     Base = None
     session = None
+    empty_engine = None
+    metadata = {}
     pk_map = {}
     fk_to_tbl_map = {}
     fk_to_pk_map = {}
@@ -180,7 +182,6 @@ class SchemaInspector:
         )
         Session = sessionmaker(bind=empty_engine)
         return Base, Session(), empty_engine
-
 
     def validate_field(self, table_name, field_name, field_value, all_data=None):
         """

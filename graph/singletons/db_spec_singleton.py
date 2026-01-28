@@ -38,7 +38,6 @@ class ResourceLoader:
     dlc_mod_ids = []
     attach_tables = []
 
-
     def __new__(cls):
         if not cls._instance:
             with cls._lock:
@@ -46,15 +45,12 @@ class ResourceLoader:
                     cls._instance = super().__new__(cls)
         return cls._instance
 
-
     def initialize(self, patch_occurred, latest=None):
-        """Explicitly load resources once."""
         with self._lock:
             if not self.initialized:
                 SQLValidator.initialize()
                 self._load_resources(patch_occurred, latest)
                 self.initialized = True
-
 
     def _load_resources(self, new_patch_occurred, latest=None):
         self._files = {

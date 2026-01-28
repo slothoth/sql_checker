@@ -62,7 +62,7 @@ def main():
     def update_splash(message, value):
         progress_bar.setValue(value)
         icon_pix = QPixmap(message)
-        if not icon_pix.isNull():       # Scale icon to fit the 80x80 label
+        if not icon_pix.isNull():
             overlay_label.setPixmap(icon_pix)
 
     worker.progress.connect(update_splash)
