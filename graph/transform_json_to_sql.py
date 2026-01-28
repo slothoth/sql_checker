@@ -86,8 +86,8 @@ def argument_transform(sql_code, error_string, dict_form_list, effect_string, ef
             if arg_value is None:
                 continue
         widget_default = default_mapper[param]
-        arg_info = effect_info['Arguments'][arg_name]
-        arg_default = arg_info['DefaultValue']  # if val is default, we can ignore
+        arg_info = effect_info.get('Arguments',).get(arg_name, {})
+        arg_default = arg_info.get('DefaultValue')  # if val is default, we can ignore
         if arg_default is None:
             if widget_default != arg_value:
                 sql, dict_form, error_string = transform_to_sql({f'{effect_string}Id': effect_id, 'Name': arg_name,
@@ -198,7 +198,7 @@ def effect_custom_transform(custom_properties, node_id, sql_code, dict_form_list
                        effect_string='Modifier', effect_id=no_arg_params['ModifierId'],
                        custom_properties=custom_properties,
                        type_arg=db_spec.mod_type_arg_map.get(effect_type, {}),
-                       effect_info=db_spec.modifier_argument_info[effect_type],
+                       effect_info=db_spec.modifier_argument_info.get(effect_type, {}),
                        node_id=node_id)
 
     template = db_spec.node_templates['ModifierStrings']  # ModifierStrings

@@ -1,8 +1,11 @@
 from sqlalchemy import create_engine, select
 import json
 
-from graph.singletons.db_spec_singleton import db_spec
 from graph.singletons.filepaths import LocalFilePaths
+LocalFilePaths.initialize_paths()
+from graph.singletons.db_spec_singleton import db_spec
+db_spec.initialize(False)
+
 from constants import ages
 from stats import gather_effects, mine_empty_effects, mine_requirements
 from schema_generator import SQLValidator

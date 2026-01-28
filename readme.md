@@ -35,7 +35,9 @@ ideas for custom nodes, please suggest them.
 - An About window explaining all the features.
 - Property viewer window shows the current SQL that the node will generate.
 - Nodes currently have a lot of unused space caused by the columns on ports. Plan to use this.
-
+- There are some missing effect types, where the effect has no examples yet in the database. Should we handle this for suggestions, or ignore as often are defunct.
+- How do we handle it if they are imported?
+- 
 # Future Big Features
 - Image imports for Civ/Unit Icons
 - A version for Civ VI.
