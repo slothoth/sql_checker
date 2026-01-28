@@ -7,10 +7,12 @@ import sys
 if sys.platform == 'win32':
     import winreg
 
+from graph.utils import check_civ_install_works, check_civ_config_works
+
 
 class FilePaths:
     def __init__(self):
-        self.save_appdata_path = self.setup_appdata(civ_type='CivVII')               #  for when we include VI
+        self.save_appdata_path = self.setup_appdata(civ_type='CivVII')               # for when we include VI
         self.civ_config = self._find_civ_config()
         self.civ_install = self._find_civ_install()
         self.workshop = self._find_workshop()
@@ -24,8 +26,7 @@ class FilePaths:
             win_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Wow6432Node\Valve\Steam")
             steam_path, _ = winreg.QueryValueEx(win_key, "SteamPath")
         elif sys.platform == 'darwin':
-            user_home = Path.home()
-            steam_path = str(user_home / "Library" / "Application Support" / "Steam")
+            steam_path = str(Path.home() / "Library" / "Application Support" / "Steam")
         else:
             return None
         return steam_path
@@ -38,19 +39,22 @@ class FilePaths:
             civ_install = os.path.join(steam_path, "steamapps/common/Sid Meier's Civilization VII")
         elif sys.platform == 'darwin':
             civ_install = os.path.join(steam_path,
-                                       "steamapps/common/Sid Meier's Civilization VII/CivilizationVII.app/Contents/Resources")
+                                "steamapps/common/Sid Meier's Civilization VII/CivilizationVII.app/Contents/Resources")
         else:
             return None
-        return civ_install
+        if check_civ_install_works(civ_install):
+            return civ_install
 
     def _find_workshop(self):
         steam_path = self._find_steam_install()
         if steam_path is None:
             return None
-        return f"{steam_path}/steamapps/workshop/content/1295660/"
+        workshop_install = f"{steam_path}/steamapps/workshop/content/1295660/"
+        if not os.path.exists(workshop_install):
+            return None
+        return workshop_install
 
-    @staticmethod
-    def _find_civ_config():
+    def _find_civ_config(self):
         if sys.platform == 'win32':
             local_appdata = os.getenv('LOCALAPPDATA')
             civ_config = f"{local_appdata}/Firaxis Games/Sid Meier's Civilization VII"
@@ -59,7 +63,10 @@ class FilePaths:
             civ_config = str(user_home / "Library" / "Application Support" / "Civilization VII")
         else:
             return None
-        return civ_config
+
+        if check_civ_config_works(civ_config):
+            return civ_config
+
 
     @staticmethod
     def setup_appdata(civ_type):
@@ -81,7 +88,6 @@ class FilePaths:
 LocalFilePaths = FilePaths()
 
 # logger setup
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 

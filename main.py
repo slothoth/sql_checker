@@ -5,6 +5,7 @@ from PyQt5.QtGui import QPixmap
 
 from graph.singletons.filepaths import LocalFilePaths       # needed because we want logger initialised
 from graph.utils import resource_path
+from graph.windows import show_dialog_if_missed_path
 
 
 class SetupWorker(QThread):
@@ -14,6 +15,9 @@ class SetupWorker(QThread):
     def run(self):
         self.progress.emit(resource_path("resources/DB_Start.png"), 0)   # Checking Civ install state for changes...
         from graph.singletons.db_spec_singleton import db_spec
+        paths = {'config': LocalFilePaths.civ_config, 'install': LocalFilePaths.civ_install,
+                 'workshop': LocalFilePaths.workshop}
+        show_dialog_if_missed_path(paths)
         patch_occurred, latest = db_spec.check_firaxis_patched()
         if patch_occurred:
             self.progress.emit(resource_path("resources/DB_Changes.png"), 10)

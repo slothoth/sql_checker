@@ -42,6 +42,28 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 
+def check_civ_install_works(path):
+    check_passed = True
+    if not os.path.exists(f"{path}/Base/Assets/schema/gameplay"):
+        check_passed = False
+    return check_passed
+
+
+def check_civ_config_works(path):
+    check_passed = True
+    if not os.path.exists(f"{path}/Debug/localization-copy.sqlite"):
+        check_passed = False
+    if not os.path.exists(f"{path}/Mods"):
+        check_passed = False
+    return check_passed
+
+
+def check_workshop_works(path):
+    if '1295660' in path:
+        return True
+    return False
+
+
 class LogPushSingleton:
     def __init__(self):
         self.log_widget = None
@@ -55,8 +77,10 @@ class LogPushSingleton:
     def push_to_log(self, message, other_log):
         other_log.info(f'Pushed to log: {message}')
         log_display = self.log_widget
-        log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
-        cursor = log_display.textCursor()  # keep view scrolled to bottom
-        log_display.setTextCursor(cursor)
+        if log_display is not None:         # rare occassions where it gets wiped by C++. Not good, but dont crash
+            log_display.appendPlainText(str(message) + '\n')  # ensure plain text insertion so the highlighter can run
+            cursor = log_display.textCursor()  # keep view scrolled to bottom
+            log_display.setTextCursor(cursor)
+
 
 LogPusher = LogPushSingleton()

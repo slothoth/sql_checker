@@ -1,15 +1,12 @@
-import threading
 import queue
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QFileDialog, QSizePolicy, QPlainTextEdit, QComboBox
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QPlainTextEdit, QComboBox
 )
 
 from syntax_highlighter import LogHighlighter
-from graph.singletons.db_spec_singleton import db_spec
 from constants import ages
-from graph.singletons.filepaths import LocalFilePaths
 from graph.utils import LogPusher
+from graph.windows import PathSettingsDialog
 
 
 class CollapsiblePanel(QWidget):
@@ -33,26 +30,10 @@ class CollapsiblePanel(QWidget):
         self.content = QWidget()
 
         content_layout = QVBoxLayout(self.content)
-        # Civ Config
-        self.entry1, btn1 = self.create_file_row(
-            "Civ Config Location:", default_value=LocalFilePaths.civ_config, browse_func=self.set_civ_config
-        )
-        content_layout.addLayout(self.entry1)
-        content_layout.addWidget(btn1)
-
-        # Workshop Folder
-        self.entry2, btn2 = self.create_file_row(
-            "Workshop Folder:", default_value=LocalFilePaths.workshop, browse_func=self.set_workshop
-        )
-        content_layout.addLayout(self.entry2)
-        content_layout.addWidget(btn2)
-
-        # Civ Install
-        self.entry3, btn3 = self.create_file_row(
-            "Civ Install:", default_value=LocalFilePaths.civ_install, browse_func=self.set_civ_install
-        )
-        content_layout.addLayout(self.entry3)
-        content_layout.addWidget(btn3)
+        # Path Settings Button
+        self.settings_btn = QPushButton("Path Settings...")
+        self.settings_btn.clicked.connect(self.open_settings)
+        content_layout.addWidget(self.settings_btn)
 
         # age for running game config analysis
         self.ageComboBox = QComboBox()
@@ -102,40 +83,12 @@ class CollapsiblePanel(QWidget):
         self.content.setVisible(self.expanded)
         self.toggle_btn.setText("▶")
 
-    @staticmethod
-    def create_file_row(label_text, default_value="", browse_func=None):
-        layout = QHBoxLayout()
-        label = QLabel(label_text)
-        line_edit = QLineEdit()
-        line_edit.setText(default_value)
-        btn = QPushButton("Browse...")
-        if browse_func:
-            btn.clicked.connect(browse_func)
-        layout.addWidget(label)
-        layout.addWidget(line_edit)
-        layout.addWidget(btn)
-        return layout, btn
-
-    def set_civ_config(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Select Civ Config File")
-        if path:
-            db_spec.update_civ_config(path)
-            self.layout().itemAt(0).itemAt(1).widget().setText(path)
-
-    def set_workshop(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Select Workshop Folder")
-        if path:
-            db_spec.update_steam_workshop(path)
-            self.layout().itemAt(2).itemAt(1).widget().setText(path)
-
-    def set_civ_install(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Select Civ Install File")
-        if path:
-            db_spec.update_civ_install(path)
-            self.layout().itemAt(4).itemAt(1).widget().setText(path)
-
     def clear_log(self):
         self.log_display.clear()
+
+    def open_settings(self):
+        dlg = PathSettingsDialog(self)
+        dlg.exec_()
 
     def timerEvent(self, event):
         try:

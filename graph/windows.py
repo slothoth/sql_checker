@@ -1,8 +1,14 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QCheckBox, QLabel, QGridLayout)
+import json
+import os
+import sys
+
 from graph.db_node_support import sync_node_options_all, set_nodes_visible_by_type
 from schema_generator import SQLValidator
 from graph.singletons.db_spec_singleton import db_spec
+from graph.utils import resource_path
+from graph.utils import check_civ_install_works, check_civ_config_works, check_workshop_works
 
 
 class MetaStore:
@@ -149,3 +155,166 @@ def get_combo_value(parent, user_knobs):
         return (dlg.age.currentText(), {i.text(): i.isChecked() for i in dlg.mod_items},
                 {k: v.currentText() for k, v in dlg.config_values.items()})
     return None, None, None
+
+
+with open(resource_path('resources/style_sheets.json')) as f:
+    styles = json.load(f)
+
+
+class PathSettingsDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None, paths=None):
+        super().__init__(parent)
+        self.ensure_valid_directory = paths is not None
+        self.setWindowTitle("Path Settings")
+
+        layout = QtWidgets.QVBoxLayout(self)
+        self.path_edits = {}
+
+        # Dictionary to hold buttons and text fields for easy access
+        self.b_dict = {}
+        self.text_fields = {}
+
+        # Create the UI rows
+        self.b_dict['config'], self.text_fields['config'] = self.add_path_row(
+            layout, "Civ Config Location:", db_spec.metadata.get('civ_config', ''), "config"
+        )
+        self.b_dict['workshop'], self.text_fields['workshop'] = self.add_path_row(
+            layout, "Workshop Folder:", db_spec.metadata.get('workshop', ''), "workshop"
+        )
+        self.b_dict['install'], self.text_fields['install'] = self.add_path_row(
+            layout, "Civ Install:", db_spec.metadata.get('civ_install', ''), "install"
+        )
+
+        # Connect Browse buttons
+        self.b_dict['config'].clicked.connect(lambda: self.browse_file(self.text_fields['config'], "Select Civ Config Location"))
+        self.b_dict['workshop'].clicked.connect(lambda: self.browse_folder(self.text_fields['workshop'], "Select Workshop Folder"))
+        self.b_dict['install'].clicked.connect(lambda: self.browse_file(self.text_fields['install'], "Select Civ Install"))
+
+        # Setup Dialog Buttons
+        self.button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self.accept)
+        self.button_box.rejected.connect(self.reject)
+        layout.addWidget(self.button_box)
+
+        # Reference to the OK button to toggle it
+        self.ok_button = self.button_box.button(QtWidgets.QDialogButtonBox.Ok)
+
+        # Connect text changes to validation
+        for field in self.text_fields.values():
+            field.textChanged.connect(self.validate_all_paths)
+
+        self._calculate_initial_width()
+        if paths is not None:
+
+            for key, path in paths.items():
+                if path is None:
+                    self.text_fields[key].setStyleSheet(styles['basic_error'])
+                else:
+                    self.b_dict[key].setDisabled(True)
+                    self.text_fields[key].setReadOnly(True)
+                    self.text_fields[key].setStyleSheet("background-color: #e1e1e1; color: #555;")
+
+        self.validate_all_paths()
+
+    def validate_all_paths(self):
+        """Checks all three paths and enables/disables the OK button."""
+        if not self.ensure_valid_directory:
+            return                          # Don't restrict if not required
+
+        cfg_path = self.text_fields['config'].text()
+        wrk_path = self.text_fields['workshop'].text()
+        ins_path = self.text_fields['install'].text()
+
+        v1 = check_civ_config_works(cfg_path)
+        v2 = check_workshop_works(wrk_path)
+        v3 = check_civ_install_works(ins_path)
+
+        self.ok_button.setEnabled(v1 and v2 and v3)
+
+    def add_path_row(self, parent_layout, label_text, default_value, key):
+        row_layout = QtWidgets.QHBoxLayout()
+        label = QtWidgets.QLabel(label_text)
+
+        line_edit = QtWidgets.QLineEdit()
+        line_edit.setText(default_value if default_value else "")
+
+        btn = QtWidgets.QPushButton("Browse...")
+
+        row_layout.addWidget(label)
+        row_layout.addWidget(line_edit)
+        row_layout.addWidget(btn)
+        parent_layout.addLayout(row_layout)
+        self.path_edits[key] = line_edit
+        return btn, line_edit
+
+    def _calculate_initial_width(self):
+        """Calculates the pixel width of the longest path and resizes the dialog."""
+        metrics = self.fontMetrics()
+        max_path_width = 0
+
+        for edit in self.path_edits.values():
+            try:
+                text_width = metrics.horizontalAdvance(edit.text())
+            except AttributeError:
+                text_width = metrics.width(edit.text())
+
+            if text_width > max_path_width:
+                max_path_width = text_width
+
+        padding = 40
+        for edit in self.path_edits.values():
+            edit.setMinimumWidth(max_path_width + padding)
+
+        self.adjustSize()
+
+    def browse_file(self, line_edit, caption):
+        start_dir = os.path.dirname(line_edit.text()) if line_edit.text() else ""
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, caption, start_dir)
+        if path:
+            line_edit.setText(path)
+
+    def browse_folder(self, line_edit, caption):
+        path = QtWidgets.QFileDialog.getExistingDirectory(self, caption, line_edit.text())
+        if path:
+            line_edit.setText(path)
+
+    def accept(self):
+        cfg = self.path_edits["config"].text()
+        work = self.path_edits["workshop"].text()
+        inst = self.path_edits["install"].text()
+
+        if cfg:
+            db_spec.update_civ_config(cfg)
+        if work:
+            db_spec.update_steam_workshop(work)
+        if inst:
+            db_spec.update_civ_install(inst)
+
+        super().accept()
+
+    def reject(self):
+        """If paths are mandatory and invalid, shut down the app."""
+        if self.ensure_valid_directory:
+            # Check if paths are currently valid
+            cfg = self.text_fields['config'].text()
+            wrk = self.text_fields['workshop'].text()
+            ins = self.text_fields['install'].text()
+
+            valid = check_civ_config_works(cfg) and check_workshop_works(wrk) and check_civ_install_works(ins)
+
+            if not valid:
+                msg = QtWidgets.QMessageBox()
+                msg.setIcon(QtWidgets.QMessageBox.Critical)
+                msg.setText("Required paths are missing or invalid.")
+                msg.setInformativeText("The application cannot continue without these settings. Closing...")
+                msg.setWindowTitle("Configuration Error")
+                msg.exec_()
+                sys.exit()                  # Full application shutdown
+
+        super().reject()
+
+
+def show_dialog_if_missed_path(paths, parent=None):
+    if not all(paths.values()):
+        dlg = PathSettingsDialog(parent, paths=paths)
+        dlg.exec_()
