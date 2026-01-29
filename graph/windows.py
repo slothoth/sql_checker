@@ -12,6 +12,7 @@ from graph.utils import check_civ_install_works, check_civ_config_works, check_w
 
 from graph.singletons.filepaths import LocalFilePaths
 
+
 class MetaStore:
     @staticmethod
     def get(graph, key, default=None):
@@ -176,12 +177,34 @@ class PathSettingsDialog(QtWidgets.QDialog):
         self.b_dict = {}
         self.text_fields = {}
 
+        header_label = QLabel("Could not resolve some filepaths. Red highlighted fields need amending.")
+        header_label.setWordWrap(True)
+        layout.addWidget(header_label)
+
+        config_label = QLabel("Your Civ Config normally is in Appdata/Local/Firaxis Games/Sid Meier's Civilization VII."
+                              " It contains a Mods folder for all non-workshop mods, and a Logs folder.")
+        config_label.setWordWrap(True)
+        layout.addWidget(config_label)
+
         config_current = db_spec.metadata.get('civ_config') or paths.get('config') or ''
         self.b_dict['config'], self.text_fields['config'] = self.add_path_row(layout, "Civ Config Location:",
                                                                               config_current, "config")
+
+        workshop_label = QLabel("Your workshop mods folder will normally be inside your Steam installation under "
+                                "steamapps/workshop/content/1295560. It should contain many numbered mod folders.")
+        workshop_label.setWordWrap(True)
+        layout.addWidget(workshop_label)
+
         workshop_current = db_spec.metadata.get('workshop') or paths.get('workshop') or ''
         self.b_dict['workshop'], self.text_fields['workshop'] = self.add_path_row(layout, "Workshop Folder:",
                                                                                   workshop_current, "workshop")
+
+        install_label = QLabel("Your Civilization Installation. On Steam this is probably under "
+                               "steam/steamapps/common/Sid Meier's Civilization VII. It should contain two folders, "
+                               "Base and DLC.")
+        install_label.setWordWrap(True)
+        layout.addWidget(install_label)
+
         install_current = db_spec.metadata.get('civ_install') or paths.get('install') or ''
 
         self.b_dict['install'], self.text_fields['install'] = self.add_path_row(layout, "Civ Install:",

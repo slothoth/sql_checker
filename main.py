@@ -53,7 +53,7 @@ class MainController:
         self.app.setQuitOnLastWindowClosed(False)        # remove quit on close as optional dialog triggers it
 
         splash_pix = QPixmap(resource_path("resources/LoadingSplash.png"))
-        self.splash = QSplashScreen(splash_pix, Qt.WindowStaysOnTopHint)
+        self.splash = QSplashScreen(splash_pix, Qt.WindowStaysOnBottomHint)
         self.progress_bar = QProgressBar(self.splash)
 
         self.overlay_label = QLabel(self.splash)
