@@ -177,7 +177,8 @@ class PathSettingsDialog(QtWidgets.QDialog):
         self.b_dict = {}
         self.text_fields = {}
 
-        header_label = QLabel("Could not resolve some filepaths. Red highlighted fields need amending.")
+        header_label = QLabel("Could not resolve some filepaths. Incorrect fields will be highlighted in red "
+                              "until amended correctly.")
         header_label.setWordWrap(True)
         layout.addWidget(header_label)
 
