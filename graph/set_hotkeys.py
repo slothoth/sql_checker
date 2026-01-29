@@ -16,7 +16,7 @@ from graph.utils import resource_path
 
 from graph.mod_conversion import extract_state_test
 from graph.utils import LogPusher
-from graph.hotkey_support import write_sql, write_loc_sql, ConfigTestWorker, node_tracker
+from graph.hotkey_support import write_sql, write_loc_sql, ConfigTestWorker, node_tracker, group_nodes_by_table
 
 log = logging.getLogger(__name__)
 
@@ -593,3 +593,11 @@ def mod_test_current_config(graph):
 
     worker.results_ready.connect(lambda result: extract_state_test(graph, result))
     thread.start()
+
+
+def switch_to_table_tabs(graph):
+    group_nodes_by_table(graph)
+
+
+def switch_to_single_tab(graph):
+    print()

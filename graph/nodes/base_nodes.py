@@ -1,5 +1,5 @@
 from collections import defaultdict
-from NodeGraphQt import BaseNode
+from NodeGraphQt import BaseNode, GroupNode
 from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
 
 
@@ -36,29 +36,6 @@ class BasicDBNode(BaseNode):
             return 'ReqSet'  # needs more complicated behavior as ModifierId now also ports so could have any attach table
         if connect_port is not None:
             return backlink_port_get(original_table, connect_table)
-
-    def set_input_port_constraint(self, port, fk_to_tbl_link, fk_to_pk_link):
-        table_class = SQLValidator.table_name_class_map.get(fk_to_tbl_link, '')
-        self.add_accept_port_type(port, {
-            'node_type': table_class,
-            'port_type': PortTypeEnum.OUT.value,
-            'port_name': fk_to_pk_link,
-        })
-        base_table_name = self.get_property('table_name')
-        if fk_to_tbl_link == 'Modifiers':
-            if base_table_name not in effect_system_tables:
-                self.add_accept_port_type(port, {
-                    'node_type': 'db.game_effects.GameEffectNode',
-                    'port_type': PortTypeEnum.OUT.value,
-                    'port_name': fk_to_pk_link,
-                })
-        if fk_to_tbl_link == 'RequirementSets':
-            if base_table_name not in requirement_system_tables:
-                self.add_accept_port_type(port, {
-                    'node_type': 'db.game_effects.RequirementEffectNode',
-                    'port_type': PortTypeEnum.OUT.value,
-                    'port_name': fk_to_pk_link,
-                })
 
     def set_spec(self, col_dict):
         self.can_validate = False           # delay validation, just needless sql_building
@@ -134,6 +111,16 @@ class BasicDBNode(BaseNode):
         return
 
 
+class MyGroupNode(GroupNode):
+    __identifier__ = 'nodes.group'
+    NODE_NAME = 'group node'
+
+    def __init__(self):
+        super(MyGroupNode, self).__init__()
+        self.output_port_tables = {}
+        self.set_color(50, 8, 25)
+
+
 def backlink_port_get(original_table, connect_table):
     backlink_spec = db_spec.node_templates[original_table]
     combined_fks = backlink_spec['foreign_keys'].copy()
@@ -146,8 +133,38 @@ def backlink_port_get(original_table, connect_table):
     return fk_ports[0]
 
 
+def set_input_port_constraint(node, port, fk_to_tbl_link, fk_to_pk_link):
+    table_class = SQLValidator.table_name_class_map.get(fk_to_tbl_link, '')     # also need linkage allowance for group
+    node.add_accept_port_type(port, {
+        'node_type': table_class,
+        'port_type': PortTypeEnum.OUT.value,
+        'port_name': fk_to_pk_link,
+    })
+    # also add for group node
+    node.add_accept_port_type(port, {
+        'node_type': table_class.replace('.table.', '.group.'),
+        'port_type': PortTypeEnum.OUT.value,
+        'port_name': fk_to_pk_link,
+    })
+    base_table_name = node.get_property('table_name') or node.get_property('group_table_name')
+    if fk_to_tbl_link == 'Modifiers':
+        if base_table_name not in effect_system_tables:
+            node.add_accept_port_type(port, {
+                'node_type': 'db.game_effects.GameEffectNode',
+                'port_type': PortTypeEnum.OUT.value,
+                'port_name': fk_to_pk_link,
+            })
+    if fk_to_tbl_link == 'RequirementSets':
+        if base_table_name not in requirement_system_tables:
+            node.add_accept_port_type(port, {
+                'node_type': 'db.game_effects.RequirementEffectNode',
+                'port_type': PortTypeEnum.OUT.value,
+                'port_name': fk_to_pk_link,
+            })
+
+
 def set_output_port_constraints(node, table_name, fk_backlink):     # not actual constraints, handled on input
-    pk = SQLValidator.pk_map[table_name][0]
+    pk = SQLValidator.pk_map[table_name][0]                         # dont do group ones here. as are suggestions
     color = SQLValidator.port_color_map['output'].get(table_name, {}).get(pk)
     port = node.add_output(pk, color=color)
     port_outputs = defaultdict(list)

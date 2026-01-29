@@ -14,6 +14,7 @@ from graph.set_hotkeys import set_hotkeys
 from graph.nodes.dynamic_nodes import generate_tables
 from graph.nodes.effect_nodes import GameEffectNode, RequirementEffectNode
 from graph.nodes.update_nodes import WhereNode
+from graph.nodes.base_nodes import MyGroupNode
 from graph.port import port_connect_transmit, update_widget_or_prop
 from graph.node_state import SuggestionHub
 from schema_generator import SQLValidator
@@ -43,7 +44,7 @@ class NodeEditorWindow(QMainWindow):
         # custom SQL nodes
         table_nodes_list, group_nodes_list = generate_tables(self.graph)
         self.graph.register_nodes(table_nodes_list + group_nodes_list +
-                                  [GameEffectNode, RequirementEffectNode, WhereNode])
+                                  [GameEffectNode, RequirementEffectNode, WhereNode, MyGroupNode])
 
         graph_widget = self.graph.widget             # show the node graph widget.
         graph_widget.setWindowTitle("Database Editor")
@@ -85,7 +86,7 @@ class NodeEditorWindow(QMainWindow):
 
         def display_properties_bin(node):
             if isinstance(node, GroupNode):
-                node.expand()  # This creates the tab and navigation
+                node.expand()  # This creates the tab and navigation TODO fails on transient widgets like GameEffects
             else:
                 if not properties_bin.isVisible():
                     properties_bin.show()

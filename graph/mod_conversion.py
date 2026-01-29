@@ -43,6 +43,7 @@ def build_imported_mod(mod_folder_path, graph):
     file_list = resolve_files(sql_info_dict, user_switches, config_params_enabled)      # TODO matts ireland missed file in sql_info_dict
     orm_list, update_delete_list, bad_instances = mod_info_into_orm(sql_info_dict, file_list, age=age, mod_id=mod_id)
     build_graph_from_orm(graph, orm_list, update_delete_list, age)
+    # build_graph_from_orm_tabs(graph, orm_list, update_delete_list, age)
     return True
 
 
@@ -510,7 +511,7 @@ def get_files(tree, state):
     return out
 
 
-def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
+def build_graph_from_orm_tabs(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
     fk_index = build_fk_index(orm_list)
     graph.blockSignals(True)
     graph.viewer().blockSignals(True)
@@ -550,6 +551,44 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
     nodes_dict = dict(nodes_dict)
     omitted_node_dict = build_effects(effect_nodes, graph, custom_effects)
     # connect_foreign_keys(fk_index, nodes_dict, omitted_node_dict)
+
+    # finally we do update nodes
+    for sql_command, change_strings in update_delete_list:
+        node = graph.create_node('db.where.WhereNode')
+        node.sql_output_triggerable = False
+        node.set_property('sql_form', sql_command)
+        node.set_property('changes', change_strings)
+        node.sql_output_triggerable = True
+    graph.blockSignals(False)
+    graph.viewer().blockSignals(False)
+    return orm_list
+
+
+def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
+    fk_index = build_fk_index(orm_list)
+    graph.blockSignals(True)
+    graph.viewer().blockSignals(True)
+    # gather instances involved in the modifier system. Use instances up to build GameEffects
+    # spare ones that arent used up (like RequirementSets in non-Modifiers) get unskipped
+    modifier_skipped, modifier_system_entries, modifier_system_not_used, effect_nodes = group_and_exclude_effects(
+        orm_list,
+        custom_effects)
+
+    nodes_dict = defaultdict(dict)             # made nodes
+    for count, orm_instance in enumerate(orm_list):
+        table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
+        not_skipped_because_modifiers = modifier_skipped.get(table_name, {}).get(pk_tuple)
+        if not_skipped_because_modifiers is None or modifier_system_not_used.get(table_name, {}).get(pk_tuple):
+            class_name = f"{table_name.title().replace('_', '')}Node"
+            node = graph.create_node(f'db.table.{table_name.lower()}.{class_name}')
+            node.set_spec(col_dicts)
+            nodes_dict[table_name][pk_tuple] = node
+            log.debug(f'there are now {count} imported nodes')
+
+    nodes_dict = dict(nodes_dict)
+    omitted_node_dict = build_effects(effect_nodes, graph, custom_effects)
+
+    connect_foreign_keys(fk_index, nodes_dict, omitted_node_dict)
 
     # finally we do update nodes
     for sql_command, change_strings in update_delete_list:
@@ -736,7 +775,6 @@ def extract_state_test(graph, data):
 
     with open(LocalFilePaths.app_data_path_form('db.log'), 'w') as f:
         f.write(graph.side_panel.log_display.toPlainText())
-
 
     error_node_tracker.empty_node_list()
     for node in all_nodes:

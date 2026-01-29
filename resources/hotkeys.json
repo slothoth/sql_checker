@@ -284,6 +284,20 @@
         "file":"./hotkey_functions.py",
         "function_name":"layout_v_mode",
         "shortcut":"Shift+2"
+      },
+      {
+        "type":"command",
+        "label":"Single Tab",
+        "file":"./hotkey_functions.py",
+        "function_name":"switch_to_single_tab",
+        "shortcut":"Ctrl+Shift+1"
+      },
+      {
+        "type":"command",
+        "label":"Table Tabs",
+        "file":"./hotkey_functions.py",
+        "function_name":"switch_to_table_tabs",
+        "shortcut":"Ctrl+Shift+2"
       }
       ]
     },

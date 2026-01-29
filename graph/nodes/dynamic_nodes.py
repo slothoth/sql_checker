@@ -1,11 +1,10 @@
 from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
-from NodeGraphQt import GroupNode
 from PyQt5 import QtCore, QtGui
 
 from graph.singletons.db_spec_singleton import db_spec
 from schema_generator import SQLValidator
 from graph.custom_widgets import IntSpinNodeWidget, FloatSpinNodeWidget, DropDownLineEdit
-from graph.nodes.base_nodes import BasicDBNode, set_output_port_constraints, index_label
+from graph.nodes.base_nodes import BasicDBNode, MyGroupNode, set_input_port_constraint, set_output_port_constraints, index_label
 
 from graph.transform_json_to_sql import transform_localisation, transform_to_sql
 
@@ -153,7 +152,7 @@ def create_table_node_class(table_name, graph):
                     port = self.add_input(col, color=color)
                 else:
                     port = self.add_input(col, painter_func=draw_square_port, color=color)
-                self.set_input_port_constraint(port, fk_to_tbl_link, fk_to_pk_link)
+                set_input_port_constraint(self, port, fk_to_tbl_link, fk_to_pk_link)
 
             col_poss_vals = bonus_col_poss_map.get(col, {}).get(table_name, self._possible_vals.get(col, None))
             col_type = SQLValidator.type_map[table_name][col]
@@ -232,9 +231,44 @@ def create_table_node_class(table_name, graph):
         '__init__': init_method,
     })
 
-    GroupClass = type(class_name, (GroupNode,), {
+    def group_init_ports(self):
+        super(type(self), self).__init__()
+        self.create_property('group_table_name', value=table_name)
+        primary_keys = SQLValidator.pk_map[table_name]
+        prim_texts = [i for i in SQLValidator.required_map[table_name] if i not in primary_keys]
+        second_texts = SQLValidator.less_important_map[table_name]
+
+        if table_name in SQLValidator.incremental_pk:
+            self._initial_fields = prim_texts
+            cols_ordered = prim_texts + second_texts
+        else:
+            self._initial_fields = primary_keys + prim_texts
+            cols_ordered = primary_keys + prim_texts + second_texts
+
+        fk_to_tbl_map = SQLValidator.fk_to_tbl_map.get(table_name, {})
+        fk_to_pk_map = SQLValidator.fk_to_pk_map.get(table_name, {})
+        require_map = SQLValidator.required_map.get(table_name, {})
+        for idx, col in enumerate(cols_ordered):
+            fk_to_tbl_link = fk_to_tbl_map.get(col, None)
+            fk_to_pk_link = fk_to_pk_map.get(col, None)
+            is_required = require_map.get(col, False)
+            if fk_to_pk_link is not None:
+                color = SQLValidator.port_color_map['input'].get(table_name, {}).get(col)
+                if is_required:
+                    port = self.add_input(col, color=color)
+                else:
+                    port = self.add_input(col, painter_func=draw_square_port, color=color)
+                set_input_port_constraint(self, port, fk_to_tbl_link, fk_to_pk_link)
+
+        fk_backlink = SQLValidator.pk_ref_map.get(table_name)
+        if fk_backlink is not None:
+            self.output_port_tables[SQLValidator.pk_map[table_name][0]] = set_output_port_constraints(self, table_name,
+                                                                                                      fk_backlink)
+
+    GroupClass = type(class_name, (MyGroupNode,), {
         '__identifier__': f'db.group.{table_name.lower()}',
         'NODE_NAME': f"{table_name}",
+        '__init__': group_init_ports,
     })
     return NewClass, GroupClass
 
