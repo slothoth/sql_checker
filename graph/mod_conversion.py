@@ -340,8 +340,14 @@ def connect_foreign_keys(fk_index, nodes_dict, effect_dict):
 
             primary_key = parent_pk[0]   # technically multiple pks possible, but ports system means just connect one
             src_ports = [i for i in parent_node.output_ports() if i.name() == parent_col]
-            if len(src_ports) != 1:
-                raise Exception('plural primary key col somehow when trying to build graph of loaded mod foreign keys')
+            if len(src_ports) > 1:
+                log.warning(f'Likely bad connection for mod import, for {parent_table} -> {child_table} connection.'
+                            f'found multiple ports matching {parent_col} on {parent_table} with pk {parent_pk}. {src_ports}')
+            if len(src_ports) == 0:
+                log.error(f'skipping bad connection for mod import, for {parent_table} -> {child_table} connection.'
+                            f'Couldnt find port {parent_col} on {parent_table} with pk {parent_pk}')
+                continue
+
             src_port = src_ports[0]
             connect_port_name = child_node.get_link_port(parent_node.get_property('table_name'), primary_key)
             if connect_port_name:

@@ -30,6 +30,7 @@ def read_xml(filepath):
     try:
         tree = ET.parse(filepath)
     except ET.ParseError as e:
+        log.error(f'Failed to parse with standard XML approach {filepath}: {e}')
         with open(filepath, 'r') as f:
             file = f.readlines()
         current_error, pretty_file, test = None, None, None
@@ -57,6 +58,9 @@ def read_xml(filepath):
                 new_error = e
                 log.debug(f'on file: {filepath}\n {e}')
                 line, position = e.position
+            except Exception as e:
+                log.error('couldnt find a way to parse xml')
+                raise new_error
         if test is None:
             log.error('couldnt find a way to parse xml')
             raise new_error

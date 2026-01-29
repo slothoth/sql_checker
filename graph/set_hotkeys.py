@@ -536,19 +536,24 @@ def import_mod(graph):
     dlg.setDirectoryUrl(QtCore.QUrl.fromLocalFile(mod_dir))
     dlg.exec()
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
-    if path is not None:
-        mod_info_found = build_imported_mod(path, graph)
-        if mod_info_found is not None and mod_info_found:
-            layout_graph_down(graph)
-            graph.auto_layout_nodes()           # layout centre
-            graph.select_all()
-            graph.fit_to_selection()
-            graph.clear_selection()
-            t = Toast('Finished loading Mod')
-            t.show_at_bottom_right()
-        else:
-            t = Toast(f'No Modinfo found in folder {path}, or age not set.')
-            t.show_at_bottom_right()
+    try:
+        if path is not None:
+            mod_info_found = build_imported_mod(path, graph)
+            if mod_info_found is not None and mod_info_found:
+                layout_graph_down(graph)
+                graph.auto_layout_nodes()           # layout centre
+                graph.select_all()
+                graph.fit_to_selection()
+                graph.clear_selection()
+                t = Toast('Finished loading Mod')
+                t.show_at_bottom_right()
+            else:
+                t = Toast(f'No Modinfo found in folder {path}, or age not set.')
+                t.show_at_bottom_right()
+    except Exception as e:
+        log.error(f'Failed to load mod: {e}')
+        t = Toast(f'Could not load mod because of error.')
+        t.show_at_bottom_right()
 
 
 def open_settings(graph):
