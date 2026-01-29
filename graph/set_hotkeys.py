@@ -402,36 +402,6 @@ def _node_from_graphics_items(items):
     return None
 
 
-def delete_node_at_cursor(graph):
-    viewer = graph.viewer()
-    scene_pos = viewer.mapToScene(viewer.mapFromGlobal(QtGui.QCursor.pos()))
-    scene = viewer.scene()
-    items = scene.items(scene_pos)
-    node = _node_from_graphics_items(items)
-    if node is None:
-        return
-    try:
-        graph.delete_node(node)
-    except Exception:
-        # fallback: if node is a graphics wrapper that exposes .node() or .get_node(), try to resolve then delete
-        try:
-            node_obj = node.node() if callable(getattr(node, "node", None)) else getattr(node, "get_node", lambda: None)()
-            if node_obj:
-                graph.delete_node(node_obj)
-        except Exception:
-            pass
-
-
-def install_delete_at_cursor_shortcut(graph):
-    viewer = graph.viewer()
-    target = viewer  # or viewer.viewport()
-
-    for seq in ('Delete', 'Backspace'):
-        sc = QtWidgets.QShortcut(QtGui.QKeySequence(seq), target)
-        sc.setContext(QtCore.Qt.WidgetWithChildrenShortcut)
-        sc.activated.connect(lambda g=graph: delete_node_at_cursor(g))
-
-
 def create_dynamic_node_with_search(graph):
     dialog = NodeCreationDialog()
     viewer = graph.viewer()

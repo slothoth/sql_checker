@@ -28,13 +28,6 @@
     "shortcut": "Ctrl+Shift+M"
   },
   {
-    "type":"command",
-    "label":"DeleteNode",
-    "file":"./hotkey_functions.py",
-    "function_name":"install_delete_at_cursor_shortcut",
-    "shortcut":"Shift+Backspace"
-  },
-  {
     "type":"menu",
     "label":"&File",
     "items":[
@@ -92,7 +85,7 @@
         "label":"Test Current",
         "file":"./hotkey_functions.py",
         "function_name":"mod_test_current_config",
-        "shortcut":"Shift+T"
+        "shortcut":"Ctrl+T"
       },
       {
         "type":"command",
