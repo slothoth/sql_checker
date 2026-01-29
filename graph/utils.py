@@ -51,9 +51,7 @@ def check_civ_install_works(path):
 
 def check_civ_config_works(path):
     check_passed = True
-    if not os.path.exists(f"{path}/Debug/localization-copy.sqlite"):
-        check_passed = False
-    if not os.path.exists(f"{path}/Mods"):
+    if not os.path.exists(f"{path}/Mods.sqlite"):
         check_passed = False
     return check_passed
 

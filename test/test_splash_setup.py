@@ -13,7 +13,7 @@ def test_manual_bad_path():
     from graph.singletons.db_spec_singleton import db_spec
     db_spec.initialize(False)
 
-    with patch.object(patch_fp.LocalFilePaths, '_find_steam_install', return_value=None):
+    with patch.object(patch_fp.LocalFilePaths, '_find_steam_install', return_value=None), patch.object(patch_fp.LocalFilePaths, '_find_civ_config', return_value=None):
         from main import MainController
         controller = MainController()
         controller.run()
