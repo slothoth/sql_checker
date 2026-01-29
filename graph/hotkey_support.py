@@ -6,9 +6,7 @@ from model import query_mod_db, organise_entries, load_files
 from schema_generator import SQLValidator, lint_database
 from graph.singletons.filepaths import LocalFilePaths
 from graph.singletons.db_spec_singleton import db_spec
-from graph.mod_conversion import extract_state_test
-from graph.utils import LogPusher
-from graph.no_context_widgets import Toast
+from collections import deque
 
 log = logging.getLogger(__name__)
 
@@ -94,3 +92,25 @@ def write_loc_sql(loc_lines):
     if loc_lines is not None:
         with open(LocalFilePaths.app_data_path_form('loc.sql'), 'w') as f:
             f.writelines(loc_lines)
+
+
+class NodeTracker:
+    def __init__(self):
+        self.last_node_id = None
+
+    def get_next_node(self, current_node_ids):
+        if not current_node_ids:
+            self.last_node_id = None
+            return None
+
+        try:
+            current_index = current_node_ids.index(self.last_node_id)
+            next_index = (current_index + 1) % len(current_node_ids)
+        except ValueError:
+            next_index = 0
+
+        self.last_node_id = current_node_ids[next_index]
+        return self.last_node_id
+
+
+node_tracker = NodeTracker()

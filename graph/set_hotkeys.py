@@ -2,7 +2,6 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 import os
 import json
 import shutil
-from collections import deque
 import logging
 
 from graph.db_node_support import NodeCreationDialog
@@ -17,7 +16,7 @@ from graph.utils import resource_path
 
 from graph.mod_conversion import extract_state_test
 from graph.utils import LogPusher
-from graph.hotkey_support import write_sql, write_loc_sql, ConfigTestWorker
+from graph.hotkey_support import write_sql, write_loc_sql, ConfigTestWorker, node_tracker
 
 log = logging.getLogger(__name__)
 
@@ -585,35 +584,10 @@ def get_previous_error_node(graph):
         graph.clear_selection()
 
 
-class NodeTracker:
-
-    def __init__(self):
-        self.nodes = deque()
-
-    def set_nodes(self, node_list):
-        self.nodes.clear()
-        self.nodes = deque(node_list)
-
-    def get_next_node(self):
-        if not self.nodes:
-            return None
-        self.nodes.rotate(-1)
-        return self.nodes[0]
-
-    def get_prev_node(self):
-        if not self.nodes:
-            return None
-        self.nodes.rotate(1)
-        return self.nodes[0]
-
-
-node_tracker = NodeTracker()
-
-
 def get_next_node(graph):
     node_list = graph.all_nodes()
-    node_tracker.set_nodes([i.id for i in node_list])
-    node_id = node_tracker.get_next_node()
+    node_ids = [i.id for i in node_list]
+    node_id = node_tracker.get_next_node(node_ids)
     if node_id is not None:
         error_node = graph.get_node_by_id(node_id)
         graph.clear_selection()
