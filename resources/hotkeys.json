@@ -345,6 +345,13 @@
         "file":"./hotkey_functions.py",
         "function_name":"get_previous_error_node",
         "shortcut":"Shift+E"
+      },
+      {
+        "type":"command",
+        "label":"Focus Next Node",
+        "file":"./hotkey_functions.py",
+        "function_name":"get_next_node",
+        "shortcut":"N"
       }
     ]
   },

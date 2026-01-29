@@ -1,4 +1,5 @@
 from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
+from NodeGraphQt import GroupNode
 from PyQt5 import QtCore, QtGui
 
 from graph.singletons.db_spec_singleton import db_spec
@@ -230,15 +231,21 @@ def create_table_node_class(table_name, graph):
         'set_defaults': set_defaults_method,
         '__init__': init_method,
     })
-    return NewClass
+
+    GroupClass = type(class_name, (GroupNode,), {
+        '__identifier__': f'db.group.{table_name.lower()}',
+        'NODE_NAME': f"{table_name}",
+    })
+    return NewClass, GroupClass
 
 
 def generate_tables(graph):
-    all_custom_nodes = []
+    all_custom_nodes, all_group_nodes = [], []
     for name in SQLValidator.Base.metadata.tables:
-        NodeClass = create_table_node_class(name, graph)
+        NodeClass, GroupClass = create_table_node_class(name, graph)
         all_custom_nodes.append(NodeClass)
-    return all_custom_nodes
+        all_group_nodes.append(GroupClass)
+    return all_custom_nodes, all_group_nodes
 
 
 def draw_square_port(painter, rect, info):

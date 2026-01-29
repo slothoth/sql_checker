@@ -2,6 +2,7 @@ from PyQt5 import QtGui, QtWidgets, QtCore
 import os
 import json
 import shutil
+from collections import deque
 import logging
 
 from graph.db_node_support import NodeCreationDialog
@@ -578,6 +579,43 @@ def get_previous_error_node(graph):
     error_node_id = error_node_tracker.get_prev_node()
     if error_node_id is not None:
         error_node = graph.get_node_by_id(error_node_id)
+        graph.clear_selection()
+        error_node.set_selected(True)
+        graph.fit_to_selection()
+        graph.clear_selection()
+
+
+class NodeTracker:
+
+    def __init__(self):
+        self.nodes = deque()
+
+    def set_nodes(self, node_list):
+        self.nodes.clear()
+        self.nodes = deque(node_list)
+
+    def get_next_node(self):
+        if not self.nodes:
+            return None
+        self.nodes.rotate(-1)
+        return self.nodes[0]
+
+    def get_prev_node(self):
+        if not self.nodes:
+            return None
+        self.nodes.rotate(1)
+        return self.nodes[0]
+
+
+node_tracker = NodeTracker()
+
+
+def get_next_node(graph):
+    node_list = graph.all_nodes()
+    node_tracker.set_nodes([i.id for i in node_list])
+    node_id = node_tracker.get_next_node()
+    if node_id is not None:
+        error_node = graph.get_node_by_id(node_id)
         graph.clear_selection()
         error_node.set_selected(True)
         graph.fit_to_selection()

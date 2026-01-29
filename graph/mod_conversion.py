@@ -16,6 +16,8 @@ from graph.singletons.db_spec_singleton import db_spec
 from constants import modifier_system_tables, ages
 from graph.utils import LogPusher
 
+from schema_generator import SQLValidator
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -514,70 +516,106 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
     graph.viewer().blockSignals(True)
     # gather instances involved in the modifier system. Use instances up to build GameEffects
     # spare ones that arent used up (like RequirementSets in non-Modifiers) get unskipped
-    modifier_skipped, modifier_system_entries = defaultdict(dict), defaultdict(dict)
-    modifier_system_not_used = defaultdict(dict)
-    if custom_effects:
-        for count, orm_instance in enumerate(orm_list):         # first lets assess which are involved in modifier system
-            table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
-            if table_name in modifier_system_tables or (table_name == 'Types' and col_dicts['Kind'] == 'KIND_MODIFIER'):
-                modifier_system_entries[table_name][pk_tuple] = col_dicts
-                modifier_skipped[table_name][pk_tuple] = True
-                modifier_system_not_used[table_name][pk_tuple] = True if table_name != 'Modifiers' else False
 
-        modifier_system_entries = dict(modifier_system_entries)
-        effect_nodes = {k[0]: {'Modifiers': v} for k, v in modifier_system_entries.get('Modifiers', {}).items()}
-
-        for modifierId, game_effect_table_entries in effect_nodes.items():
-            # is there a matching dynamicModifier?
-            effect_nodes[modifierId]['references'] = {}
-            modifier_info = game_effect_table_entries['Modifiers']
-            effect_nodes[modifierId]['references']['Modifiers'] = (modifierId,)
-            modifier_type = modifier_info['ModifierType']
-            # get dynamic modifier
-            pk = (modifier_type,)
-            dynamic_modifier = modifier_system_entries.get('DynamicModifiers', {}).get(pk)
-            if dynamic_modifier is not None:
-                effect_nodes[modifierId]['DynamicModifiers'] = dynamic_modifier
-                effect_nodes[modifierId]['references']['DynamicModifiers'] = pk
-                modifier_system_not_used['DynamicModifiers'][pk] = False
-
-            types_modifier_type = modifier_system_entries.get('Types', {}).get(pk)
-            if types_modifier_type is not None:
-                effect_nodes[modifierId]['Types'] = types_modifier_type
-                effect_nodes[modifierId]['references']['Types'] = pk
-                modifier_system_not_used['Types'][pk] = False
-            # get modifier (modifier info)
-            # get mod args
-            matching_modargs = {k: v for k, v in modifier_system_entries.get('ModifierArguments', {}).items()
-                                if v['ModifierId'] == modifierId}
-            for p_tup, mod_arg_info in matching_modargs.items():
-                if 'Arguments' not in effect_nodes[modifierId]:
-                    effect_nodes[modifierId]['Arguments'] = {}
-                    effect_nodes[modifierId]['references']['ModifierArguments'] = {}
-                effect_nodes[modifierId]['Arguments'][mod_arg_info['Name']] = mod_arg_info['Value']     # strips Extra
-                pk = (modifierId, mod_arg_info['Name'])
-                effect_nodes[modifierId]['references']['ModifierArguments'][pk] = True
-                modifier_system_not_used['ModifierArguments'][pk] = False
-            # get mod string
-            pk = (modifierId,)
-            matching_modstring = modifier_system_entries.get('ModifierStrings', {}).get(pk)
-            if matching_modstring is not None:
-                effect_nodes[modifierId]['ModifierStrings'] = matching_modstring
-                effect_nodes[modifierId]['references']['ModifierStrings'] = pk
-                modifier_system_not_used['ModifierStrings'][pk] = False
+    modifier_skipped, modifier_system_entries, modifier_system_not_used, effect_nodes = group_and_exclude_effects(orm_list,
+                                                                                                              custom_effects)
+    table_groups = defaultdict(list)         # group nodes
+    for orm_instance in orm_list:
+        table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
+        table_groups[table_name].append((col_dicts, pk_tuple))
 
     nodes_dict = defaultdict(dict)             # made nodes
-    for count, orm_instance in enumerate(orm_list):
-        table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
-        not_skipped_because_modifiers = modifier_skipped.get(table_name, {}).get(pk_tuple)
-        if not_skipped_because_modifiers is None or modifier_system_not_used.get(table_name, {}).get(pk_tuple):
-            class_name = f"{table_name.title().replace('_', '')}Node"
-            node = graph.create_node(f'db.table.{table_name.lower()}.{class_name}')
-            node.set_spec(col_dicts)
-            nodes_dict[table_name][pk_tuple] = node
-            log.debug(f'there are now {count} imported nodes')
-    nodes_dict = dict(nodes_dict)
+    for table_name, instances in table_groups.items():
+        group_id = f'db.group.{table_name.lower()}.{table_name.title().replace("_", "")}Node'
+        row_class_id = f'db.table.{table_name.lower()}.{table_name.title().replace("_", "")}Node'
+        table_group_node = graph.create_node(group_id)
 
+        sub_graph = table_group_node.expand()
+
+        for count, (col_dicts, pk_tuple) in enumerate(instances):
+            not_skipped_because_modifiers = modifier_skipped.get(table_name, {}).get(pk_tuple)
+            if not_skipped_because_modifiers is None or modifier_system_not_used.get(table_name, {}).get(pk_tuple):
+                # Instantiate the RowNode inside the subgraph
+                row_node = sub_graph.create_node(row_class_id)
+                row_node.set_spec(col_dicts)
+
+                # Position them in a simple grid inside the group
+                row_node.set_pos(0, count * 150)
+
+                # We still store them in nodes_dict so connections can find them
+                nodes_dict[table_name][pk_tuple] = row_node
+
+        table_group_node.collapse()
+
+    nodes_dict = dict(nodes_dict)
+    omitted_node_dict = build_effects(effect_nodes, graph, custom_effects)
+    # connect_foreign_keys(fk_index, nodes_dict, omitted_node_dict)
+
+    # finally we do update nodes
+    for sql_command, change_strings in update_delete_list:
+        node = graph.create_node('db.where.WhereNode')
+        node.sql_output_triggerable = False
+        node.set_property('sql_form', sql_command)
+        node.set_property('changes', change_strings)
+        node.sql_output_triggerable = True
+    graph.blockSignals(False)
+    graph.viewer().blockSignals(False)
+    return orm_list
+
+
+def group_and_exclude_effects(orm_list, custom_effects):
+    modifier_skipped, modifier_system_entries = defaultdict(dict), defaultdict(dict)
+    modifier_system_not_used = defaultdict(dict)
+    if not custom_effects:
+        return modifier_skipped, modifier_system_entries, modifier_system_not_used, {}
+    for count, orm_instance in enumerate(orm_list):  # first lets assess which are involved in modifier system
+        table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
+        if table_name in modifier_system_tables or (table_name == 'Types' and col_dicts['Kind'] == 'KIND_MODIFIER'):
+            modifier_system_entries[table_name][pk_tuple] = col_dicts
+            modifier_skipped[table_name][pk_tuple] = True
+            modifier_system_not_used[table_name][pk_tuple] = True if table_name != 'Modifiers' else False
+
+    modifier_system_entries = dict(modifier_system_entries)
+    effect_nodes = {k[0]: {'Modifiers': v} for k, v in modifier_system_entries.get('Modifiers', {}).items()}
+
+    for modifierId, game_effect_table_entries in effect_nodes.items():
+        effect_nodes[modifierId]['references'] = {}                 # is there a matching dynamicModifier?
+        modifier_info = game_effect_table_entries['Modifiers']
+        effect_nodes[modifierId]['references']['Modifiers'] = (modifierId,)
+        modifier_type = modifier_info['ModifierType']
+        pk = (modifier_type,)
+        dynamic_modifier = modifier_system_entries.get('DynamicModifiers', {}).get(pk)      # get dynamic modifier
+        if dynamic_modifier is not None:
+            effect_nodes[modifierId]['DynamicModifiers'] = dynamic_modifier
+            effect_nodes[modifierId]['references']['DynamicModifiers'] = pk
+            modifier_system_not_used['DynamicModifiers'][pk] = False
+
+        types_modifier_type = modifier_system_entries.get('Types', {}).get(pk)
+        if types_modifier_type is not None:
+            effect_nodes[modifierId]['Types'] = types_modifier_type
+            effect_nodes[modifierId]['references']['Types'] = pk
+            modifier_system_not_used['Types'][pk] = False
+        matching_modargs = {k: v for k, v in modifier_system_entries.get('ModifierArguments', {}).items()
+                            if v['ModifierId'] == modifierId}
+        for p_tup, mod_arg_info in matching_modargs.items():             # get mod args
+            if 'Arguments' not in effect_nodes[modifierId]:
+                effect_nodes[modifierId]['Arguments'] = {}
+                effect_nodes[modifierId]['references']['ModifierArguments'] = {}
+            effect_nodes[modifierId]['Arguments'][mod_arg_info['Name']] = mod_arg_info['Value']  # strips Extra
+            pk = (modifierId, mod_arg_info['Name'])
+            effect_nodes[modifierId]['references']['ModifierArguments'][pk] = True
+            modifier_system_not_used['ModifierArguments'][pk] = False
+
+        pk = (modifierId,)
+        matching_modstring = modifier_system_entries.get('ModifierStrings', {}).get(pk)     # get mod string
+        if matching_modstring is not None:
+            effect_nodes[modifierId]['ModifierStrings'] = matching_modstring
+            effect_nodes[modifierId]['references']['ModifierStrings'] = pk
+            modifier_system_not_used['ModifierStrings'][pk] = False
+    return modifier_skipped, modifier_system_entries, modifier_system_not_used, effect_nodes
+
+
+def build_effects(effect_nodes, graph, custom_effects):
     omitted_node_dict = {'Modifiers': {}, 'DynamicModifiers': {}, 'Types': {}, 'ModifierStrings': {},
                          'ModifierArguments': {}}
     if custom_effects:
@@ -622,19 +660,7 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
                 omitted_node_dict['ModifierArguments'][(modifier_info['ModifierId'], arg_name)] = node
 
             node.set_spec(new_props)
-
-    connect_foreign_keys(fk_index, nodes_dict, omitted_node_dict)
-
-    # finally we do update nodes
-    for sql_command, change_strings in update_delete_list:
-        node = graph.create_node('db.where.WhereNode')
-        node.sql_output_triggerable = False
-        node.set_property('sql_form', sql_command)
-        node.set_property('changes', change_strings)
-        node.sql_output_triggerable = True
-    graph.blockSignals(False)
-    graph.viewer().blockSignals(False)
-    return orm_list
+    return omitted_node_dict
 
 
 def xml_ensure_list_of_dicts(data):

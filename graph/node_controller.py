@@ -4,7 +4,7 @@ import json
 from PyQt5 import QtGui, QtWidgets, QtCore
 from PyQt5.QtWidgets import QMainWindow, QSizePolicy
 
-from NodeGraphQt import NodeGraph, PropertiesBinWidget
+from NodeGraphQt import NodeGraph, PropertiesBinWidget, GroupNode
 # patches
 from NodeGraphQt.widgets.node_widgets import _NodeGroupBox
 from graph.patchs import _patched_size_hint
@@ -41,8 +41,9 @@ class NodeEditorWindow(QMainWindow):
         menubar = self.menuBar()
         set_hotkeys(self, menubar)
         # custom SQL nodes
-        table_nodes_list = generate_tables(self.graph)
-        self.graph.register_nodes(table_nodes_list + [GameEffectNode, RequirementEffectNode, WhereNode])
+        table_nodes_list, group_nodes_list = generate_tables(self.graph)
+        self.graph.register_nodes(table_nodes_list + group_nodes_list +
+                                  [GameEffectNode, RequirementEffectNode, WhereNode])
 
         graph_widget = self.graph.widget             # show the node graph widget.
         graph_widget.setWindowTitle("Database Editor")
@@ -83,8 +84,11 @@ class NodeEditorWindow(QMainWindow):
         properties_bin.setWindowFlags(QtCore.Qt.Tool)
 
         def display_properties_bin(node):
-            if not properties_bin.isVisible():
-                properties_bin.show()
+            if isinstance(node, GroupNode):
+                node.expand()  # This creates the tab and navigation
+            else:
+                if not properties_bin.isVisible():
+                    properties_bin.show()
 
         # wire function to "node_double_clicked" signal.
         self.graph.node_double_clicked.connect(display_properties_bin)

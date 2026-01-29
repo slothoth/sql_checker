@@ -29,7 +29,6 @@ class BasicDBNode(BaseNode):
         self.create_property('dict_sql', {})        # would be , widget_type=NodePropWidgetEnum.QTEXT_EDIT.value
 
     def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
-        connection_spec = db_spec.node_templates.get(connect_table, {})
         original_table = self.get_property('table_name')
         if connect_table == 'GameEffectCustom':
             if connect_port == 'ModifierId':
@@ -86,7 +85,6 @@ class BasicDBNode(BaseNode):
                         self.create_property(col_name, value)
 
     def set_bool_checkbox(self, col, idx=0, default_val=None, display_in_prop_bin=True):
-        is_default_on = default_val is not None and int(default_val) == 1
         self.add_custom_widget(BoolCheckNodeWidget(parent=self.view, prop=col), tab='fields',
                                widget_type=NodePropWidgetEnum.QCHECK_BOX.value if display_in_prop_bin else None)
 
@@ -98,9 +96,6 @@ class BasicDBNode(BaseNode):
         text_widget.get_custom_widget().setMinimumHeight(24)
 
     def update_model(self):
-        """
-        Update the node model from view. Ensure we dont update hidden properties
-        """
         for name, val in self.view.properties.items():
             if name in ['inputs', 'outputs']:
                 continue
@@ -115,13 +110,11 @@ class BasicDBNode(BaseNode):
                     arg_params[name] = widget.get_value()
 
     def error_color(self, is_error=True):
+        self.test_error = is_error
         if is_error:
-            error_color = (200, 30, 30)        # Set to an error color (e.g., Red: R, G, B, A)
-            self.set_color(*error_color)
-            self.test_error = True
+            self.set_color(200, 30, 30)
         else:
-            self.set_color(*self._default_color)        # Restore original color
-            self.test_error = False
+            self.set_color(*self._default_color)
 
     def _update_field_style(self, field_name, is_valid):
         widget = self.get_widget(field_name)
