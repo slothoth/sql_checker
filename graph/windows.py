@@ -211,9 +211,9 @@ class PathSettingsDialog(QtWidgets.QDialog):
         self.b_dict['install'], self.text_fields['install'] = self.add_path_row(layout, "Civ Install:",
                                                                                 install_current, "install")
         # Connect Browse buttons
-        self.b_dict['config'].clicked.connect(lambda: self.browse_file(self.text_fields['config'], "Select Civ Config Location"))
+        self.b_dict['config'].clicked.connect(lambda: self.browse_folder(self.text_fields['config'], "Select Civ Config Location"))
         self.b_dict['workshop'].clicked.connect(lambda: self.browse_folder(self.text_fields['workshop'], "Select Workshop Folder"))
-        self.b_dict['install'].clicked.connect(lambda: self.browse_file(self.text_fields['install'], "Select Civ Install"))
+        self.b_dict['install'].clicked.connect(lambda: self.browse_folder(self.text_fields['install'], "Select Civ Install"))
 
         # Setup Dialog Buttons
         self.button_box = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
@@ -296,12 +296,6 @@ class PathSettingsDialog(QtWidgets.QDialog):
             edit.setMinimumWidth(max_path_width + padding)
 
         self.adjustSize()
-
-    def browse_file(self, line_edit, caption):
-        start_dir = os.path.dirname(line_edit.text()) if line_edit.text() else ""
-        path, _ = QtWidgets.QFileDialog.getOpenFileName(self, caption, start_dir)
-        if path:
-            line_edit.setText(path)
 
     def browse_folder(self, line_edit, caption):
         path = QtWidgets.QFileDialog.getExistingDirectory(self, caption, line_edit.text())
