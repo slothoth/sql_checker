@@ -5,6 +5,7 @@ from sqlglot.errors import ParseError
 import itertools
 from itertools import product
 from collections import defaultdict, deque
+from time import time
 
 from graph.singletons.filepaths import LocalFilePaths
 from xml_handler import read_xml
@@ -16,7 +17,6 @@ from graph.singletons.db_spec_singleton import db_spec
 from constants import modifier_system_tables, ages
 from graph.utils import LogPusher
 
-from schema_generator import SQLValidator
 
 import logging
 
@@ -29,22 +29,30 @@ log = logging.getLogger(__name__)
 def build_imported_mod(mod_folder_path, graph):
     modinfo_list = [f for f in glob.glob(f'{mod_folder_path}/*.modinfo*')]
     if len(modinfo_list) != 1:
-        return False
-
+        return
+    start_time = time()
     modinfo_dict, mod_id = parse_modinfo(modinfo_list[0], mod_folder_path)
     sql_info_dict = modinfo_into_jobs(modinfo_dict)
     user_knobs = extract_user_controls(modinfo_dict)
+    end_parse_modinfo = time()
+    LogPusher.push_to_log(f'Parsed modinfo time {int(end_parse_modinfo - start_time)}', log)
     # make a decision on which ORM to build
     age, mods_enabled, config_params_enabled = get_combo_value(graph.viewer(), user_knobs)
+    start_mod_load_time = time()
     if age is None:     # user clicked x/decline rather than accept
         return False
     user_switches = [k for k, v in mods_enabled.items() if v]
     user_switches.append(age)
     file_list = resolve_files(sql_info_dict, user_switches, config_params_enabled)      # TODO matts ireland missed file in sql_info_dict
     orm_list, update_delete_list, bad_instances = mod_info_into_orm(sql_info_dict, file_list, age=age, mod_id=mod_id)
+    end_orm_list = time()
+    LogPusher.push_to_log(f'Parsed convert to ORM instance time {int(end_orm_list - start_mod_load_time)}', log)
     build_graph_from_orm(graph, orm_list, update_delete_list, age, custom_effects=False)
+    end_build_graph = time()
+    LogPusher.push_to_log(f'total build node time {int(end_build_graph - end_orm_list)}', log)
+    LogPusher.push_to_log(f'Showing {len(orm_list)} nodes', log)
     # build_graph_from_orm_tabs(graph, orm_list, update_delete_list, age)
-    return True
+    return end_build_graph
 
 
 def extract_user_controls(data):
@@ -562,9 +570,12 @@ def build_graph_from_orm_tabs(graph, orm_list, update_delete_list: [(str, str)],
     graph.viewer().blockSignals(False)
     return orm_list
 
-
+from time import time
 def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
+    start_time = time()
     fk_index = build_fk_index(orm_list)
+    end_fk_time = time()
+    LogPusher.push_to_log(f'Building fk index time for {int(end_fk_time - start_time)}', log)
     graph.blockSignals(True)
     graph.viewer().blockSignals(True)
     # gather instances involved in the modifier system. Use instances up to build GameEffects
@@ -572,6 +583,8 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
     modifier_skipped, modifier_system_entries, modifier_system_not_used, effect_nodes = group_and_exclude_effects(
         orm_list,
         custom_effects)
+    end_effect_exclude_time = time()
+    LogPusher.push_to_log(f'effect exclude time for {int(end_effect_exclude_time - end_fk_time)}', log)
 
     nodes_dict = defaultdict(dict)             # made nodes
     for count, orm_instance in enumerate(orm_list):
@@ -582,12 +595,17 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
             node = graph.create_node(f'db.table.{table_name.lower()}.{class_name}')
             node.set_spec(col_dicts)
             nodes_dict[table_name][pk_tuple] = node
-            log.debug(f'there are now {count} imported nodes')
+    end_build_table_nodes_time = time()
+    LogPusher.push_to_log(f'build regular node times for {int(end_build_table_nodes_time - end_effect_exclude_time)}', log)
 
     nodes_dict = dict(nodes_dict)
     omitted_node_dict = build_effects(effect_nodes, graph, custom_effects)
+    end_build_effects_time = time()
+    LogPusher.push_to_log(f'build effect node times for {int(end_build_effects_time - end_build_table_nodes_time)}', log)
 
     connect_foreign_keys(fk_index, nodes_dict, omitted_node_dict)
+    end_fk_connect_time = time()
+    LogPusher.push_to_log(f'connect nodes times for {int(end_fk_connect_time - end_build_effects_time)}', log)
 
     # finally we do update nodes
     for sql_command, change_strings in update_delete_list:
@@ -596,8 +614,12 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
         node.set_property('sql_form', sql_command)
         node.set_property('changes', change_strings)
         node.sql_output_triggerable = True
+    end_update_node_time = time()
+    LogPusher.push_to_log(f'build update node times for {end_update_node_time - end_fk_connect_time}', log)
     graph.blockSignals(False)
     graph.viewer().blockSignals(False)
+    unblocked_signals_time = time()
+    LogPusher.push_to_log(f'unblocked signals time node times for {unblocked_signals_time - end_update_node_time}', log)
     return orm_list
 
 
