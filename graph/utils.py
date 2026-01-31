@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 import logging
 
 log = logging.getLogger(__name__)
@@ -60,6 +61,19 @@ def check_workshop_works(path):
     if '1295660' in path:
         return True
     return False
+
+
+def strip_transient_widgets(graph_nodes):
+    graph_migrated_params = {}
+    for idx, node in enumerate(graph_nodes):
+        migrated_params = node.migrate_extra_params()
+        graph_migrated_params[idx] = migrated_params
+    return graph_migrated_params
+
+
+def print_traceback():
+    exc_string = traceback.format_exc()
+    print(exc_string)
 
 
 class LogPushSingleton:

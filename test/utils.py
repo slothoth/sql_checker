@@ -105,7 +105,7 @@ def setup_effect_req(window, qtbot):
     cast_test_input('ResourceClassType', 'RESOURCECLASS_EMPIRE', effect_node)
     qtbot.wait(1)
 
-    req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')
+    req_node = window.graph.create_node('db.game_effects.req.RequirementEffectNode')
     qtbot.wait(1)
     req_node.set_property('RequirementType', 'REQUIREMENT_PLAYER_HAS_AT_LEAST_NUM_UNIT_TYPE')
     qtbot.wait(1)

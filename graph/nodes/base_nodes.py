@@ -6,7 +6,7 @@ from NodeGraphQt.constants import PortTypeEnum, NodePropWidgetEnum
 from graph.singletons.db_spec_singleton import db_spec
 from constants import effect_system_tables, requirement_system_tables
 from schema_generator import SQLValidator
-from graph.custom_widgets import ExpandingLineEdit, BoolCheckNodeWidget
+from graph.custom_widgets import ExpandingLineEdit, BoolCheckNodeWidget, MultiLineLabel
 
 import logging
 
@@ -104,6 +104,12 @@ class BasicDBNode(BaseNode):
         custom_properties = {k: v for k, v in custom_properties.items() if v is not None}
         return custom_properties
 
+    def get_root_graph(self):
+        current_graph = self.graph
+        while not current_graph.is_root:
+            current_graph = current_graph.parent_graph
+        return current_graph
+
     def migrate_extra_params(self):
         return
 
@@ -118,7 +124,27 @@ class MyGroupNode(GroupNode):
     def __init__(self):
         super(MyGroupNode, self).__init__()
         self.output_port_tables = {}
+        self.add_custom_widget(MultiLineLabel(self.view, name="Contained", label="Contained Nodes"),
+                               widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.set_color(50, 8, 25)
+
+    def get_root_meta(self):
+        current_graph = self.graph
+        while not current_graph.is_root:
+            current_graph = current_graph.parent_graph
+        return current_graph.get_property('meta')
+
+    def set_content_string(self, text):
+        widget_wrapper = self.get_widget('Contained')
+        widget_wrapper.get_custom_widget().setText(text)
+        widget_wrapper.widget().adjustSize()
+        self.view.draw_node()
+
+    def migrate_extra_params(self):
+        return
+
+    def restore_extra_params(self, migrated_properties):
+        return
 
 
 def backlink_port_get(original_table, connect_table):
@@ -157,7 +183,7 @@ def set_input_port_constraint(node, port, fk_to_tbl_link, fk_to_pk_link):
     if fk_to_tbl_link == 'RequirementSets':
         if base_table_name not in requirement_system_tables:
             node.add_accept_port_type(port, {
-                'node_type': 'db.game_effects.RequirementEffectNode',
+                'node_type': 'db.game_effects.req.RequirementEffectNode',
                 'port_type': PortTypeEnum.OUT.value,
                 'port_name': fk_to_pk_link,
             })

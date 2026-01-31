@@ -131,7 +131,7 @@ class SchemaInspector:
                                 for table_name in self.Base.metadata.tables}
 
         self.table_name_class_map.update({'GameEffectCustom': 'db.game_effects.GameEffectNode',
-                                          'ReqEffectCustom': 'db.game_effects.RequirementEffectNode'})
+                                          'ReqEffectCustom': 'db.game_effects.req.RequirementEffectNode'})
 
         self.incremental_pk = {k: v.primary_key.columns[0].autoincrement for k, v in self.Base.metadata.tables.items()
                                if hasattr(v, 'primary_key')

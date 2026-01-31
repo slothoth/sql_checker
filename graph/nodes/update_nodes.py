@@ -9,6 +9,8 @@ from NodeGraphQt.constants import NodePropWidgetEnum
 from PyQt5.QtGui import QPalette, QColor, QFontMetrics
 
 from ORM import update_delete_transform
+from graph.singletons.db_spec_singleton import db_spec
+from graph.custom_widgets import ReadOnlySqlText
 
 
 class ReadOnlyTwoColTable(NodeBaseWidget):
@@ -50,23 +52,8 @@ class ReadOnlyTwoColTable(NodeBaseWidget):
         table.resizeColumnsToContents()
 
 
-class ReadOnlySqlText(NodeBaseWidget):
-    value_changed = QtCore.pyqtSignal(str, object)
 
-    def __init__(self, parent=None, name='sql', label=''):
-        super(ReadOnlySqlText, self).__init__(parent, name, label)
-        self._sql = ""
-        w = QtWidgets.QPlainTextEdit()
-        w.setReadOnly(True)
-        w.setMinimumHeight(70)
-        self.set_custom_widget(w)
-
-    def get_value(self):
-        return self._sql
-
-    def set_value(self, value):
-        self._sql = value or ""
-        self.get_custom_widget().setPlainText(self._sql)
+db_spec.table_name_id_mapper['db.where'] = 'Where'
 
 
 class WhereNode(BaseNode):
@@ -78,7 +65,7 @@ class WhereNode(BaseNode):
     def __init__(self):
         super(WhereNode, self).__init__()
         self._default_color = self.color()
-        self.add_custom_widget(ReadOnlySqlText(self.view, name="sql_form", label="SQL"),
+        self.add_custom_widget(ReadOnlySqlText(self.view, name="sql_form", label="SQL", height=70),
                                widget_type=NodePropWidgetEnum.QTEXT_EDIT.value)
         self.add_custom_widget(ReadOnlyTwoColTable(self.view, name="changes", label="Changes"),
                                widget_type=NodePropWidgetEnum.HIDDEN.value)
@@ -89,7 +76,8 @@ class WhereNode(BaseNode):
     def apply_and_populate(self):
         sql = self.get_widget("sql_form").get_value()
         try:
-            column_output_tuples = update_delete_transform(sql, age=self.graph.property('meta').get('Age', 'AGE_ANTIQUITY'))
+            metadata = self.get_root_graph().property('metadata')
+            column_output_tuples = update_delete_transform(sql, age=metadata.get('Age', 'AGE_ANTIQUITY'))
         except (TypeError, KeyError, ValueError, sqlite3.Warning) as e:
             self.sql_output_triggerable = False
             self.color_as_error()
@@ -154,3 +142,9 @@ class WhereNode(BaseNode):
         else:
             self.set_color(*self._default_color)        # Restore original color
             self.test_error = False
+
+    def get_root_meta(self):
+        current_graph = self.graph
+        while not current_graph.is_root:
+            current_graph = current_graph.parent_graph
+        return current_graph.get_property('meta')

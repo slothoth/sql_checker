@@ -542,3 +542,40 @@ spin_styling = {
                 'border-top-color': '#ffffff'
             }
         }
+
+
+class ReadOnlySqlText(NodeBaseWidget):
+    value_changed = QtCore.pyqtSignal(str, object)
+
+    def __init__(self, parent=None, name='sql', label='', height=70):
+        super(ReadOnlySqlText, self).__init__(parent, name, label)
+        self._sql = ""
+        w = QtWidgets.QPlainTextEdit()
+        w.setReadOnly(True)
+        w.setMinimumHeight(height)
+        self.set_custom_widget(w)
+
+    def get_value(self):
+        return self._sql
+
+    def set_value(self, value):
+        self._sql = value or ""
+        self.get_custom_widget().setPlainText(self._sql)
+
+
+class MultiLineLabel(NodeBaseWidget):
+    value_changed = QtCore.pyqtSignal(str, object)
+
+    def __init__(self, parent=None, name='multi_line_label', label='', value=''):
+        super(MultiLineLabel, self).__init__(parent, name, label)
+        self.current_val = value
+        w = QtWidgets.QLabel(value)
+        w.setWordWrap(True)
+        self.set_custom_widget(w)
+
+    def get_value(self):
+        return self.current_val
+
+    def set_value(self, value):
+        self.current_val = value or ""
+        self.get_custom_widget().setText(self.current_val)

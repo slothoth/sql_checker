@@ -37,6 +37,7 @@ class ResourceLoader:
     metadata = {}
     dlc_mod_ids = []
     attach_tables = []
+    table_name_id_mapper = {}
 
     def __new__(cls):
         if not cls._instance:

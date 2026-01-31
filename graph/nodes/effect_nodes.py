@@ -128,12 +128,15 @@ class BaseEffectNode(BasicDBNode):
             # get db type and use dropdownlinedit database_arg_map
             arg_table = self.get_param_arg_table(arg)
 
-            base_vals = db_spec.possible_vals[self.graph.property('meta')['Age']].get(arg_table, {}).get('_PK_VALS') or []
+            metadata = self.get_root_graph()
+
+            base_vals = db_spec.possible_vals[metadata.property('meta')['Age']].get(arg_table, {}).get('_PK_VALS') or []
 
             self.add_custom_widget(DropDownLineEdit(parent=self.view, label=arg, name=arg, text='',
                                                     suggestions=base_vals), tab='fields')
             widget = self.get_widget(arg)
-            self.graph.suggest_hub.add_custom_watch(arg_table, widget)
+            root_graph = self.get_root_graph()
+            root_graph.suggest_hub.add_custom_watch(arg_table, widget)
         elif prop_type == 'bool':
             self.set_bool_checkbox(arg, default_val=None, display_in_prop_bin=False)
         elif prop_type == 'int':
@@ -209,6 +212,9 @@ class BaseEffectNode(BasicDBNode):
         return [], {}, ''           # sql_list, dict form, loc
 
 
+db_spec.table_name_id_mapper['db.game_effects.GameEffectNode'] = 'CustomGameEffect'
+
+
 class GameEffectNode(BaseEffectNode):
     __identifier__ = 'db.game_effects'
     NODE_NAME = 'CustomGameEffect'
@@ -251,18 +257,18 @@ class GameEffectNode(BaseEffectNode):
         self.output_port_tables['ModifierId'] = set_output_port_constraints(self, 'Modifiers',
                                                               SQLValidator.pk_ref_map.get('Modifiers'))
         self.output_port_tables['ModifierId'] = {k: v for k, v in self.output_port_tables['ModifierId'].items()if SQLValidator.class_table_name_map.get(k, k) not in effect_system_tables}
-        reqset_connection_info = {'db.game_effects.RequirementEffectNode': ['ReqSet'],
+        reqset_connection_info = {'db.game_effects.req.RequirementEffectNode': ['ReqSet'],
                                   'db.table.requirementsets.RequirementsetsNode': ['ReqSet']}
         self.output_port_tables['SubjectReq'] = reqset_connection_info
         self.output_port_tables['OwnerReq'] = reqset_connection_info
 
         # Req Ports
 
-        self.add_output('SubjectReq')
+        self.add_input('SubjectReq')
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='SubjectRequirementSetId', name='SubjectReq',
                                                  check_if_edited=True), tab='fields',
                                widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
-        self.add_output('OwnerReq')
+        self.add_input('OwnerReq')
         self.add_custom_widget(ExpandingLineEdit(parent=self.view, label='OwnerRequirementSetId', name='OwnerReq',
                                                  check_if_edited=True), tab='fields',
                                widget_type=NodePropWidgetEnum.QLINE_EDIT.value)
@@ -334,8 +340,11 @@ class GameEffectNode(BaseEffectNode):
         return sql_code, dict_form_list, ''
 
 
+db_spec.table_name_id_mapper['db.game_effects.req.RequirementEffectNode'] = 'CustomRequirement'
+
+
 class RequirementEffectNode(BaseEffectNode):
-    __identifier__ = 'db.game_effects'
+    __identifier__ = 'db.game_effects.req'
     NODE_NAME = 'CustomRequirement'
     argument_info_map = db_spec.requirement_argument_info
     arg_prop_map = db_spec.req_type_arg_map

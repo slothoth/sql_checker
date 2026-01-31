@@ -110,6 +110,7 @@ def create_table_node_class(table_name, graph):
         self._validation_errors = {}  # Track validation errors for each field
         self.view.setVisible(False)
         primary_keys = SQLValidator.pk_map[table_name]
+        self.primary_keys = primary_keys
         prim_texts = [i for i in SQLValidator.required_map[table_name] if i not in primary_keys]
         second_texts = SQLValidator.less_important_map[table_name]
 
@@ -128,9 +129,6 @@ def create_table_node_class(table_name, graph):
             self._possible_vals = db_spec.all_possible_vals.get(table_name, {})
         else:
             self._possible_vals = db_spec.possible_vals.get(age, {}).get(table_name, {})
-
-        if table_name == 'RequirementSets':
-            self.add_input('RequirementSetId')
 
         if len(primary_keys) == 1:
             self.create_property('primary_key', primary_keys[0])
@@ -224,8 +222,9 @@ def create_table_node_class(table_name, graph):
             default_val = self._spec.get("default_values", {}).get(column_name, '')
             self.set_property(column_name, default_val)
 
+    id = f'db.table.{table_name.lower()}'
     NewClass = type(class_name, (DynamicNode,), {
-        '__identifier__': f'db.table.{table_name.lower()}',
+        '__identifier__': id,
         'NODE_NAME': f"{table_name}",
         'set_defaults': set_defaults_method,
         '__init__': init_method,
@@ -265,8 +264,13 @@ def create_table_node_class(table_name, graph):
             self.output_port_tables[SQLValidator.pk_map[table_name][0]] = set_output_port_constraints(self, table_name,
                                                                                                       fk_backlink)
 
+    db_spec.table_name_id_mapper[f'{id}.{class_name}'] = table_name
+    group_id = f'db.group.{table_name.lower()}'
+    db_spec.table_name_id_mapper[table_name] = f'{group_id}.{class_name}'
+    db_spec.table_name_id_mapper[f'{group_id}.{class_name}'] = table_name
+
     GroupClass = type(class_name, (MyGroupNode,), {
-        '__identifier__': f'db.group.{table_name.lower()}',
+        '__identifier__': group_id,
         'NODE_NAME': f"{table_name}",
         '__init__': group_init_ports,
     })
