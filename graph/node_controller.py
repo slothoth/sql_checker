@@ -160,7 +160,11 @@ class NodeEditorWindow(QMainWindow):
                         if new_node.output_ports():                             # new node, which should be primary key
                             output_port = new_node.output_ports()[0]
                             new_node.output_ports()[0].connect_to(src_port)
-                            old_fk = src_node.get_widget(src_port_name).get_value()
+                            old_fk_widget = src_node.get_widget(src_port_name)
+                            if old_fk_widget is not None:
+                                old_fk = old_fk_widget.get_value()
+                            else:
+                                old_fk = src_node.get_property(src_port_name)
                             if old_fk != '':                                    # if not default, update new node pk
                                 update_widget_or_prop(node=new_node, widget_name=output_port.name(), new_val=old_fk)
 
