@@ -175,11 +175,11 @@ def parse_modinfo(modinfo_path, mod_folder_path):
     for criteria_info in criterias:
         criteria_dict[criteria_info['@id']] = {}
         specific_criteria = criteria_dict[criteria_info['@id']]
-        any_check = '@any' in criteria_info and criteria_info['@any'] == 'true'
+        any_check = '@any' in criteria_info and criteria_info['@any'] == 'true'         # TODO use any check, important for ModInUse
         for key, val in criteria_info.items():
             if key == '@id':
                 continue
-            if 'ModInUse' in key:
+            if 'ModInUse' in key or 'ModIsEnabled' in key:  # as we currently dont deal with frontend both are conflated
                 if isinstance(val, dict):
                     if val.get('@inverse') == '1':
                         specific_criteria.setdefault('ModsOff', []).append(val['#text'])
@@ -194,7 +194,12 @@ def parse_modinfo(modinfo_path, mod_folder_path):
 
             elif 'AgeInUse' in key:
                 if isinstance(val, dict):
-                    log.warning('skipping xml dict while parsing criteria as Age in Use but is dict')
+                    # likely an inverse
+                    if '@inverse' in val:
+                        if val.get('@inverse') == '1':
+                            specific_criteria.setdefault('AgeOn', []).append(val['#text'])
+                        else:
+                            specific_criteria.setdefault('AgeOff', []).append(val['#text'])
                 elif isinstance(val, str):
                     specific_criteria.setdefault('AgeOn', []).append(val)
                 elif isinstance(val, list):
@@ -214,6 +219,8 @@ def parse_modinfo(modinfo_path, mod_folder_path):
 
             elif 'AlwaysMet' in key:
                 continue
+            elif '@any' in key:
+                continue        # we skip Any since we actually handle it at the beginning
             else:
                 log.critical(f'Trying to parse modinfo of {mod_id} and met new criteria! {key}. skipping but this bad')
 
@@ -234,7 +241,7 @@ def parse_modinfo(modinfo_path, mod_folder_path):
                                                        'priority': int(action_group.get('{ModInfo}Properties', {}).get('{ModInfo}LoadOrder', -1))}
                 actions = action_group.get('{ModInfo}Actions', {})
                 for action_type, action_dict in actions.items():
-                    if action_dict == '':       # empty xml. We should fix this earlier, but we didnt.
+                    if action_dict == '' or action_dict is None:       # empty xml. We should fix this earlier, but we didnt.
                         continue
                     if 'UpdateDatabase' in action_type:
                         for item_name, file_path_list in action_dict.items():
@@ -296,7 +303,7 @@ def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY', mod_id
         sql_commands = sql_info_dict['sql'][short_path]
         for sql_text in sql_commands:
             try:
-                instance_list, bad_instances, list_type = create_instances_from_sql(sql_text, age)
+                instance_list, bad_instances, list_type = create_instances_from_sql(sql_text, age, file_name=short_path)
                 if list_type is None:
                     continue
                 elif list_type == 'insert':
