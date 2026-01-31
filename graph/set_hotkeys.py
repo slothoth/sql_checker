@@ -3,6 +3,8 @@ import os
 import json
 import shutil
 import logging
+from time import time
+
 
 from graph.db_node_support import NodeCreationDialog
 from graph.transform_json_to_sql import transform_json, make_modinfo
@@ -12,11 +14,14 @@ from graph.singletons.filepaths import LocalFilePaths
 from graph.nodes.effect_nodes import BaseEffectNode
 from graph.mod_conversion import build_imported_mod, error_node_tracker
 from graph.no_context_widgets import Toast
-from graph.utils import resource_path
+from graph.utils import resource_path, print_traceback
 
 from graph.mod_conversion import extract_state_test
 from graph.utils import LogPusher
-from graph.hotkey_support import write_sql, write_loc_sql, ConfigTestWorker, node_tracker, group_nodes_by_table
+from graph.hotkey_support import (write_sql, write_loc_sql, ConfigTestWorker, node_tracker,
+                                  turn_off_viewer, turn_on_viewer)
+from graph.layouts import (group_nodes_by_table_with_connections, group_leaf_trees, strip_transient_widgets,
+                           process_and_group_islands)
 
 log = logging.getLogger(__name__)
 
@@ -157,11 +162,8 @@ def save_session_as(graph):
 
 
 def custom_save(graph, file_path):
-    graph_migrated_params = {}
     graph_nodes = graph.all_nodes()
-    for idx, node in enumerate(graph_nodes):
-        migrated_params = node.migrate_extra_params()
-        graph_migrated_params[idx] = migrated_params
+    graph_migrated_params = strip_transient_widgets(graph_nodes)
     graph.save_session(file_path)
     for idx, params in graph_migrated_params.items():
         graph_nodes[idx].restore_extra_params(params)           # just used to maintain integrity of running graph
@@ -432,7 +434,7 @@ def create_requirement_game_effects(graph):
     viewer = graph.viewer()
     pos = viewer.mapToGlobal(QtGui.QCursor.pos())
     scene_pos = viewer.mapToScene(viewer.mapFromGlobal(pos))
-    node = graph.create_node('db.game_effects.RequirementEffectNode', pos=[scene_pos.x(), scene_pos.y()])
+    node = graph.create_node('db.game_effects.req.RequirementEffectNode', pos=[scene_pos.x(), scene_pos.y()])
 
 
 def create_update_node(graph):
@@ -506,10 +508,12 @@ def import_mod(graph):
     dlg.setDirectoryUrl(QtCore.QUrl.fromLocalFile(mod_dir))
     dlg.exec()
     path = dlg.selectedFiles()[0] if dlg.selectedFiles() else None
+    prev_mode = turn_off_viewer(graph)
+    time_taken = None
     try:
         if path is not None:
-            mod_info_found = build_imported_mod(path, graph)
-            if mod_info_found is not None and mod_info_found:
+            time_taken = build_imported_mod(path, graph)
+            if time_taken is not None:
                 layout_graph_down(graph)
                 graph.auto_layout_nodes()           # layout centre
                 graph.select_all()
@@ -520,10 +524,16 @@ def import_mod(graph):
             else:
                 t = Toast(f'No Modinfo found in folder {path}, or age not set.')
                 t.show_at_bottom_right()
-    except Exception as e:
+    except NotImplementedError as e:
         log.error(f'Failed to load mod: {e}')
         t = Toast(f'Could not load mod because of error.')
         t.show_at_bottom_right()
+        print_traceback()
+
+    finally:
+        turn_on_viewer(graph, prev_mode)
+        if time_taken is not None:
+            LogPusher.push_to_log(f'Time taken to show nodes: {int(time() - time_taken)}', log)
 
 
 def open_settings(graph):
@@ -596,8 +606,49 @@ def mod_test_current_config(graph):
 
 
 def switch_to_table_tabs(graph):
-    group_nodes_by_table(graph)
+    start_time = time()
+    prev_mode = turn_off_viewer(graph)
+    # try:
+    graph.begin_undo('Auto Group by Table')
+    group_nodes_by_table_with_connections(graph)
+    # except Exception as e:
+    #    print(f'unable to process grouping tables as {e}')
+    #    print_traceback()
+
+    turn_on_viewer(graph, prev_mode)
+    graph.end_undo()
+    end_time = time()
+    print(f'Finished grouping nodes by table name in {end_time - start_time} seconds')
+
+
+def switch_to_grouped_leafs(graph):         # best method so far
+    start_time = time()
+    prev_mode = turn_off_viewer(graph)
+    graph.begin_undo("Group Islands")
+    group_leaf_trees(graph)
+    #except Exception as e:
+    #    print(f'unable to process and group leafs as {e}')
+    #    print_traceback()
+    #finally:
+    turn_on_viewer(graph, prev_mode)
+    graph.end_undo()
+    end_time = time()
+    print(f'Finished grouping nodes by grouped leafs name in {end_time - start_time} seconds')
 
 
 def switch_to_single_tab(graph):
-    print()
+    return
+
+
+def switch_to_island_groups(graph):
+    start_time = time()
+    prev_mode = turn_off_viewer(graph)
+    # try:
+    process_and_group_islands(graph)
+    #except Exception as e:
+    #    print(f'unable to process and group islands as {e}')
+    #    print_traceback()
+    #finally:
+    turn_on_viewer(graph, prev_mode)
+    end_time = time()
+    print(f'Finished grouping nodes by islands in {end_time - start_time} seconds')

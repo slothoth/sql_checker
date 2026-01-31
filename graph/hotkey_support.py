@@ -1,13 +1,14 @@
-from PyQt5 import QtCore
+from PyQt5 import QtCore, QtWidgets
 import logging
 import time
 import json
+from time import time
+
 from model import query_mod_db, organise_entries, load_files
 from schema_generator import SQLValidator, lint_database
 from graph.singletons.filepaths import LocalFilePaths
 from graph.singletons.db_spec_singleton import db_spec
-from collections import defaultdict
-
+from graph.utils import print_traceback
 
 log = logging.getLogger(__name__)
 
@@ -79,188 +80,9 @@ class ConfigTestWorker(QtCore.QObject):
         except Exception as e:
             self.log_updated.emit(f"Error during threaded execution: {e}")
             log.error("Thread error", exc_info=True)
+            print_traceback()
         finally:
             self.finished.emit()
-
-
-def group_nodes_by_table(graph):
-    """
-    Groups all nodes with the same 'table_name' property into GroupNodes.
-    Ignores table_names that appear only once.
-    """
-    # 1. Start the macro for a single Undo step
-    graph.begin_undo('Auto Group by Table')
-    try:
-        original_connections, node_group_map, grouped_nodes = [], {}, defaultdict(list)
-        all_nodes = graph.all_nodes()
-
-        for node in all_nodes:
-            table_name = node.get_property('table_name')
-            if table_name and table_name not in ['GameEffectCustom', 'ReqEffectCustom']:
-                grouped_nodes[table_name].append(node)
-            for port_name, port_obj in node.outputs().items():
-                for connected_port in port_obj.connected_ports():
-                    conn_tuple = (node.id, port_name, connected_port.node().id, connected_port.name())
-                    original_connections.append(conn_tuple)
-
-        for table_name, nodes in grouped_nodes.items():
-            num_nodes = len(nodes)
-            if num_nodes < 2:
-                continue
-
-            group_node_name = f"{nodes[0].__identifier__.replace('.table.', '.group.')}.{table_name.title()}Node"
-            if group_node_name not in graph.registered_nodes():
-                group_node_name = 'nodes.group.MyGroupNode'
-            position = [int(sum(n.x_pos() for n in nodes) / num_nodes), int(sum(n.y_pos() for n in nodes) / num_nodes)]
-            group_node = graph.create_node(group_node_name, name=table_name, push_undo=True, pos=position)
-
-            for node in nodes:
-                node_group_map[node.id] = group_node
-
-            session_data = graph._serialize(nodes)
-            group_node.set_sub_graph_session(session_data)
-
-            sub_graph = group_node.expand()
-            inner_inputs = {n.name(): n for n in sub_graph.get_input_port_nodes()}
-            inner_outputs = {n.name(): n for n in sub_graph.get_output_port_nodes()}
-
-            for inner_node in sub_graph.all_nodes():
-                if inner_node.type_ in ['nodeGraphQt.nodes.PortInputNode', 'nodeGraphQt.nodes.PortOutputNode']:
-                    continue
-
-                for port_name, port in inner_node.inputs().items():
-                    if port_name in inner_inputs:
-                        inner_inputs[port_name].output(0).connect_to(port)
-
-                for port_name, port in inner_node.outputs().items():
-                    if port_name in inner_outputs:
-                        inner_outputs[port_name].input(0).connect_to(port)
-
-            # organize_subgraph_layout(sub_graph)
-            sub_graph.auto_layout_nodes(nodes=sub_graph.all_nodes(), down_stream=True)
-            sub_graph.set_zoom(0)
-            sub_graph.center_on(sub_graph.all_nodes())
-            group_node.collapse()
-
-            for src_id, src_port, dst_id, dst_port in original_connections:
-                src_node = node_group_map.get(src_id) or graph.get_node_by_id(src_id)
-                dst_node = node_group_map.get(dst_id) or graph.get_node_by_id(dst_id)
-
-                if not src_node or not dst_node or src_node == dst_node:
-                    continue
-                try:
-                    s_port = src_node.outputs().get(src_port)
-                    d_port = dst_node.inputs().get(dst_port)
-                    if s_port and d_port:
-                        s_port.connect_to(d_port)
-                except Exception as e:
-                    pass
-
-        nodes_to_delete = []
-        for nodes in grouped_nodes.values():
-            if len(nodes) >= 2:
-                nodes_to_delete.extend(nodes)
-
-        graph.delete_nodes(nodes_to_delete, push_undo=True)
-        graph.auto_layout_nodes(nodes=graph.all_nodes(), down_stream=True)
-        graph.select_all()
-        graph.fit_to_selection()
-        graph.clear_selection()
-
-    except Exception as e:
-        import traceback
-        error = traceback.format_exc()
-        print(f"Error grouping nodes: {e}")
-
-    finally:
-        # 4. End the macro ensuring the Undo stack is closed even if errors occur
-        graph.end_undo()
-
-
-def normalize_session_coordinates(session_data):
-    """
-    Shifts all nodes in the session dictionary so that their
-    collective center is at (0,0).
-    """
-    nodes = session_data.get('nodes', {})
-    if not nodes:
-        return session_data
-
-    # 1. Gather all X and Y positions
-    x_coords = []
-    y_coords = []
-
-    for node_id, node_data in nodes.items():
-        # 'pos' is typically a list [x, y]
-        pos = node_data.get('pos', [0.0, 0.0])
-        x_coords.append(pos[0])
-        y_coords.append(pos[1])
-
-    if not x_coords:
-        return session_data
-
-    # 2. Calculate the center point
-    min_x, max_x = min(x_coords), max(x_coords)
-    min_y, max_y = min(y_coords), max(y_coords)
-
-    center_x = (min_x + max_x) / 2.0
-    center_y = (min_y + max_y) / 2.0
-
-    # 3. Offset every node by the center point
-    for node_id, node_data in nodes.items():
-        original_x, original_y = node_data.get('pos', [0.0, 0.0])
-        new_x = original_x - center_x
-        new_y = original_y - center_y
-        node_data['pos'] = [new_x, new_y]
-
-    return session_data
-
-
-def organize_subgraph_layout(sub_graph, padding=300, vertical_spacing=100):
-    """
-    Organizes the layout of a subgraph:
-    - Inputs on the Left
-    - Content (Original Nodes) in the Middle
-    - Outputs on the Right
-    """
-    input_nodes, output_nodes, content_nodes = [], [], []
-
-    for node in sub_graph.all_nodes():
-        if node.type_ == 'nodeGraphQt.nodes.PortInputNode':
-            input_nodes.append(node)
-        elif node.type_ == 'nodeGraphQt.nodes.PortOutputNode':
-            output_nodes.append(node)
-        else:
-            content_nodes.append(node)
-
-    if not content_nodes:
-        mid_x, mid_y, min_x, max_x = 0.0, 0.0, -padding, padding
-    else:
-        x_positions = [n.x_pos() for n in content_nodes]
-        y_positions = [n.y_pos() for n in content_nodes]
-
-        min_x, max_x = min(x_positions), max(x_positions)
-        min_y, max_y = min(y_positions), max(y_positions)
-
-        mid_y = (min_y + max_y) / 2.0
-
-    if input_nodes:
-        input_nodes.sort(key=lambda n: n.name())
-
-        start_y = mid_y - ((len(input_nodes) * vertical_spacing) / 2.0)
-        x_pos = min_x - padding
-
-        for i, node in enumerate(input_nodes):
-            node.set_pos(x_pos, start_y + (i * vertical_spacing))
-
-    if output_nodes:
-        output_nodes.sort(key=lambda n: n.name())
-
-        start_y = mid_y - ((len(output_nodes) * vertical_spacing) / 2.0)
-        x_pos = max_x + padding
-
-        for i, node in enumerate(output_nodes):
-            node.set_pos(x_pos, start_y + (i * vertical_spacing))
 
 
 def write_sql(sql_dict_list):                               # save SQL, then trigger main run model
@@ -273,6 +95,21 @@ def write_loc_sql(loc_lines):
     if loc_lines is not None:
         with open(LocalFilePaths.app_data_path_form('loc.sql'), 'w') as f:
             f.writelines(loc_lines)
+
+
+def turn_off_viewer(graph):
+    viewer = graph.viewer()
+    prev_mode = viewer.viewportUpdateMode()
+    viewer.setViewportUpdateMode(QtWidgets.QGraphicsView.NoViewportUpdate)
+    graph.blockSignals(True)
+    return prev_mode
+
+
+def turn_on_viewer(graph, prev_mode):
+    viewer = graph.viewer()
+    graph.blockSignals(False)
+    viewer.setViewportUpdateMode(prev_mode)
+    viewer.force_update()
 
 
 class NodeTracker:

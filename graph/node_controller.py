@@ -86,7 +86,8 @@ class NodeEditorWindow(QMainWindow):
 
         def display_properties_bin(node):
             if isinstance(node, GroupNode):
-                node.expand()  # This creates the tab and navigation TODO fails on transient widgets like GameEffects
+                sub_graph = node.expand()  # This creates the tab and navigation TODO fails on transient widgets like GameEffects
+                sub_graph.center_on(sub_graph.all_nodes())
             else:
                 if not properties_bin.isVisible():
                     properties_bin.show()

@@ -294,12 +294,26 @@
       },
       {
         "type":"command",
-        "label":"Table Tabs",
+        "label":"Group by Table",
         "file":"./hotkey_functions.py",
         "function_name":"switch_to_table_tabs",
         "shortcut":"Ctrl+Shift+2"
+      },
+      {
+        "type":"command",
+        "label":"Group by Leaves",
+        "file":"./hotkey_functions.py",
+        "function_name":"switch_to_grouped_leafs",
+        "shortcut":"Ctrl+Shift+3"
+      },
+      {
+        "type":"command",
+        "label":"Group by Islands",
+        "file":"./hotkey_functions.py",
+        "function_name":"switch_to_island_groups",
+        "shortcut":"Ctrl+Shift+4"
       }
-      ]
+    ]
     },
   {
     "type":"menu",
