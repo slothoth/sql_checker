@@ -90,7 +90,7 @@ def test_all_req_args(qtbot):
     window = NodeEditorWindow()
     qtbot.addWidget(window)
     qtbot.waitExposed(window)
-    req_node = window.graph.create_node('db.game_effects.RequirementEffectNode')
+    req_node = window.graph.create_node('db.game_effects.req.RequirementEffectNode')
     qtbot.wait(1)
     possible_reqs = req_node.get_widget('RequirementType')._completer_model.stringList()
     for effect in possible_reqs:

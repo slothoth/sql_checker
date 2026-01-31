@@ -47,7 +47,7 @@ def test_node_value_change(qtbot):
 def test_req_effect_cycle_all_vals(qtbot):
     window = NodeEditorWindow(parent=None)
     qtbot.addWidget(window)
-    node = window.graph.create_node('db.game_effects.RequirementEffectNode')
+    node = window.graph.create_node('db.game_effects.req.RequirementEffectNode')
     missed = []
     for i in db_spec.requirement_argument_info:
         try:
