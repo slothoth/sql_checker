@@ -121,7 +121,7 @@ class NodeEditorWindow(QMainWindow):
                         accepted_ports = {k: True for k, v in src_node.output_port_tables.get(src_port_name, {}).items()}
                     else:
                         src_port = src_node.get_input(src_port_name)   # Dialog only needed if associated with Effect
-                        accepted_ports = src_port.accepted_port_types()
+                        accepted_ports = {k: v for k, v in src_port.accepted_port_types().items() if '.group.' not in k}
                     if len(accepted_ports) > 1:
                         name = self.node_dialog_name([SQLValidator.class_table_name_map.get(i, i)
                                                       for i in accepted_ports])
@@ -153,7 +153,11 @@ class NodeEditorWindow(QMainWindow):
 
                             if connect_port is not None:
                                 src_port.connect_to(connect_port)
-                                old_pk = src_node.get_widget(src_port_name).get_value()  # get val of connecting entry
+                                widget = src_node.get_widget(src_port_name)
+                                if widget is not None:
+                                    old_pk = src_node.get_widget(src_port_name).get_value()  # get val of connecting entry
+                                else:
+                                    old_pk = src_node.get_property(src_port_name)
                                 update_widget_or_prop(node=new_node, widget_name=connect_port, new_val=old_pk)
 
                     elif src_port.type_() == 'in':                              # Connect to first available output of

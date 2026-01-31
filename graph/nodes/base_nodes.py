@@ -28,14 +28,14 @@ class BasicDBNode(BaseNode):
         self.create_property('loc_sql_form', '')    # in propBin Widget
         self.create_property('dict_sql', {})        # would be , widget_type=NodePropWidgetEnum.QTEXT_EDIT.value
 
-    def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
+    def get_link_port(self, connect_table, parent_port, child_port): # given an input port, finds the matching output on other node
         original_table = self.get_property('table_name')
         if connect_table == 'GameEffectCustom':
-            if connect_port == 'ModifierId':
-                return backlink_port_get(original_table, 'Modifiers')
+            if parent_port == 'ModifierId':
+                return backlink_port_get(original_table, 'Modifiers', child_port)
             return 'ReqSet'  # needs more complicated behavior as ModifierId now also ports so could have any attach table
-        if connect_port is not None:
-            return backlink_port_get(original_table, connect_table)
+        if child_port is not None:
+            return backlink_port_get(original_table, connect_table, child_port)
 
     def set_spec(self, col_dict):
         self.can_validate = False           # delay validation, just needless sql_building
@@ -147,7 +147,7 @@ class MyGroupNode(GroupNode):
         return
 
 
-def backlink_port_get(original_table, connect_table):
+def backlink_port_get(original_table, connect_table, connect_port):
     backlink_spec = db_spec.node_templates[original_table]
     combined_fks = backlink_spec['foreign_keys'].copy()
     combined_fks.update(backlink_spec.get('extra_fks', {}))

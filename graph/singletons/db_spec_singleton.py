@@ -51,6 +51,7 @@ class ResourceLoader:
             if not self.initialized:
                 SQLValidator.initialize()
                 self._load_resources(patch_occurred, latest)
+                SQLValidator.update_from_spec(self)
                 self.initialized = True
 
     def _load_resources(self, new_patch_occurred, latest=None):

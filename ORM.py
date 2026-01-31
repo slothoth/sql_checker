@@ -8,6 +8,7 @@ import sqlite3
 from collections import defaultdict
 from schema_generator import SQLValidator
 from graph.singletons.db_spec_singleton import db_spec
+from graph.utils import LogPusher
 
 import logging
 
@@ -30,7 +31,7 @@ for table in SQLValidator.metadata.tables.values():
     canonical_mapper[tbl_name.lower()] = tbl_name
 
 
-def create_instances_from_sql(sql_text, age):
+def create_instances_from_sql(sql_text, age, file_name=''):
     cleaned_sql = clean_sql(sql_text)
     if 'PRAGMA foreign_keys' in cleaned_sql:
         return ([], []), [sql_text], 'pragma_discard'
@@ -78,7 +79,8 @@ def create_instances_from_sql(sql_text, age):
         missed_cols = [k for k in sql_columns if colmap.get(k.lower()) is None]
         col_dict = zip(sql_columns, sql_values)
         if not all(colmap.get(k.lower()) is not None for k in sql_columns):
-            log.error(f"when translating mod, found bad values {missed_cols} on entry: {col_dict}")
+            err_msg = f"found bad values {missed_cols} in file {file_name} on entry:\n {dict(col_dict)}"
+            LogPusher.push_to_log(err_msg, log)
             bad_instances.append({'missed_cols': missed_cols, 'entry': col_dict})
             continue
         kwargs = {colmap[k.lower()]: v for k, v in col_dict}
@@ -101,19 +103,14 @@ def get_table_and_key_vals(orm_instance):
         attr.key: state.attrs[attr.key].value
         for attr in state.mapper.column_attrs
     }
-    pk_tuple = tuple(
-        getattr(orm_instance, col.name)
-        for col in mapper.local_table.primary_key.columns
-    )
+    pk_tuple = tuple(getattr(orm_instance, col.name) for col in mapper.local_table.primary_key.columns)
     if table_name == 'Types':
         del col_dicts['Hash']
     return table_name, col_dicts, pk_tuple
 
 
 def build_fk_index(instances):
-    fk_index = defaultdict(set)
-    by_table = defaultdict(list)
-    tables_by_name = {}
+    fk_index, by_table, tables_by_name = defaultdict(set), defaultdict(list), {}
     for obj in instances:
         t = inspect(obj).mapper.local_table
         by_table[t].append(obj)
@@ -122,12 +119,13 @@ def build_fk_index(instances):
     for child in instances:
         sc = inspect(child)
         child_table = sc.mapper.local_table
-        child_pk = tuple(
-            getattr(child, mapped_attr(child, child_table, c.name)) for c in child_table.primary_key.columns)
+        child_pk = tuple(getattr(child, mapped_attr(child, child_table, c.name))
+                         for c in child_table.primary_key.columns)
 
         for fk in child_table.foreign_keys:
             parent_table = fk.column.table
             parent_col = fk.column.name
+            child_fk_col_name = fk.parent.name
 
             child_attr = mapped_attr(child, child_table, fk.parent.name)
             parent_val = getattr(child, child_attr)
@@ -139,7 +137,7 @@ def build_fk_index(instances):
                 if getattr(parent, parent_attr) == parent_val:
                     parent_pk = tuple(getattr(parent, mapped_attr(parent, parent_table, c.name)) for c in
                                       parent_table.primary_key.columns)
-                    fk_index[(parent_table.name, parent_col, parent_pk)].add((child_table.name, child_pk))
+                    fk_index[(parent_table.name, parent_col, parent_pk)].add((child_table.name, child_pk, child_fk_col_name))
 
         extra = db_spec.node_templates[child_table.name].get("extra_fks", {})
         for child_col_name, fk_info in extra.items():
@@ -162,7 +160,7 @@ def build_fk_index(instances):
                 if getattr(parent, parent_attr) == parent_val:
                     parent_pk = tuple(getattr(parent, mapped_attr(parent, parent_table, c.name)) for c in
                                       parent_table.primary_key.columns)
-                    fk_index[(parent_table.name, ref_col_name, parent_pk)].add((child_table.name, child_pk))
+                    fk_index[(parent_table.name, ref_col_name, parent_pk)].add((child_table.name, child_pk, child_col_name))
 
     return fk_index
 

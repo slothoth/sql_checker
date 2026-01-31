@@ -302,8 +302,8 @@ class GameEffectNode(BaseEffectNode):
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
         self.can_validate = True
 
-    def get_link_port(self, connect_table, connect_port):    # uses custom ReqCustom and all Modifier attachment tables
-        if connect_port is not None:
+    def get_link_port(self, connect_table, parent_port, child_port):    # uses custom ReqCustom and all Modifier attachment tables
+        if parent_port is not None:
             for backlink_table in ['RequirementSets']:
                 if backlink_table == self.get_property('table_name'):
                     backlink_spec = db_spec.node_templates[backlink_table]
@@ -380,8 +380,8 @@ class RequirementEffectNode(BaseEffectNode):
         self._apply_mode(self.get_property(self.arg_setter_prop), push_undo=False)
         self.can_validate = True
 
-    def get_link_port(self, connect_table, connect_port): # given an input port, finds the matching output on other node
-        if connect_port is not None:
+    def get_link_port(self, connect_table, parent_port, child_port): # given an input port, finds the matching output on other node
+        if parent_port is not None:
             return 'ReqSet'
 
     def update_unnamed_cols(self, mode):

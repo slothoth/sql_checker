@@ -1,3 +1,6 @@
+from copy import deepcopy
+
+
 def game_effects(sql_statements, sql_commands_dict, xml_file, skips):
     collection_ = sql_commands_dict.get('@collection', 'COLLECTION_OWNER')
     sql_statements.append({"type": "INSERT", "table": 'DynamicModifiers',
@@ -8,30 +11,31 @@ def game_effects(sql_statements, sql_commands_dict, xml_file, skips):
                            "values": [f"{sql_commands_dict['@id']}_TYPE", 'KIND_MODIFIER']})
     columns, values, errors = [], [], []
     modifier_id, subject_req_set, owner_req_set, subject_req_args, owner_req_args, mod_args = None, None, None, None, None, None
-    for col, val in sql_commands_dict.items():
+    strip_prefix_statement = {k.replace('{GameEffects}', ''): deepcopy(v) for k, v in sql_commands_dict.items()}
+    for col, val in strip_prefix_statement.items():
         if col == '@id':
             modifier_id = val
             columns.append('ModifierType')
             values.append(val + '_TYPE')
-        if col in ['@collection', '@effect']:
+        elif col in ['@collection', '@effect']:
             continue
-        if col == '{GameEffects}Argument':
+        elif col == 'Argument':
             continue
-        elif col == '{GameEffects}String':
+        elif col == 'String':
             continue
-        elif col == '{GameEffects}SubjectRequirements':
+        elif col == 'SubjectRequirements':
             columns.append('SubjectRequirementSetId')
             subject_req_set = f'{modifier_id}_SUBJECT_REQUIREMENTS'
             values.append(subject_req_set)
             subject_req_args = val
             continue
-        elif col == '{GameEffects}OwnerRequirements':
+        elif col == 'OwnerRequirements':
             columns.append('OwnerRequirementSetId')
             owner_req_set = f'{modifier_id}_OWNER_REQUIREMENTS'
             values.append(owner_req_set)
             owner_req_args = val
             continue
-        elif col == '{GameEffects}Requirement':         # bad input by modder
+        elif col == 'Requirement':         # bad input by modder
             errors.append(f'Requirements Tag in wrong place in file: {xml_file}. This requirement will not be seen by Firaxis parser')
             continue
         elif col == '#text':         # bad input by modder
@@ -46,10 +50,13 @@ def game_effects(sql_statements, sql_commands_dict, xml_file, skips):
                                           '@owner-stack-limit': 'OwnerStackLimit', '@new-only': 'NewOnly'})
     sql_statements.append({"type": "INSERT", "table": 'Modifiers', "columns": columns, "values": values})
 
-    if '{GameEffects}Argument' in sql_commands_dict:
-        if isinstance(sql_commands_dict['{GameEffects}Argument'], dict):
-            sql_commands_dict['{GameEffects}Argument'] = [sql_commands_dict['{GameEffects}Argument']]
-        for arg in sql_commands_dict['{GameEffects}Argument']:
+
+
+    if 'Argument' in strip_prefix_statement:
+        arg_dict = strip_prefix_statement.get('Argument')
+        if isinstance(arg_dict, dict):
+            strip_prefix_statement['Argument'] = [strip_prefix_statement['Argument']]
+        for arg in strip_prefix_statement['Argument']:
             arg_cols, arg_vals = [i for i in arg], [j for j in arg.values()]
             arg_cols, arg_vals = ['ModifierId'] + arg_cols, [modifier_id] + arg_vals,
             arg_cols = col_replacer(arg_cols, {'@name': 'Name', '#text': 'Value', '@extra': 'Extra',
@@ -58,30 +65,31 @@ def game_effects(sql_statements, sql_commands_dict, xml_file, skips):
             sql_statements.append(
                 {"type": "INSERT", "table": 'ModifierArguments', "columns": arg_cols, "values": arg_vals})
 
-    # if '{GameEffects}String???' in sql_commands_dict:
+    # if 'String???' in strip_prefix_statement:
 
     if owner_req_args is not None:
         if modifier_id in skips:
             skip = skips[modifier_id]
             if skip['error_type'] == 'NestedRequirements' and skip['additional'] == 'owner':
-                if len(sql_commands_dict['{GameEffects}OwnerRequirements']) > 1:
-                    sql_commands_dict['{GameEffects}OwnerRequirements'] = sql_commands_dict['{GameEffects}OwnerRequirements'][0]
-        req_set_build(sql_statements, sql_commands_dict['{GameEffects}OwnerRequirements'], owner_req_set)
+                if len(strip_prefix_statement['OwnerRequirements']) > 1:
+                    strip_prefix_statement['OwnerRequirements'] = strip_prefix_statement['OwnerRequirements'][0]
+        req_set_build(sql_statements, strip_prefix_statement['OwnerRequirements'], owner_req_set)
     if subject_req_args is not None:
         if modifier_id in skips:
             skip = skips[modifier_id]
             if skip['error_type'] == 'NestedRequirements' and skip['additional'] == 'subject':
-                if len(sql_commands_dict['{GameEffects}SubjectRequirements']) > 1:
-                    sql_commands_dict['{GameEffects}SubjectRequirements'] = sql_commands_dict['{GameEffects}SubjectRequirements'][0]
-        req_set_build(sql_statements, sql_commands_dict['{GameEffects}SubjectRequirements'], subject_req_set)
+                if len(strip_prefix_statement['SubjectRequirements']) > 1:
+                    strip_prefix_statement['SubjectRequirements'] = strip_prefix_statement['SubjectRequirements'][0]
+        req_set_build(sql_statements, strip_prefix_statement['SubjectRequirements'], subject_req_set)
     return sql_statements, errors
 
 
 def req_set_build(sql_statements, sql_commands_dict, reqsetID):
+    strip_prefix_dict = {k.replace('{GameEffects}', ''): deepcopy(v) for k, v in sql_commands_dict.items()}
     sql_statements.append(
         {"type": "INSERT", "table": 'RequirementSets', "columns": ['RequirementSetId', 'RequirementSetType'],
          "values": [reqsetID, 'REQUIREMENTSET_TEST_ALL']})
-    requirement_list = sql_commands_dict['{GameEffects}Requirement']
+    requirement_list = strip_prefix_dict['Requirement']
     if isinstance(requirement_list, dict):
         requirement_list = [requirement_list]
     for idx, require_info in enumerate(requirement_list):
@@ -95,19 +103,18 @@ def req_set_build(sql_statements, sql_commands_dict, reqsetID):
 
 
 def req_build(sql_statements, sql_commands_dict, reqId):
-    new_req_id =reqId
+    new_req_id = reqId
     req_set = {}
     for col, val in sql_commands_dict.items():
         if isinstance(val, dict) or isinstance(val, list):
             req_set[col] = val
-            continue
+
     if len(req_set) > 0:
         for key, val in req_set.items():
             if '@xref' in val:
                 new_req_id = val['@xref']
                 continue  # covered elsewhere
-            if 'GameEffect' in key and (
-                    '#text' in val or isinstance(val, list)):  # implies its a sole requirement, no reqset
+            if 'GameEffect' in key and ('#text' in val or isinstance(val, list)):  # implies its a sole requirement, no reqset
                 if not isinstance(val, list):
                     val = [val]
                 # do the Requirements entry
@@ -126,15 +133,22 @@ def req_build(sql_statements, sql_commands_dict, reqId):
                     sql_statements.append(
                         {"type": "INSERT", "table": 'RequirementArguments', "columns": cols,
                          "values": vals})
+            elif 'Argument' in key:                 # single arg
+                cols, vals = ['RequirementId'] + list(val.keys()), [new_req_id] + list(val.values())
+                cols = col_replacer(cols, {'@name': 'Name', '#text': 'Value'})
+                sql_statements.append({"type": "INSERT", "table": 'RequirementArguments', "columns": cols,
+                                       "values": vals})
+
             else:
                 req_cols, req_vals = (['RequirementId'] + [i for i in val if 'GameEffects' not in i],
                                       [reqId] + [val_ for key_, val_ in val.items() if 'GameEffects' not in key_])
-                req_cols = col_replacer(req_cols, {'@type': 'RequirementType', '@inverse': 'Inverse'})
+                req_cols = col_replacer(req_cols, {'@type': 'RequirementType', '@inverse': 'Inverse',
+                                                   '@name': 'Name'})
                 sql_statements.append(
                     {"type": "INSERT", "table": 'Requirements', "columns": req_cols, "values": req_vals})
 
-                if '{GameEffects}Argument' in val:
-                    req_args = val['{GameEffects}Argument']
+                if 'Argument' in val:
+                    req_args = val['Argument']
                     if isinstance(req_args, dict):
                         req_args = [req_args]
                     for idx, req_arg in enumerate(req_args):

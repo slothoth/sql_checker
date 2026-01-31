@@ -116,7 +116,7 @@ def convert_xml_to_sql(xml_file, job_type=None):
         if not isinstance(sql_commands, list):
             sql_commands = [sql_commands]
         for sql_commands_dict in sql_commands:
-            if table_name == '{GameEffects}Modifier':
+            if table_name in ['{GameEffects}Modifier', 'Modifier']:
                 sql_statements, errors = game_effects(sql_statements, sql_commands_dict, xml_file, skips)
                 if len(errors) > 0:
                     if xml_errors.get(table_name, False):
@@ -124,11 +124,11 @@ def convert_xml_to_sql(xml_file, job_type=None):
                     else:
                         xml_errors[table_name] = [errors]
                 continue
-            if table_name == '{GameEffects}RequirementSet':
+            if table_name in ['{GameEffects}RequirementSet', 'RequirementSet']:
                 req_set_id = sql_commands_dict['@id']
                 sql_statements = req_set_build(sql_statements, sql_commands_dict, req_set_id)
                 continue
-            if table_name == '{GameEffects}Requirement':
+            if table_name in ['{GameEffects}Requirement', 'Requirement']:
                 req_id = sql_commands_dict['@id']
                 sql_statements, req_id = req_build(sql_statements, sql_commands_dict, req_id)
                 continue

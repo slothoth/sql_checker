@@ -64,6 +64,11 @@ class SchemaInspector:
     engine_dict = {}
     mod_setup = {}
     prebuilt = {}
+    table_name_class_map = {}
+    incremental_pk = {}
+    class_table_name_map = {}
+    canonicalise_tables = {}
+    canonicalise_columns = {}
     include_mods = False
 
     def initialize(self):

@@ -42,7 +42,7 @@ def build_imported_mod(mod_folder_path, graph):
     user_switches.append(age)
     file_list = resolve_files(sql_info_dict, user_switches, config_params_enabled)      # TODO matts ireland missed file in sql_info_dict
     orm_list, update_delete_list, bad_instances = mod_info_into_orm(sql_info_dict, file_list, age=age, mod_id=mod_id)
-    build_graph_from_orm(graph, orm_list, update_delete_list, age)
+    build_graph_from_orm(graph, orm_list, update_delete_list, age, custom_effects=False)
     # build_graph_from_orm_tabs(graph, orm_list, update_delete_list, age)
     return True
 
@@ -314,7 +314,7 @@ def mod_info_into_orm(sql_info_dict, file_path_list, age='AGE_ANTIQUITY', mod_id
                     log.warning(f'Discarding Pragma when importing mod {mod_id}: {sql_text}')
                 bad_instances_list.extend(bad_instances)
             except (ParseError, ValueError) as e:
-                log.error(f'When importing mod {mod_id}, couldnt parse sql file {short_path}: {sql_text} as: {e}')
+                LogPusher.push_to_log(f'When importing mod {mod_id}, couldnt parse sql file {short_path}: {sql_text} as: {e}', log)
 
     return orm_list, update_delete_list, bad_instances_list
 
@@ -336,7 +336,7 @@ def connect_foreign_keys(fk_index, nodes_dict, effect_dict):
                             f' with primary key {parent_pk} which should have {len(children)} children connections')
                 continue
 
-        for child_table, child_pk in children:
+        for child_table, child_pk, child_col_name in children:
             child_node = nodes_dict.get(child_table, {}).get(child_pk)
             if child_node is None:
                 child_node = effect_dict.get(child_table, {}).get(child_pk)
@@ -348,22 +348,14 @@ def connect_foreign_keys(fk_index, nodes_dict, effect_dict):
                                 f' could not find child connection {child_table}, {",".join(child_pk)}')
                     continue
 
-            primary_key = parent_pk[0]   # technically multiple pks possible, but ports system means just connect one
-            src_ports = [i for i in parent_node.output_ports() if i.name() == parent_col]
-            if len(src_ports) > 1:
-                log.warning(f'Likely bad connection for mod import, for {parent_table} -> {child_table} connection.'
-                            f'found multiple ports matching {parent_col} on {parent_table} with pk {parent_pk}. {src_ports}')
-            if len(src_ports) == 0:
-                log.error(f'skipping bad connection for mod import, for {parent_table} -> {child_table} connection.'
-                            f'Couldnt find port {parent_col} on {parent_table} with pk {parent_pk}')
-                continue
-
-            src_port = src_ports[0]
-            connect_port_name = child_node.get_link_port(parent_node.get_property('table_name'), primary_key)
-            if connect_port_name:
-                port_index = next((i for i, s in enumerate(child_node.input_ports()) if s.name() == connect_port_name), 0)
-                if len (child_node.input_ports()) > 0:
-                    src_port.connect_to(child_node.input_ports()[port_index])
+            primary_key_value = parent_pk[0]   # technically multiple pks possible, but ports system means just connect one
+            primary_key = parent_node.primary_keys[0]
+            src_port = parent_node.outputs().get(parent_col)
+            if src_port is None:
+                src_port = parent_node.inputs().get(parent_col)
+            port = child_node.inputs().get(child_col_name)              # TODO DynamicModifiers should have entry?
+            if port is not None:
+                src_port.connect_to(port)
 
 
 def criteria_matches(criteria, age):
