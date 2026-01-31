@@ -1,8 +1,9 @@
 from collections import defaultdict, Counter
 from NodeGraphQt import BaseNode
 
+
 from graph.singletons.db_spec_singleton import db_spec
-from graph.utils import flatten, strip_transient_widgets
+from graph.utils import flatten, strip_transient_widgets, auto_layout_nodes_minimise_crossing
 
 import logging
 
@@ -46,7 +47,7 @@ def group_leaf_trees(graph):
         group_counts[name] = len(nodes_list)
         sub_graph = group_node.expand()
         _rewire_subgraph(sub_graph, connection_map)                 # wire internal ports and layout
-        sub_graph.auto_layout_nodes(nodes=sub_graph.all_nodes(), down_stream=True)
+        auto_layout_nodes_minimise_crossing(sub_graph, nodes=sub_graph.all_nodes(), down_stream=True)
         group_node.collapse()
 
     log.info('nodes grouped:')
@@ -241,7 +242,7 @@ def layout_aggregate_unconnected(graph):
     connected = [i for i in all_nodes if any(port.connected_ports() for port in i.output_ports() + i.input_ports())]
     unconnected = [i for i in all_nodes if i not in connected]
     if connected:
-        graph.auto_layout_nodes(nodes=connected, down_stream=True)
+        auto_layout_nodes_minimise_crossing(graph, nodes=connected, down_stream=True)
         min_x = float('inf')                            # Calculate the Bounding Box of the connected graph
         max_x, max_y = -float('inf'), -float('inf')
 
@@ -270,7 +271,7 @@ def layout_aggregate_unconnected(graph):
             row_height = max(row_height, h)
 
     elif unconnected:
-        graph.auto_layout_nodes(nodes=unconnected)
+        auto_layout_nodes_minimise_crossing(graph, nodes=unconnected)
 
 
 def get_weakly_connected_components(graph):     # DFS traversal
@@ -310,7 +311,7 @@ def _rewire_graph(graph, group_node, node_group_map, original_connections):
     _rewire_subgraph(sub_graph)
 
     organize_subgraph_layout(sub_graph)
-    sub_graph.auto_layout_nodes(nodes=sub_graph.all_nodes(), down_stream=True)
+    auto_layout_nodes_minimise_crossing(sub_graph,nodes=sub_graph.all_nodes(), down_stream=True)
     sub_graph.set_zoom(0)
     sub_graph.center_on(sub_graph.all_nodes())
     group_node.collapse()
@@ -426,7 +427,7 @@ def delete_displaced_nodes(graph, grouped_nodes):
 
 
 def layout_and_centre_view(graph):
-    graph.auto_layout_nodes(nodes=graph.all_nodes(), down_stream=True)
+    auto_layout_nodes_minimise_crossing(graph, nodes=graph.all_nodes(), down_stream=True)
     graph.select_all()
     graph.fit_to_selection()
     graph.clear_selection()

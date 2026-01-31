@@ -21,7 +21,7 @@ from graph.utils import LogPusher
 from graph.hotkey_support import (write_sql, write_loc_sql, ConfigTestWorker, node_tracker,
                                   turn_off_viewer, turn_on_viewer)
 from graph.layouts import (group_nodes_by_table_with_connections, group_leaf_trees, strip_transient_widgets,
-                           process_and_group_islands)
+                           process_and_group_islands, auto_layout_nodes_minimise_crossing)
 
 log = logging.getLogger(__name__)
 
@@ -360,7 +360,7 @@ def layout_graph_down(graph):
     Auto layout the nodes down stream.
     """
     nodes = graph.selected_nodes() or graph.all_nodes()
-    graph.auto_layout_nodes(nodes=nodes, down_stream=True)
+    auto_layout_nodes_minimise_crossing(graph, nodes=nodes, down_stream=True)
 
 
 def layout_graph_up(graph):

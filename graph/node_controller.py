@@ -19,7 +19,7 @@ from graph.port import port_connect_transmit, update_widget_or_prop
 from graph.node_state import SuggestionHub
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
-from graph.utils import resource_path
+from graph.utils import resource_path, auto_layout_nodes_minimise_crossing
 
 import logging
 
@@ -87,6 +87,7 @@ class NodeEditorWindow(QMainWindow):
         def display_properties_bin(node):
             if isinstance(node, GroupNode):
                 sub_graph = node.expand()  # This creates the tab and navigation TODO fails on transient widgets like GameEffects
+                auto_layout_nodes_minimise_crossing(sub_graph)
                 sub_graph.center_on(sub_graph.all_nodes())
             else:
                 if not properties_bin.isVisible():
