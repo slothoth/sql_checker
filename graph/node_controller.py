@@ -9,7 +9,7 @@ from NodeGraphQt import NodeGraph, PropertiesBinWidget, GroupNode
 from NodeGraphQt.widgets.node_widgets import _NodeGroupBox
 from graph.patchs import _patched_size_hint
 
-from graph.db_node_support import NodeCreationDialog, set_nodes_visible_by_type
+from graph.db_node_support import NodeCreationDialog
 from graph.set_hotkeys import set_hotkeys
 from graph.nodes.dynamic_nodes import generate_tables
 from graph.nodes.effect_nodes import GameEffectNode, RequirementEffectNode
@@ -19,7 +19,7 @@ from graph.port import port_connect_transmit, update_widget_or_prop
 from graph.node_state import SuggestionHub
 from schema_generator import SQLValidator
 from graph.info_panel import CollapsiblePanel
-from graph.utils import resource_path, auto_layout_nodes_minimise_crossing
+from graph.utils import resource_path, auto_layout_nodes_minimise_crossing, set_nodes_visible_by_type
 
 import logging
 

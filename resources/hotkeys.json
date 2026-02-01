@@ -312,6 +312,13 @@
         "file":"./hotkey_functions.py",
         "function_name":"switch_to_island_groups",
         "shortcut":"Ctrl+Shift+4"
+      },
+      {
+        "type":"command",
+        "label":"Group Simple Outputs",
+        "file":"./hotkey_functions.py",
+        "function_name":"switch_to_grouped_outputs",
+        "shortcut":"Ctrl+Shift+5"
       }
     ]
     },
@@ -373,6 +380,20 @@
         "file":"./hotkey_functions.py",
         "function_name":"get_next_node",
         "shortcut":"N"
+      },
+      {
+        "type":"command",
+        "label":"Hide Types",
+        "file":"./hotkey_functions.py",
+        "function_name":"hide_types_and_kinds",
+        "shortcut":"1"
+      },
+      {
+        "type":"command",
+        "label":"Show Types",
+        "file":"./hotkey_functions.py",
+        "function_name":"show_types_and_kinds",
+        "shortcut":"2"
       }
     ]
   },

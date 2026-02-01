@@ -4,12 +4,11 @@ import json
 import os
 import sys
 
-from graph.db_node_support import sync_node_options_all, set_nodes_visible_by_type
+from graph.db_node_support import sync_node_options_all
 from schema_generator import SQLValidator
 from graph.singletons.db_spec_singleton import db_spec
-from graph.utils import resource_path
-from graph.utils import check_civ_install_works, check_civ_config_works, check_workshop_works
-
+from graph.utils import (resource_path, set_nodes_visible_by_type, check_civ_install_works, check_civ_config_works,
+                         check_workshop_works)
 from graph.singletons.filepaths import LocalFilePaths
 
 

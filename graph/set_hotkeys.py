@@ -14,14 +14,14 @@ from graph.singletons.filepaths import LocalFilePaths
 from graph.nodes.effect_nodes import BaseEffectNode
 from graph.mod_conversion import build_imported_mod, error_node_tracker
 from graph.no_context_widgets import Toast
-from graph.utils import resource_path, print_traceback
+from graph.utils import resource_path, print_traceback, set_nodes_visible_by_type
 
 from graph.mod_conversion import extract_state_test
-from graph.utils import LogPusher
+from graph.utils import LogPusher, auto_layout_nodes_minimise_crossing
 from graph.hotkey_support import (write_sql, write_loc_sql, ConfigTestWorker, node_tracker,
                                   turn_off_viewer, turn_on_viewer)
 from graph.layouts import (group_nodes_by_table_with_connections, group_leaf_trees, strip_transient_widgets,
-                           process_and_group_islands, auto_layout_nodes_minimise_crossing)
+                           process_and_group_islands, collate_flowering_trees)
 
 log = logging.getLogger(__name__)
 
@@ -625,7 +625,10 @@ def switch_to_grouped_leafs(graph):         # best method so far
     start_time = time()
     prev_mode = turn_off_viewer(graph)
     graph.begin_undo("Group Islands")
-    group_leaf_trees(graph)
+    group_leaf_trees(graph, 'leaf_stubs')
+    # group_leaf_trees(graph, 'force_forward_chains')
+    # group_leaf_trees(graph, 'simple_leaf')
+    # group_leaf_trees(graph, 'group_flowering_leafs')
     #except Exception as e:
     #    print(f'unable to process and group leafs as {e}')
     #    print_traceback()
@@ -633,7 +636,7 @@ def switch_to_grouped_leafs(graph):         # best method so far
     turn_on_viewer(graph, prev_mode)
     graph.end_undo()
     end_time = time()
-    print(f'Finished grouping nodes by grouped leafs name in {end_time - start_time} seconds')
+    LogPusher.push_to_log(f'Finished grouping nodes by grouped leafs name in {end_time - start_time} seconds', log)
 
 
 def switch_to_single_tab(graph):
@@ -652,3 +655,19 @@ def switch_to_island_groups(graph):
     turn_on_viewer(graph, prev_mode)
     end_time = time()
     print(f'Finished grouping nodes by islands in {end_time - start_time} seconds')
+
+
+def switch_to_grouped_outputs(graph):
+    prev_mode = turn_off_viewer(graph)
+    collate_flowering_trees(graph)
+    turn_on_viewer(graph, prev_mode)
+
+
+def hide_types_and_kinds(graph):
+    set_nodes_visible_by_type(graph, 'db.table.types.TypesNode', False)
+    set_nodes_visible_by_type(graph, 'db.table.kinds.KindsNode', False)
+
+
+def show_types_and_kinds(graph):
+    set_nodes_visible_by_type(graph, 'db.table.types.TypesNode', True)
+    set_nodes_visible_by_type(graph, 'db.table.kinds.KindsNode', True)

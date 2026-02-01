@@ -134,9 +134,10 @@ class MyGroupNode(GroupNode):
             current_graph = current_graph.parent_graph
         return current_graph.get_property('meta')
 
-    def set_content_string(self, text):
+    def set_contained_table_description(self, values):
         widget_wrapper = self.get_widget('Contained')
-        widget_wrapper.get_custom_widget().setText(text)
+        table_string = f"{', '.join(sorted(list(set(values))))}\n Table Count: {len(values)}"
+        widget_wrapper.get_custom_widget().setText(table_string)
         widget_wrapper.widget().adjustSize()
         self.view.draw_node()
 

@@ -1,6 +1,6 @@
 from collections import defaultdict, Counter
 from NodeGraphQt import BaseNode
-
+from time import time
 
 from graph.singletons.db_spec_singleton import db_spec
 from graph.utils import flatten, strip_transient_widgets, auto_layout_nodes_minimise_crossing
@@ -23,10 +23,46 @@ def group_nodes_by_table_with_connections(graph):
     layout_and_centre_view(graph)
 
 
-def group_leaf_trees(graph):
+def collate_flowering_trees(graph):
     all_nodes = graph.all_nodes()
-    groups = group_leaves_allow_stubs(all_nodes)
+    groups = group_flowering_leaves(all_nodes)
+    color = (150, 150, 150)
+    node_to_created_group, group_counts = {}, {}
+    _, original_connections = get_groups_and_connections(all_nodes)
+    for (group_id, port_name, port_type), nodes in groups.items():
+        nodes_list = list(nodes)
+        name = f"{graph.get_node_by_id(group_id).get_property('table_name')}_{port_type}"
+        group_node, connection_map = make_group_node(graph, nodes_list, node_to_created_group, name,
+                                     group_name='nodes.group.MyGroupNode', color=color)
+        group_counts[name] = len(nodes_list)
+        sub_graph = group_node.expand()
+        _rewire_subgraph(sub_graph)  # wire internal ports and layout
+        auto_layout_nodes_minimise_crossing(sub_graph, nodes=sub_graph.all_nodes(), down_stream=True)
+        group_node.collapse()
 
+    log.info('nodes grouped:')
+    log.info(sorted([(k, v) for k, v in group_counts.items()], key=lambda x: x[0], reverse=True))
+    _rewire_outer_graph(graph, original_connections, node_to_created_group)
+    delete_displaced_nodes(graph, groups)
+    layout_and_centre_view(graph)
+
+
+def group_leaf_trees(graph, method='leaf_stubs'):
+    all_nodes = graph.all_nodes()
+    start_time = time()
+    if method == 'leaf_stubs':
+        groups = group_leaves_allow_stubs(all_nodes)
+        color = (30, 30, 150)
+    elif method == 'force_forward_chains':
+        groups = force_forward_chains(all_nodes)
+        color = (150, 30, 30)
+    elif method == 'simple_leaf':
+        groups = group_leaves(all_nodes)
+        color = (150, 150, 30)
+    else:
+        print('a')
+    end_group_time = time()
+    print(f'Finished grouping in {end_group_time - start_time}')
     signature_map = defaultdict(list)
     for g_id, nodes in groups.items():
         if len(nodes) > 1:
@@ -35,15 +71,13 @@ def group_leaf_trees(graph):
 
     groups, node_group_map = merge_signature_components(signature_map)
     _, original_connections = get_groups_and_connections(all_nodes)
-    node_to_created_group = {}
-
-    group_counts = {}
+    node_to_created_group, group_counts = {}, {}
     for group_id, nodes in groups.items():
         nodes_list = list(nodes)
         best_root = find_best_root(nodes_list, nodes)
         _, name = name_from_root(best_root)
         group_node, connection_map = make_group_node(graph, nodes_list, node_to_created_group, name,
-                                     group_name='nodes.group.MyGroupNode', color=(30, 30, 150))       # blue
+                                     group_name='nodes.group.MyGroupNode', color=color)
         group_counts[name] = len(nodes_list)
         sub_graph = group_node.expand()
         _rewire_subgraph(sub_graph, connection_map)                 # wire internal ports and layout
@@ -54,7 +88,6 @@ def group_leaf_trees(graph):
     log.info(sorted([(k, v) for k, v in group_counts.items()], key=lambda x: x[0], reverse=True))
 
     _rewire_outer_graph(graph, original_connections, node_to_created_group)
-
     delete_displaced_nodes(graph, groups)
 
     # second pass to group together same table nodes
@@ -70,7 +103,7 @@ def group_leaf_trees(graph):
         make_group_node(graph, nodes, node_group_map, table_name, color=(30, 150, 30))
 
     delete_displaced_nodes(graph, grouped_nodes)
-    layout_aggregate_unconnected(graph)
+    layout_and_centre_view(graph)
     graph.clear_selection()
 
 
@@ -85,13 +118,12 @@ def process_and_group_islands(graph):
             continue
         sub_nodes = flatten(components_list)
         node_tables = signature.split('->')
-        node_names = ", ".join(node_tables)
         most_common_table = sorted([(k, count) for k, count in Counter(node_tables).items()],
                                    key=lambda x: x[1], reverse=True)[0][0]
         group_node, connection_map = make_group_node(graph, sub_nodes, {}, most_common_table)
-        group_node.set_content_string(node_names)
+        group_node.set_contained_table_description(node_tables)
 
-    layout_aggregate_unconnected(graph)
+    layout_and_centre_view(graph)
 
 
 def merge_signature_components(signature_map):
@@ -237,41 +269,65 @@ def identify_leaves(all_nodes):
     return node_group_map, groups
 
 
-def layout_aggregate_unconnected(graph):
-    all_nodes = graph.all_nodes()
-    connected = [i for i in all_nodes if any(port.connected_ports() for port in i.output_ports() + i.input_ports())]
-    unconnected = [i for i in all_nodes if i not in connected]
-    if connected:
-        auto_layout_nodes_minimise_crossing(graph, nodes=connected, down_stream=True)
-        min_x = float('inf')                            # Calculate the Bounding Box of the connected graph
-        max_x, max_y = -float('inf'), -float('inf')
+def force_forward_chains(nodes):
+    """
+    Returns a list of lists, where each inner list is a chain of nodes.
+    Chains are exclusive (a node belongs to only one chain).
+    Chains are formed by grouping nodes connected by non-branching edges.
 
-        for node in connected:
-            x, y = node.x_pos(), node.y_pos()
-            w, h = node.view.width, node.view.height
+    Rule: Node U and Node V (U->V) are in the same chain IF U outputs ONLY to V.
+    """
+    visited, chains = set(), []
+    for node in nodes:
+        if node in visited:
+            continue
 
-            min_x = min(min_x, x)
-            max_x = max(max_x, x + w)
-            max_y = max(max_y, y + h)
+        current_chain = []
+        queue = [node]
+        visited.add(node)
 
-        # fill rows horizontally. When a node would cross max_x, we wrap to the next row.
-        start_x, start_y = min_x, max_y + 150       # 150px below the main graph
-        x_padding, y_padding = 50, 50
+        while queue:
+            curr = queue.pop(0)
+            current_chain.append(curr)
+            curr_out_nodes = get_connected_nodes(curr, output=True, input=False)
+            if len(curr_out_nodes) == 1:
+                nxt = list(curr_out_nodes)[0]
+                if nxt not in visited:
+                    visited.add(nxt)
+                    queue.append(nxt)
+            curr_in_nodes = get_connected_nodes(curr, input=True, output=False)
+            for prev in curr_in_nodes:
+                prev_out_nodes = get_connected_nodes(prev, output=True, input=False)
+                if len(prev_out_nodes) == 1:
+                    # (Implicitly prev_out_nodes == {curr})
+                    if prev not in visited:
+                        visited.add(prev)
+                        queue.append(prev)
 
-        current_x, current_y, row_height = start_x, start_y, 0
-        for node in unconnected:
-            w, h = node.view.width, node.view.height
-            if (current_x + w > max_x) and (current_x > start_x):
-                current_x = start_x
-                current_y += row_height + y_padding
-                row_height = 0  # Reset row height
+        chains.append(current_chain)
+    dict_chains = {i[0].id: i for i in chains}
+    return dict_chains
 
-            node.set_pos(current_x, current_y)
-            current_x += w + x_padding
-            row_height = max(row_height, h)
 
-    elif unconnected:
-        auto_layout_nodes_minimise_crossing(graph, nodes=unconnected)
+def group_flowering_leaves(all_nodes):
+    """Iterates through all nodes, find all output nodes that are stubs, but only
+    if more than two output nodes."""
+    groups = {}
+    for parent_node in all_nodes:
+        for port in parent_node.output_ports():
+            connected_ports = port.connected_ports()
+            nodes_on_this_port = []
+            for cp in connected_ports:
+                downstream_node = cp.node()
+                nodes_on_this_port.append(downstream_node)
+            if len(nodes_on_this_port) > 2:
+                groups[(parent_node.id, port.name(), 'Outputs')] = nodes_on_this_port
+        input_nodes = [i for i in get_connected_nodes(parent_node, input=True, output=False)
+                       if len(get_connected_nodes(i, input=True, output=True)) == 1]
+        if len(input_nodes) > 2:
+            groups[(parent_node.id, 'Input', 'Inputs')] = input_nodes
+
+    return groups
 
 
 def get_weakly_connected_components(graph):     # DFS traversal
@@ -311,7 +367,7 @@ def _rewire_graph(graph, group_node, node_group_map, original_connections):
     _rewire_subgraph(sub_graph)
 
     organize_subgraph_layout(sub_graph)
-    auto_layout_nodes_minimise_crossing(sub_graph,nodes=sub_graph.all_nodes(), down_stream=True)
+    auto_layout_nodes_minimise_crossing(sub_graph, nodes=sub_graph.all_nodes(), down_stream=True)
     sub_graph.set_zoom(0)
     sub_graph.center_on(sub_graph.all_nodes())
     group_node.collapse()
@@ -380,8 +436,7 @@ def make_group_node(graph, nodes, node_group_map, name, group_name=None, color=N
     for node in nodes:
         node_group_map[node.id] = group_node
 
-    node_set = ", ".join(list(set(i.get_property('table_name') for i in nodes)))
-    group_node.set_content_string(node_set)
+    group_node.set_contained_table_description([i.get_property('table_name') or 'Group' for i in nodes])
 
     connection_map = {}
     if group_name == 'nodes.group.MyGroupNode':
@@ -407,7 +462,7 @@ def make_group_node(graph, nodes, node_group_map, name, group_name=None, color=N
                     group_port_name = group_port.name()
                     output_port_names[port_name] = group_port_name
                 else:
-                    group_port_name = output_port_names[port.name()]
+                    group_port_name = output_port_names[port_name]
                 connection_map[(node.id, port_name)] = group_port_name
 
     graph_migrated_params = strip_transient_widgets(nodes)
@@ -423,7 +478,7 @@ def delete_displaced_nodes(graph, grouped_nodes):
         if len(nodes) >= 2:
             nodes_to_delete.extend(nodes)
 
-    graph.delete_nodes(nodes_to_delete, push_undo=True)
+    graph.delete_nodes(list(set(nodes_to_delete)), push_undo=True)
 
 
 def layout_and_centre_view(graph):
