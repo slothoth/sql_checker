@@ -2,8 +2,7 @@ import sqlalchemy.exc
 from sqlalchemy.orm import registry
 import sqlglot
 from sqlglot import exp, TokenError
-from sqlalchemy import PrimaryKeyConstraint, text
-from sqlalchemy import inspect
+from sqlalchemy import PrimaryKeyConstraint, text, inspect
 import sqlite3
 from collections import defaultdict
 from schema_generator import SQLValidator
@@ -96,13 +95,10 @@ def clean_sql(sql_text):
 
 
 def get_table_and_key_vals(orm_instance):
-    mapper = inspect(orm_instance).mapper
-    table_name = mapper.local_table.name
     state = inspect(orm_instance)
-    col_dicts = {
-        attr.key: state.attrs[attr.key].value
-        for attr in state.mapper.column_attrs
-    }
+    mapper = state.mapper
+    table_name = mapper.local_table.name
+    col_dicts = {attr.key: state.attrs[attr.key].value for attr in state.mapper.column_attrs}
     pk_tuple = tuple(getattr(orm_instance, col.name) for col in mapper.local_table.primary_key.columns)
     if table_name == 'Types':
         del col_dicts['Hash']
@@ -260,3 +256,11 @@ def update_delete_transform(update_sql: str, parsed=None, age='AGE_ANTIQUITY'):
                     right = "\n".join(f"{k}: {v[0]} -> {v[1]}" for k, v in changed.items())
                 columns_output_tuples.append((str(*pk), right))
         return columns_output_tuples
+
+
+def instance_has_value(obj, value):
+    mapper = inspect(obj).mapper
+    for column in mapper.column_attrs:
+        if getattr(obj, column.key) == value:
+            return True
+    return False

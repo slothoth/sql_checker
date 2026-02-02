@@ -5,15 +5,17 @@ from sqlglot.errors import ParseError
 import itertools
 from itertools import product
 from collections import defaultdict, deque
+from sqlalchemy import inspect
 from time import time
 
+from graph.singletons.db_spec_singleton import db_spec
 from graph.singletons.filepaths import LocalFilePaths
+from schema_generator import SQLValidator
 from xml_handler import read_xml
 import xml.etree.ElementTree as ET
 from model import convert_xml_to_sql
-from ORM import create_instances_from_sql, get_table_and_key_vals, build_fk_index
+from ORM import create_instances_from_sql, get_table_and_key_vals, build_fk_index, mapped_attr
 from graph.windows import get_combo_value
-from graph.singletons.db_spec_singleton import db_spec
 from constants import modifier_system_tables, ages
 from graph.utils import LogPusher
 
@@ -41,16 +43,19 @@ def build_imported_mod(mod_folder_path, graph):
     start_mod_load_time = time()
     if age is None:     # user clicked x/decline rather than accept
         return False
+    meta = graph.property('meta') or {}
+    meta["Age"] = age
+    graph.setProperty('meta', meta)
     user_switches = [k for k, v in mods_enabled.items() if v]
     user_switches.append(age)
     file_list = resolve_files(sql_info_dict, user_switches, config_params_enabled)      # TODO matts ireland missed file in sql_info_dict
     orm_list, update_delete_list, bad_instances = mod_info_into_orm(sql_info_dict, file_list, age=age, mod_id=mod_id)
     end_orm_list = time()
     LogPusher.push_to_log(f'Parsed convert to ORM instance time {int(end_orm_list - start_mod_load_time)}', log)
-    build_graph_from_orm(graph, orm_list, update_delete_list, age, custom_effects=False)
+    filtered_orm_list = build_graph_from_orm(graph, orm_list, update_delete_list, age, custom_effects=False)
     end_build_graph = time()
     LogPusher.push_to_log(f'total build node time {int(end_build_graph - end_orm_list)}', log)
-    LogPusher.push_to_log(f'Showing {len(orm_list)} nodes', log)
+    LogPusher.push_to_log(f'Showing {len(filtered_orm_list)} nodes', log)
     # build_graph_from_orm_tabs(graph, orm_list, update_delete_list, age)
     return end_build_graph
 
@@ -570,7 +575,7 @@ def build_graph_from_orm_tabs(graph, orm_list, update_delete_list: [(str, str)],
     graph.viewer().blockSignals(False)
     return orm_list
 
-from time import time
+
 def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age: str, custom_effects=True):
     start_time = time()
     fk_index = build_fk_index(orm_list)
@@ -585,9 +590,41 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
         custom_effects)
     end_effect_exclude_time = time()
     LogPusher.push_to_log(f'effect exclude time for {int(end_effect_exclude_time - end_fk_time)}', log)
+    typed_table_cols = {k1: v1 for k1, v1 in {k: [key for key, val in v.items() if val == 'Types']
+                                              for k, v in SQLValidator.fk_to_tbl_map.items()}.items()
+                        if len(v1) > 0}
+    grouped_by_class = defaultdict(list)
+    for obj in orm_list:
+        grouped_by_class[type(obj)].append(obj)
+    table_name_mapper = {k: inspect(v[0]).mapper.local_table.name for k, v in grouped_by_class.items()}
+
+    named_instances = {obj: table_name_mapper[type(obj)] for obj in orm_list}
+    type_dependant_instances = {obj: tbl_name for obj, tbl_name in named_instances.items()
+                                if tbl_name in typed_table_cols}
+
+    aa = {obj: (tbl_name, {k.key:getattr(obj, k.key, None) for k in inspect(obj).mapper.column_attrs})
+          for obj, tbl_name in named_instances.items() if tbl_name in typed_table_cols}
+
+    type_instances = {obj.Type: obj for obj, tbl_name in named_instances.items() if tbl_name == 'Types'}
+    to_delete_types = {}
+    for obj, tbl_name in type_dependant_instances.items():
+        type_cols = typed_table_cols[tbl_name]
+        for col in type_cols:
+            val = getattr(obj, col)
+            if val in type_instances:
+                to_delete_types[val] = type_instances[val]
+
+    filtered_orm_list = set(orm_list) - set(to_delete_types.values())
+    LogPusher.push_to_log(f'When importing mod, stripped out {len(to_delete_types)} Types entries. These'
+                          f'will be reconstituted when building the mod.', log)
+
+    filtered_orm_list = filtered_orm_list - set([k for k, tbl_name in named_instances.items() if tbl_name == 'Kinds'])
+
+    retained = [i.Type for i in filtered_orm_list if str(type(i)) == "<class 'ORM.Types'>"]
+    LogPusher.push_to_log(f'Retained Types {len(retained)} nodes', log)
 
     nodes_dict = defaultdict(dict)             # made nodes
-    for count, orm_instance in enumerate(orm_list):
+    for count, orm_instance in enumerate(filtered_orm_list):
         table_name, col_dicts, pk_tuple = get_table_and_key_vals(orm_instance)
         not_skipped_because_modifiers = modifier_skipped.get(table_name, {}).get(pk_tuple)
         if not_skipped_because_modifiers is None or modifier_system_not_used.get(table_name, {}).get(pk_tuple):
@@ -620,8 +657,7 @@ def build_graph_from_orm(graph, orm_list, update_delete_list: [(str, str)], age:
     graph.viewer().blockSignals(False)
     unblocked_signals_time = time()
     LogPusher.push_to_log(f'unblocked signals time node times for {unblocked_signals_time - end_update_node_time}', log)
-    return orm_list
-
+    return filtered_orm_list
 
 def group_and_exclude_effects(orm_list, custom_effects):
     modifier_skipped, modifier_system_entries = defaultdict(dict), defaultdict(dict)

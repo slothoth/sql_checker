@@ -36,34 +36,31 @@ def transform_json(json_filepath):
     update_nodes = {}
     incompletes_ordered = defaultdict(dict)
     for node_id, val in data['nodes'].items():
+        if val['type_'] == 'nodes.group.MyGroupNode':
+            for sub_node_id, sub_val in val.get('subgraph_session', {}).get('nodes', {}).items():
+                if sub_val['type_'] == 'db.where.WhereNode':
+                    update_nodes[node_id] = val
+                elif sub_val['type_'] in ['nodeGraphQt.nodes.PortInputNode', 'nodeGraphQt.nodes.PortOutputNode']:
+                    continue        # skip port nodes
+                completes, dict_form, loc_form, new_incompletes = process_node(sub_node_id, sub_val, incompletes_ordered)
+                sql_code.extend(completes)
+                dict_form_list.append(dict_form)
+                if len(loc_form) > 0:
+                    loc_dict_list.extend(loc_form)
+                for tbl_name, v in new_incompletes.items():
+                    for key, i in v.items():
+                        incompletes_ordered[tbl_name][key] = i
+            continue
         if val['type_'] == 'db.where.WhereNode':
             update_nodes[node_id] = val
-        custom_properties = val['custom']
-        sql_form = custom_properties.get('sql_form')
-        if isinstance(sql_form, str):
-            sql_commands = [{'sql': f'{i.strip()};', 'node_source': node_id} for i in sql_form.split(';') if len(i) > 0]
-        else:
-            sql_commands = [{'sql': i, 'node_source': node_id} for i in sql_form]
-        incompletes = {idx: i for idx, i in enumerate(sql_commands) if 'MISSING REQUIRED COLUMNS' in i['sql'] or 'NO COLUMNS PRESENT' in i['sql']}
-        completes = [i for i in sql_commands if i not in incompletes.values()]
+        completes, dict_form, loc_form, new_incompletes = process_node(node_id, val, incompletes_ordered)
         sql_code.extend(completes)
-        dict_form = custom_properties.get('dict_sql')
-        dict_form_list.append({'sql': dict_form, 'node_source': node_id})
-        loc_form = custom_properties.get('loc_sql_form', [])
+        dict_form_list.append(dict_form)
         if len(loc_form) > 0:
             loc_dict_list.extend(loc_form)
-        for idx, i in incompletes.items():
-            if isinstance(dict_form, list):
-                dict_form = dict_form[idx]
-            tbl_name = dict_form['table_name']
-            primary_key_cols = db_spec.node_templates[tbl_name].get("primary_keys")
-            pk_dict = {k: v for k, v in dict_form['columns'].items() if k in primary_key_cols}
-            pk_tuple = tuple([v for k, v in pk_dict.items()])
-            if len(pk_tuple) == 0 or pk_tuple in incompletes_ordered[tbl_name]:
-                key = (i['node_source'], tbl_name)                       # for very broken ones with no pk tuple
-            else:
-                key = pk_tuple
-            incompletes_ordered[tbl_name][key] = i
+        for tbl_name, v in new_incompletes.items():
+            for key, i in v.items():
+                incompletes_ordered[tbl_name][key] = i
 
     if len(error_string) > 0:
         return error_string
@@ -74,6 +71,36 @@ def transform_json(json_filepath):
                                          for i in loc_dict_list if i['Text'] != '') + ';'
 
     return sql_code, dict_form_list, loc_code, dict(incompletes_ordered)
+
+
+def process_node(node_id, val, incompletes_ordered):
+    custom_properties = val['custom']
+    sql_form = custom_properties.get('sql_form')
+    if isinstance(sql_form, str):
+        sql_commands = [{'sql': f'{i.strip()};', 'node_source': node_id} for i in sql_form.split(';') if len(i) > 0]
+    else:
+        sql_commands = [{'sql': i, 'node_source': node_id} for i in sql_form]
+    incompletes = {idx: i for idx, i in enumerate(sql_commands) if
+                   'MISSING REQUIRED COLUMNS' in i['sql'] or 'NO COLUMNS PRESENT' in i['sql']}
+    completes = [i for i in sql_commands if i not in incompletes.values()]
+    dict_form = custom_properties.get('dict_sql')
+    loc_form = custom_properties.get('loc_sql_form', [])
+
+    new_incompletes = defaultdict(dict)
+    for idx, i in incompletes.items():
+        if isinstance(dict_form, list):
+            dict_form = dict_form[idx]
+        tbl_name = dict_form['table_name']
+        primary_key_cols = db_spec.node_templates[tbl_name].get("primary_keys")
+        pk_dict = {k: v for k, v in dict_form['columns'].items() if k in primary_key_cols}
+        pk_tuple = tuple([v for k, v in pk_dict.items()])
+        if len(pk_tuple) == 0 or pk_tuple in incompletes_ordered[tbl_name]:
+            key = (i['node_source'], tbl_name)  # for very broken ones with no pk tuple
+        else:
+            key = pk_tuple
+        new_incompletes[tbl_name][key] = i
+
+    return completes, {'sql': dict_form, 'node_source': node_id}, loc_form, new_incompletes
 
 
 def argument_transform(sql_code, error_string, dict_form_list, effect_string, effect_id, custom_properties, type_arg,

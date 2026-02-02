@@ -1,525 +1,18 @@
-from collections import defaultdict, Counter
+import math
+import random
+from collections import defaultdict
 from NodeGraphQt import BaseNode
-from time import time
 
-from graph.singletons.db_spec_singleton import db_spec
-from graph.utils import flatten, strip_transient_widgets, auto_layout_nodes_minimise_crossing
+from graph.utils import auto_layout_nodes_minimise_crossing
 
 import logging
 
 log = logging.getLogger(__name__)
 
 
-def group_nodes_by_table_with_connections(graph):
-    original_connections, node_group_map, grouped_nodes = [], {}, defaultdict(list)
-    all_nodes = graph.all_nodes()
-    grouped_nodes, original_connections = get_groups_and_connections(all_nodes)
-    for table_name, nodes in grouped_nodes.items():
-        group_node, connection_map = make_group_node(graph, nodes, node_group_map, table_name)
-        if group_node is not None:
-            _rewire_graph(graph, group_node, node_group_map, original_connections)
-
-    delete_displaced_nodes(graph, grouped_nodes)
-    layout_and_centre_view(graph)
-
-
-def collate_flowering_trees(graph):
-    all_nodes = graph.all_nodes()
-    groups = group_flowering_leaves(all_nodes)
-    color = (150, 150, 150)
-    node_to_created_group, group_counts = {}, {}
-    _, original_connections = get_groups_and_connections(all_nodes)
-    for (group_id, port_name, port_type), nodes in groups.items():
-        nodes_list = list(nodes)
-        name = f"{graph.get_node_by_id(group_id).get_property('table_name')}_{port_type}"
-        group_node, connection_map = make_group_node(graph, nodes_list, node_to_created_group, name,
-                                     group_name='nodes.group.MyGroupNode', color=color)
-        group_counts[name] = len(nodes_list)
-        sub_graph = group_node.expand()
-        _rewire_subgraph(sub_graph)  # wire internal ports and layout
-        auto_layout_nodes_minimise_crossing(sub_graph, nodes=sub_graph.all_nodes(), down_stream=True)
-        group_node.collapse()
-
-    log.info('nodes grouped:')
-    log.info(sorted([(k, v) for k, v in group_counts.items()], key=lambda x: x[0], reverse=True))
-    _rewire_outer_graph(graph, original_connections, node_to_created_group)
-    delete_displaced_nodes(graph, groups)
-    layout_and_centre_view(graph)
-
-
-def group_leaf_trees(graph, method='leaf_stubs'):
-    all_nodes = graph.all_nodes()
-    start_time = time()
-    if method == 'leaf_stubs':
-        groups = group_leaves_allow_stubs(all_nodes)
-        color = (30, 30, 150)
-    elif method == 'force_forward_chains':
-        groups = force_forward_chains(all_nodes)
-        color = (150, 30, 30)
-    elif method == 'simple_leaf':
-        groups = group_leaves(all_nodes)
-        color = (150, 150, 30)
-    else:
-        print('a')
-    end_group_time = time()
-    print(f'Finished grouping in {end_group_time - start_time}')
-    signature_map = defaultdict(list)
-    for g_id, nodes in groups.items():
-        if len(nodes) > 1:
-            sig = get_structural_signature(nodes)
-            signature_map[sig].append(nodes)
-
-    groups, node_group_map = merge_signature_components(signature_map)
-    _, original_connections = get_groups_and_connections(all_nodes)
-    node_to_created_group, group_counts = {}, {}
-    for group_id, nodes in groups.items():
-        nodes_list = list(nodes)
-        best_root = find_best_root(nodes_list, nodes)
-        _, name = name_from_root(best_root)
-        group_node, connection_map = make_group_node(graph, nodes_list, node_to_created_group, name,
-                                     group_name='nodes.group.MyGroupNode', color=color)
-        group_counts[name] = len(nodes_list)
-        sub_graph = group_node.expand()
-        _rewire_subgraph(sub_graph, connection_map)                 # wire internal ports and layout
-        auto_layout_nodes_minimise_crossing(sub_graph, nodes=sub_graph.all_nodes(), down_stream=True)
-        group_node.collapse()
-
-    log.info('nodes grouped:')
-    log.info(sorted([(k, v) for k, v in group_counts.items()], key=lambda x: x[0], reverse=True))
-
-    _rewire_outer_graph(graph, original_connections, node_to_created_group)
-    delete_displaced_nodes(graph, groups)
-
-    # second pass to group together same table nodes
-    connected = [i for i in graph.all_nodes()
-                 if any(port.connected_ports() for port in i.output_ports() + i.input_ports())]
-    unconnected = [i for i in graph.all_nodes() if i not in connected and i.type_ != 'nodes.group.MyGroupNode']
-
-    node_group_map = {}
-    grouped_nodes, original_connections = get_groups_and_connections(unconnected)
-
-    viable_groups = {k: v for k, v in grouped_nodes.items() if len(v) > 1}
-    for table_name, nodes in viable_groups.items():
-        make_group_node(graph, nodes, node_group_map, table_name, color=(30, 150, 30))
-
-    delete_displaced_nodes(graph, grouped_nodes)
-    layout_and_centre_view(graph)
-    graph.clear_selection()
-
-
-def process_and_group_islands(graph):
-    islands, unused_connections = get_weakly_connected_components(graph)
-    islands_by_signature = defaultdict(list)
-    for island_nodes in islands:
-        sig = get_chain_signature(island_nodes)
-        islands_by_signature[sig].append(island_nodes)
-    for signature, components_list in islands_by_signature.items():
-        if len(components_list) == 1 and len(components_list[0]) == 1:
-            continue
-        sub_nodes = flatten(components_list)
-        node_tables = signature.split('->')
-        most_common_table = sorted([(k, count) for k, count in Counter(node_tables).items()],
-                                   key=lambda x: x[1], reverse=True)[0][0]
-        group_node, connection_map = make_group_node(graph, sub_nodes, {}, most_common_table)
-        group_node.set_contained_table_description(node_tables)
-
-    layout_and_centre_view(graph)
-
-
-def merge_signature_components(signature_map):
-    groups, node_group_map, group_counter = {}, {}, 0
-    for sig, clusters in signature_map.items():
-        merged_set = set()
-        for c in clusters:
-            merged_set.update(c)
-
-        new_id = f"merged_group_{group_counter}"  # assign group id
-        groups[new_id] = merged_set
-        for n in merged_set:
-            node_group_map[n.id] = new_id
-        group_counter += 1
-    return groups, node_group_map
-
-
-def get_nodes_with_connections(all_nodes, node_group_map):
-    candidate_parents = []  # Find parents that have outputs connected to something
-    for node in all_nodes:
-        if node.id in node_group_map:
-            continue
-        if any(p.connected_ports() for p in node.outputs().values()):
-            candidate_parents.append(node)
-    return candidate_parents
-
-
-def get_connected_nodes(node, input=True, output=False):
-    connected_nodes = set()
-    port_connections = []
-    if input:
-        port_connections = port_connections + node.input_ports()
-    if output:
-        port_connections = port_connections + node.output_ports()
-    for port in port_connections:
-        for connected_port in port.connected_ports():
-            connected_nodes.add(connected_port.node())
-    return connected_nodes
-
-
-def group_leaves_allow_stubs(all_nodes):                # better than normal leaf algo
-    node_group_map, groups = identify_leaves(all_nodes)
-    changed = True
-    while changed:
-        changed = False
-        candidate_parents = get_nodes_with_connections(all_nodes, node_group_map)
-
-        for parent in candidate_parents:
-            absorbable_groups, children = set(), set()          # Get all children connected to outputs
-            children = get_connected_nodes(parent, input=False, output=True)
-            if not children:
-                continue
-            for child in children:
-                if child.id not in node_group_map:
-                    continue
-                unique_parents = get_connected_nodes(child, input=True, output=False)
-                non_stub_parents = 0        # Allow merge if other parents are stubs
-                for p in unique_parents:
-                    has_inputs = any(port.connected_ports() for port in p.inputs().values())   # No Inputs Upstream
-                    # Downstream port should only include the child object, so max 1
-                    simple_outputs = sum(len(port.connected_ports()) for port in p.outputs().values()) < 2
-                    is_stub = (not has_inputs) and simple_outputs
-                    if not is_stub:
-                        non_stub_parents += 1
-
-                if non_stub_parents < 2:            # only add if one non-stub parent
-                    absorbable_groups.add(node_group_map[child.id])
-
-            # Merge parent and valid children groups
-            if absorbable_groups:
-                primary_set, primary_group_id = merge_existing_groups(groups, absorbable_groups, node_group_map)
-                primary_set.add(parent)
-                node_group_map[parent.id] = primary_group_id
-                changed = True
-    return groups
-
-
-def group_leaves(all_nodes):
-    node_group_map, groups = identify_leaves(all_nodes)
-    changed = True
-    while changed:
-        changed = False
-        candidate_parents = get_nodes_with_connections(all_nodes, node_group_map)
-        for parent in candidate_parents:
-            absorbable_groups = set()         # Get all children connected to outputs
-            children = get_connected_nodes(parent, input=False, output=True)
-            if not children:
-                continue
-            can_absorb = True
-            for child in children:
-                if child.id not in node_group_map:          # Must be grouped
-                    can_absorb = False
-                    break
-                unique_parents = get_connected_nodes(child, input=True, output=False)   # Exclusive Check (No Merge)
-                if len(unique_parents) != 1:
-                    can_absorb = False
-                    break
-
-                absorbable_groups.add(node_group_map[child.id])
-
-            if can_absorb and absorbable_groups:
-                primary_set, primary_group_id = merge_existing_groups(groups, absorbable_groups, node_group_map)
-                primary_set.add(parent)
-                node_group_map[parent.id] = primary_group_id
-                changed = True
-
-    return groups
-
-
-def merge_existing_groups(groups, absorbable_groups, node_group_map):
-    primary_group_id = list(absorbable_groups)[0]
-    primary_set = groups[primary_group_id]
-
-    # Merge existing groups
-    for other_id in absorbable_groups:
-        if other_id == primary_group_id:
-            continue
-
-        nodes_to_move = groups[other_id]
-        primary_set.update(nodes_to_move)
-
-        for n in nodes_to_move:
-            node_group_map[n.id] = primary_group_id
-
-        del groups[other_id]
-
-    return primary_set, primary_group_id
-
-
-def identify_leaves(all_nodes):
-    node_group_map, groups = {}, {}
-    for node in all_nodes:
-        is_leaf = True
-        for port in node.outputs().values():
-            if port.connected_ports():
-                is_leaf = False
-                break
-
-        if is_leaf:
-            group_id = node.id
-            node_group_map[node.id] = group_id
-            groups[group_id] = {node}
-    return node_group_map, groups
-
-
-def force_forward_chains(nodes):
-    """
-    Returns a list of lists, where each inner list is a chain of nodes.
-    Chains are exclusive (a node belongs to only one chain).
-    Chains are formed by grouping nodes connected by non-branching edges.
-
-    Rule: Node U and Node V (U->V) are in the same chain IF U outputs ONLY to V.
-    """
-    visited, chains = set(), []
-    for node in nodes:
-        if node in visited:
-            continue
-
-        current_chain = []
-        queue = [node]
-        visited.add(node)
-
-        while queue:
-            curr = queue.pop(0)
-            current_chain.append(curr)
-            curr_out_nodes = get_connected_nodes(curr, output=True, input=False)
-            if len(curr_out_nodes) == 1:
-                nxt = list(curr_out_nodes)[0]
-                if nxt not in visited:
-                    visited.add(nxt)
-                    queue.append(nxt)
-            curr_in_nodes = get_connected_nodes(curr, input=True, output=False)
-            for prev in curr_in_nodes:
-                prev_out_nodes = get_connected_nodes(prev, output=True, input=False)
-                if len(prev_out_nodes) == 1:
-                    # (Implicitly prev_out_nodes == {curr})
-                    if prev not in visited:
-                        visited.add(prev)
-                        queue.append(prev)
-
-        chains.append(current_chain)
-    dict_chains = {i[0].id: i for i in chains}
-    return dict_chains
-
-
-def group_flowering_leaves(all_nodes):
-    """Iterates through all nodes, find all output nodes that are stubs, but only
-    if more than two output nodes."""
-    groups = {}
-    for parent_node in all_nodes:
-        for port in parent_node.output_ports():
-            connected_ports = port.connected_ports()
-            nodes_on_this_port = []
-            for cp in connected_ports:
-                downstream_node = cp.node()
-                nodes_on_this_port.append(downstream_node)
-            if len(nodes_on_this_port) > 2:
-                groups[(parent_node.id, port.name(), 'Outputs')] = nodes_on_this_port
-        input_nodes = [i for i in get_connected_nodes(parent_node, input=True, output=False)
-                       if len(get_connected_nodes(i, input=True, output=True)) == 1]
-        if len(input_nodes) > 2:
-            groups[(parent_node.id, 'Input', 'Inputs')] = input_nodes
-
-    return groups
-
-
-def get_weakly_connected_components(graph):     # DFS traversal
-    visited, components = set(), []
-
-    all_nodes = graph.all_nodes()
-    grouped_nodes, original_connections = get_groups_and_connections(all_nodes)
-
-    for node in all_nodes:
-        if node in visited:
-            continue
-
-        component_nodes, stack = [], [node]
-        while stack:
-            current_node = stack.pop()
-            if current_node in visited:
-                continue
-            visited.add(current_node)
-            component_nodes.append(current_node)
-            neighbors = []
-            if isinstance(current_node, BaseNode):
-                input_conn = current_node.connected_input_nodes()
-                for connected_list in input_conn.values():
-                    neighbors.extend(connected_list)
-                output_conn = current_node.connected_output_nodes()
-                for connected_list in output_conn.values():
-                    neighbors.extend(connected_list)
-            for neighbor in neighbors:                      # Add unvisited neighbors to the stack
-                if neighbor not in visited:
-                    stack.append(neighbor)
-        components.append(component_nodes)
-    return components, original_connections
-
-
-def _rewire_graph(graph, group_node, node_group_map, original_connections):
-    sub_graph = group_node.expand()
-    _rewire_subgraph(sub_graph)
-
-    organize_subgraph_layout(sub_graph)
-    auto_layout_nodes_minimise_crossing(sub_graph, nodes=sub_graph.all_nodes(), down_stream=True)
-    sub_graph.set_zoom(0)
-    sub_graph.center_on(sub_graph.all_nodes())
-    group_node.collapse()
-
-    _rewire_outer_graph(graph, original_connections, node_group_map)
-
-
-def _rewire_subgraph(sub_graph, connection_map=None):
-    if connection_map is None:
-        inner_inputs = {n.name(): n for n in sub_graph.get_input_port_nodes()}
-        inner_outputs = {n.name(): n for n in sub_graph.get_output_port_nodes()}
-
-        for inner_node in sub_graph.all_nodes():
-            if inner_node.type_ in ['nodeGraphQt.nodes.PortInputNode', 'nodeGraphQt.nodes.PortOutputNode']:
-                continue
-
-            for port_name, port in inner_node.inputs().items():
-                if port_name in inner_inputs:
-                    inner_inputs[port_name].output(0).connect_to(port)
-
-            for port_name, port in inner_node.outputs().items():
-                if port_name in inner_outputs:
-                    inner_outputs[port_name].input(0).connect_to(port)
-    else:
-        bridge_nodes = {n.name(): n for n in sub_graph.get_input_port_nodes()}
-        for internal_node in sub_graph.all_nodes():
-            if internal_node.type_ in ['nodeGraphQt.nodes.PortInputNode', 'nodeGraphQt.nodes.PortOutputNode']:
-                continue
-            for port_name, port in internal_node.inputs().items():
-                key = (internal_node.id, port_name)
-                if key in connection_map:
-                    group_port_name = connection_map[key]
-                    bridge_node = bridge_nodes.get(group_port_name)
-                    if bridge_node:
-                        bridge_node.output(0).connect_to(port)
-
-
-def _rewire_outer_graph(graph, original_connections, node_group_map):
-    for src_id, src_port, dst_id, dst_port in original_connections:
-        src_node = node_group_map.get(src_id) or graph.get_node_by_id(src_id)
-        dst_node = node_group_map.get(dst_id) or graph.get_node_by_id(dst_id)
-
-        if not src_node or not dst_node or src_node == dst_node:
-            continue
-        try:
-            s_port = src_node.outputs().get(src_port)
-            d_port = dst_node.inputs().get(dst_port)
-            if s_port and d_port:
-                s_port.connect_to(d_port)
-        except Exception as e:
-            pass
-
-
-def make_group_node(graph, nodes, node_group_map, name, group_name=None, color=None):  # utils
-    center_x = sum([n.x_pos() for n in nodes]) / len(nodes)
-    center_y = sum([n.y_pos() for n in nodes]) / len(nodes)
-
-    if group_name is None:
-        group_name = f"{nodes[0].__identifier__.replace('.table.', '.group.')}.{name.title()}Node"
-        if group_name not in graph.registered_nodes():
-            group_name = 'nodes.group.MyGroupNode'
-
-    group_node = graph.create_node(group_name, name=name, pos=[center_x, center_y], push_undo=True, selected=False)
-    if color is not None:
-        group_node.set_color(*color)
-    for node in nodes:
-        node_group_map[node.id] = group_node
-
-    group_node.set_contained_table_description([i.get_property('table_name') or 'Group' for i in nodes])
-
-    connection_map = {}
-    if group_name == 'nodes.group.MyGroupNode':
-        node_class_set = {node.get_property('table_name'): node for node in nodes}      # setify
-        input_port_names, output_port_names = {}, {}
-        for table_name, node in node_class_set.items():
-            # Check Inputs
-            for port in node.input_ports():
-                if port.name() not in input_port_names:
-                    group_port = group_node.add_input(name=port.name(), multi_input=True)
-                    group_port_name = group_port.name()
-                    input_port_names[port.name()] = group_port_name
-                else:
-                    group_port_name = input_port_names[port.name()]
-                connection_map[(node.id, port.name())] = group_port_name
-        for table_name, node in node_class_set.items():
-            for port in node.output_ports():
-                port_name = port.name()
-                if port_name in input_port_names:
-                    port_name = f"{port_name} 1"
-                if port_name not in output_port_names:
-                    group_port = group_node.add_output(name=port_name)
-                    group_port_name = group_port.name()
-                    output_port_names[port_name] = group_port_name
-                else:
-                    group_port_name = output_port_names[port_name]
-                connection_map[(node.id, port_name)] = group_port_name
-
-    graph_migrated_params = strip_transient_widgets(nodes)
-    raw_session = graph._serialize(nodes)
-    normalized_session = normalize_session_coordinates(raw_session)
-    group_node.set_sub_graph_session(normalized_session)
-    return group_node, connection_map
-
-
-def delete_displaced_nodes(graph, grouped_nodes):
-    nodes_to_delete = []
-    for nodes in grouped_nodes.values():
-        if len(nodes) >= 2:
-            nodes_to_delete.extend(nodes)
-
-    graph.delete_nodes(list(set(nodes_to_delete)), push_undo=True)
-
-
 def layout_and_centre_view(graph):
     auto_layout_nodes_minimise_crossing(graph, nodes=graph.all_nodes(), down_stream=True)
-    graph.select_all()
-    graph.fit_to_selection()
-    graph.clear_selection()
-
-
-def get_groups_and_connections(node_subset):
-    original_connections, grouped_nodes = [], defaultdict(list)
-    for node in node_subset:
-        table_name = node.get_property('table_name')
-        if table_name and table_name not in ['GameEffectCustom', 'ReqEffectCustom']:
-            grouped_nodes[table_name].append(node)
-        for port_name, port_obj in node.outputs().items():
-            for connected_port in port_obj.connected_ports():
-                conn_tuple = (node.id, port_name, connected_port.node().id, connected_port.name())
-                original_connections.append(conn_tuple)
-
-    return grouped_nodes, original_connections
-
-
-def get_structural_signature(nodes_set):
-    """ Format: (src_index, src_port, dst_index, dst_port)"""
-    nodes_list = list(nodes_set)
-    nodes_list.sort(key=lambda n: n.__identifier__)
-    node_to_idx = {n: i for i, n in enumerate(nodes_list)}
-    type_sig = tuple(n.__identifier__ for n in nodes_list)
-    conn_sig = []
-    for n in nodes_list:
-        src_idx = node_to_idx[n]
-        for port_name, port in n.outputs().items():
-            for cp in port.connected_ports():
-                dst_node = cp.node()
-                if dst_node in nodes_set:
-                    dst_idx = node_to_idx[dst_node]
-                    conn_sig.append((src_idx, port_name, dst_idx, cp.name()))
-
-    conn_sig.sort()
-    return type_sig, tuple(conn_sig)
+    graph._viewer.zoom_to_nodes([n.view for n in graph.all_nodes()])
 
 
 def normalize_session_coordinates(session_data):
@@ -542,46 +35,6 @@ def normalize_session_coordinates(session_data):
         node_data['pos'] = [original_x - center_x, original_y - center_y]
 
     return session_data
-
-
-def find_best_root(nodes_list, nodes):
-    """Find a Root for naming purposes. Use the first root-like node, and use its primary key tuple"""
-    best_root = nodes_list[0]
-    min_internal = 9999
-    for n in nodes_list:
-        count = 0
-        for p in n.inputs().values():
-            for cp in p.connected_ports():
-                if cp.node() in nodes:
-                    count += 1
-        if count < min_internal:
-            min_internal = count
-            best_root = n
-    return best_root
-
-
-def name_from_root(best_root):
-    base_id = best_root.__identifier__
-    group_class_name = "nodes.group.MyGroupNode"
-    if '.table.' in base_id:
-        group_class_name = db_spec.table_name_id_mapper[best_root.get_property('table_name')]
-    name = best_root.name() + "_Group"
-    if 'db.table.' in best_root.type_:  # we can use primary key
-        pk_list = best_root.primary_keys  # TODO we currently use pk, but if there are plural signatures, should use signature
-        pk_values = [best_root.get_property(i) for i in
-                     pk_list]  # TODO translate signature using db_spec.table_name_id_mapper
-        if all(pk_values):
-            name = ", ".join(pk_values)
-    return group_class_name, name
-
-
-def get_chain_signature(nodes):
-    node_names = list(set([i.get_property('table_name') for i in nodes]))
-    if not all(i in ['Types', 'Kinds'] for i in node_names):
-        node_names = [i for i in node_names if i not in ['Types', 'Kinds']]
-    sorted_nodes = sorted(node_names)
-    signature = "->".join([name for name in sorted_nodes])      # Create signature from types
-    return signature
 
 
 def organize_subgraph_layout(sub_graph, padding=300, vertical_spacing=100):
@@ -623,3 +76,558 @@ def organize_subgraph_layout(sub_graph, padding=300, vertical_spacing=100):
 
         for i, node in enumerate(output_nodes):
             node.set_pos(x_pos, start_y + (i * vertical_spacing))
+
+
+def layout_force_directed(graph,
+                          nodes=None,
+                          iterations=100,
+                          repulsion_strength=100.0,
+                          spring_stiffness=0.05,
+                          gravity=0.01,
+                          flow_bias=0.0):
+    """
+    Applies a force-directed layout to the NodeGraphQt instance.
+
+    Args:
+        graph (NodeGraph): The main graph controller.
+        nodes (list): Optional list of nodes to layout. Defaults to all nodes.
+        iterations (int): How many physics steps to run.
+        repulsion_strength (float): Factor for how much nodes push apart.
+        spring_stiffness (float): How strongly connections pull nodes together.
+        gravity (float): How much the graph should pull in on each step
+        flow_bias (float): 0.0 to 1.0. Adds a force pushing children to the right
+                           to respect the Input(Left)->Output(Right) flow.
+    """
+
+    # 1. Setup Phase
+    # ---------------------------------------------------------
+    if nodes is None:
+        nodes = graph.all_nodes()
+
+    # Filter out Backdrops or other non-BaseNodes that shouldn't move independently
+    active_nodes = [n for n in nodes if isinstance(n, BaseNode)]
+
+    if not active_nodes:
+        return
+
+    # Map node objects to a lightweight data structure for calculation
+    # struct: { node_id: {'x': float, 'y': float, 'w': float, 'h': float, 'obj': node} }
+    node_data = {}
+
+    # Pre-calculate center points and sizes
+    for node in active_nodes:
+        # We use the view's width/height to ensure we respect the actual UI size
+        w = node.view.width + 50  # Add padding to width
+        h = node.view.height + 50  # Add padding to height
+        x, y = node.pos()
+
+        node_data[node.id] = {
+            'x': x,
+            'y': y,
+            'w': w,
+            'h': h,
+            'r': (w+h) / 4,
+            'dx': 0.0,  # Velocity/Displacement X
+            'dy': 0.0,  # Velocity/Displacement Y
+            'obj': node
+        }
+
+    node_ids = list(node_data.keys())
+
+    # Build efficient edge list for spring forces
+    edges = []
+    for node in active_nodes:
+        # connected_output_nodes returns { port_name: [node_list] }
+        outputs = node.connected_output_nodes()
+        for port_name, connected_nodes_list in outputs.items():
+            for target_node in connected_nodes_list:
+                if target_node.id in node_data:
+                    edges.append((node.id, target_node.id))
+
+    # 2. Simulation Loop
+    # ---------------------------------------------------------
+
+    # Cooling factor: Movement decreases as iterations progress
+    initial_temperature = 10.0
+
+    for i in range(iterations):
+        progress = i / iterations
+        temperature = initial_temperature * (1.0 - progress)
+
+        # A. Reset forces (displacements)
+        for nid in node_ids:
+            node_data[nid]['dx'] = 0.0
+            node_data[nid]['dy'] = 0.0
+
+        # B. Repulsion (All nodes repel all other nodes)
+        # Optimized: Only calculate distinct pairs
+        for idx, nid1 in enumerate(node_ids):
+            n1 = node_data[nid1]
+            for nid2 in node_ids[idx + 1:]:
+                n2 = node_data[nid2]
+
+                dx = n1['x'] - n2['x']
+                dy = n1['y'] - n2['y']
+
+                dist_sq = dx * dx + dy * dy
+
+                # Prevent division by zero and extreme overlaps
+                if dist_sq < 0.01:
+                    dx = random.uniform(-1, 1)
+                    dy = random.uniform(-1, 1)
+                    dist = 1.0
+                else:
+                    dist = math.sqrt(dist_sq)
+
+                # Custom Repulsion:
+                # Use the combined radius of the nodes to prevent overlap.
+                # Nodes are rectangles, so we approximate "radius" based on width/height.
+                min_dist = (n1['w'] + n2['w']) / 2.0
+
+                # If nodes are overlapping or too close, repulsion skyrockets
+                force = (repulsion_strength * repulsion_strength) / dist
+
+                # Direction vector
+                fx = (dx / dist) * force
+                fy = (dy / dist) * force
+
+                n1['dx'] += fx
+                n1['dy'] += fy
+                n2['dx'] -= fx
+                n2['dy'] -= fy
+
+        # C. Attraction (Springs connect related nodes)
+        for source_id, target_id in edges:
+            n1 = node_data[source_id]
+            n2 = node_data[target_id]
+
+            dx = n1['x'] - n2['x']
+            dy = n1['y'] - n2['y']
+            dist = math.sqrt(dx * dx + dy * dy) or 1.0
+
+            # Hooke's Law: F = -k * (current_length - ideal_length)
+            current_spring_length = n1['r'] + n2['r']
+            displacement = dist - current_spring_length
+            force = displacement * spring_stiffness
+
+            fx = (dx / dist) * force
+            fy = (dy / dist) * force
+
+            n1['dx'] -= fx
+            n1['dy'] -= fy
+            n2['dx'] += fx
+            n2['dy'] += fy
+
+            # D. Flow Bias (Directional Force)
+            # Push Target to the Right, Source to the Left
+            # This helps organize inputs on left, outputs on right
+            if flow_bias > 0:
+                flow_force = flow_bias * 50.0  # Constant push
+                n2['dx'] += flow_force
+                n1['dx'] -= flow_force
+
+        # E. Apply Forces & Temperature
+        for nid in node_ids:
+            node = node_data[nid]
+
+            node['x'] -= node['x'] * gravity       # pull back in
+            node['y'] -= node['y'] * gravity
+
+            # Normalize displacement direction
+            disp_len = math.sqrt(node['dx'] ** 2 + node['dy'] ** 2)
+            if disp_len > 0:
+                # Limit movement by temperature to prevent exploding layout
+                move_dist = min(disp_len, temperature * 10.0)
+
+                node['x'] += (node['dx'] / disp_len) * move_dist
+                node['y'] += (node['dy'] / disp_len) * move_dist
+
+    # 3. Apply to Graph
+    # ---------------------------------------------------------
+
+    # Calculate bounds to center the graph after layout
+    min_x, max_x = float('inf'), float('-inf')
+    min_y, max_y = float('inf'), float('-inf')
+
+    for nid, data in node_data.items():
+        min_x = min(min_x, data['x'])
+        max_x = max(max_x, data['x'])
+        min_y = min(min_y, data['y'])
+        max_y = max(max_y, data['y'])
+
+    center_x = (min_x + max_x) / 2
+    center_y = (min_y + max_y) / 2
+
+    # Apply positions relative to 0,0 (or keep relative to previous center)
+    for nid, data in node_data.items():
+        # Final set_pos
+        data['obj'].set_pos(data['x'] - center_x, data['y'] - center_y)
+
+
+def arrange_leaves(nodes):
+    """
+    Post-processing step to neatly stack leaf nodes with one parent vertically.
+    """
+    parent_leaves, processed_leaves = {}, set()
+    for node in nodes:
+        # 1. Must be a Parent (has outputs)
+        if not node.output_ports():
+            continue
+
+        leaves_for_this_parent = []
+
+        # Iterate ports in order (Top -> Bottom)
+        for port in node.output_ports():
+            target_ports = port.connected_ports()
+
+            for target_port in target_ports:
+                leaf_candidate = target_port.node()
+
+                # --- FILTERING LOGIC ---
+
+                # A. Skip if it's the parent itself (loopback)
+                if leaf_candidate == node:
+                    continue
+
+                # B. Skip if it has outputs (it's not a leaf, it's a branch)
+                # connected_output_nodes returns a dict, empty dict means no outputs
+                if any(leaf_candidate.connected_output_nodes().values()):
+                    continue
+
+                # C. Skip if already processed
+                if leaf_candidate.id in processed_leaves:
+                    continue
+
+                # D. STRICT PARENT CHECK (The new part)
+                # Get all input connections: { 'port_name': [NodeObj, NodeObj] }
+                input_data = leaf_candidate.connected_input_nodes()
+
+                # Flatten all lists into one set of unique nodes
+                all_parents = set()
+                for connected_node_list in input_data.values():
+                    all_parents.update(connected_node_list)
+
+                # If there is more than 1 unique parent, let physics handle it.
+                if len(all_parents) != 1:
+                    continue
+
+                # -----------------------
+
+                leaves_for_this_parent.append(leaf_candidate)
+                processed_leaves.add(leaf_candidate.id)
+
+        if leaves_for_this_parent:
+            parent_leaves[node] = leaves_for_this_parent
+
+    # 2. Position the Stacks
+    for parent, leaves in parent_leaves.items():
+        if not leaves:
+            continue
+
+        parent_x, parent_y = parent.pos()
+        parent_w = parent.view.width
+        parent_h = parent.view.height
+
+        # Calculate stack height to center it
+        total_stack_height = sum(leaf.view.height for leaf in leaves)
+        padding = 10.0
+        total_stack_height += padding * (len(leaves) - 1)
+
+        # Start Y: Center of parent - Half of stack height
+        start_y = (parent_y + parent_h / 2.0) - (total_stack_height / 2.0)
+        start_x = parent_x + parent_w + 100.0
+
+        current_y = start_y
+        for leaf in leaves:
+            leaf.set_pos(start_x, current_y)
+            current_y += leaf.view.height + padding
+
+
+def pack_orphans(nodes):
+    orphans = []
+    for node in nodes:
+        has_inputs = any(node.connected_input_nodes().values())
+        has_outputs = any(node.connected_output_nodes().values())
+        if not has_inputs and not has_outputs:
+            orphans.append(node)
+    if not orphans:
+        return []
+    orphans.sort(key=lambda n: n.view.height)
+    count = len(orphans)
+    cols = math.ceil(math.sqrt(count))
+    rows = math.ceil(count / cols)
+    gap_x, gap_y = 10.0, 10.0
+    col_widths = [0.0] * cols
+    row_heights = [0.0] * rows
+
+    for i, node in enumerate(orphans):
+        col = i % cols
+        row = i // cols
+        if node.view.width > col_widths[col]:
+            col_widths[col] = node.view.width
+        if node.view.height > row_heights[row]:
+            row_heights[row] = node.view.height
+
+    start_x, start_y = orphans[0].pos()         # Place Nodes: Use the first orphan's position as the anchor
+    current_y = start_y
+    for r in range(rows):
+        current_x = start_x
+        r_height = row_heights[r]
+        for c in range(cols):
+            index = r * cols + c
+            if index >= count:
+                break
+            node = orphans[index]
+            c_width = col_widths[c]
+            node.set_pos(current_x, current_y)
+            current_x += c_width + gap_x        # Move X pointer by this column's width + gap
+        current_y += r_height + gap_y           # Move Y pointer by this row's height + gap
+    return orphans
+
+
+def layout_clusters(clusters, iterations=100):
+    """
+    Treats each list of nodes as a single 'Super Node'.
+    Calculates Bounding Boxes and runs a force-directed layout on them.
+    """
+    if not clusters:
+        return
+
+    cluster_data = []
+    for i, nodes in enumerate(clusters):
+        if not nodes:
+            continue
+
+        # Calculate BBox
+        min_x = min(n.x_pos() for n in nodes)
+        max_x = max(n.x_pos() + n.view.width for n in nodes)
+        min_y = min(n.y_pos() for n in nodes)
+        max_y = max(n.y_pos() + n.view.height for n in nodes)
+
+        w = max_x - min_x
+        h = max_y - min_y
+        cx = min_x + w / 2.0
+        cy = min_y + h / 2.0
+
+        # Radius = Half diagonal (approximate circle that covers the box)
+        radius = math.sqrt(w * w + h * h) / 2.0
+
+        cluster_data.append({
+            'id': i,
+            'x': cx, 'y': cy,
+            'w': w, 'h': h,
+            'r': radius,
+            'dx': 0.0, 'dy': 0.0,
+            'nodes': nodes
+        })
+
+    count = len(cluster_data)
+    if count < 2:
+        return
+
+    # 2. Simulation Loop
+    # ---------------------------------------------------------
+    temperature = 100.0  # High temp for big movements
+
+    for _ in range(iterations):
+        # Reset forces
+        for c in cluster_data:
+            c['dx'] = 0.0
+            c['dy'] = 0.0
+
+            # GRAVITY: Pull all clusters towards center (0,0)
+            # This keeps the islands from drifting to infinity
+            c['dx'] -= c['x'] * 0.02
+            c['dy'] -= c['y'] * 0.02
+
+        # Repulsion (Cluster vs Cluster)
+        for i in range(count):
+            c1 = cluster_data[i]
+            for j in range(i + 1, count):
+                c2 = cluster_data[j]
+
+                dx = c1['x'] - c2['x']
+                dy = c1['y'] - c2['y']
+                dist = math.sqrt(dx * dx + dy * dy) or 1.0
+
+                # SHIELDING REPULSION
+                # We want them to touch edges, not centers.
+                # Target distance = Sum of Radii + Padding
+                min_dist = c1['r'] + c2['r'] + 100.0
+
+                if dist < min_dist:
+                    # Overlap detected! Strong repulsive force.
+                    force = (min_dist - dist) * 2.0
+
+                    fx = (dx / dist) * force
+                    fy = (dy / dist) * force
+
+                    c1['dx'] += fx
+                    c1['dy'] += fy
+                    c2['dx'] -= fx
+                    c2['dy'] -= fy
+
+        # Apply Movement
+        for c in cluster_data:
+            disp_len = math.sqrt(c['dx'] ** 2 + c['dy'] ** 2)
+            if disp_len > 0:
+                # Cap movement speed
+                move = min(disp_len, temperature)
+                c['x'] += (c['dx'] / disp_len) * move
+                c['y'] += (c['dy'] / disp_len) * move
+
+        temperature *= 0.95  # Cool down
+
+    # 3. Apply Final Positions
+    # ---------------------------------------------------------
+    for c in cluster_data:
+        # Calculate how much the CENTER moved
+        # (Current Center - Original Center is not stored, but we can infer offset)
+        # Actually, simpler: We know the NEW center (c['x'], c['y'])
+        # We need to compute the offset from the OLD center.
+
+        # Re-calculate old center to be safe
+        old_min_x = min(n.x_pos() for n in c['nodes'])
+        old_max_x = max(n.x_pos() + n.view.width for n in c['nodes'])
+        old_min_y = min(n.y_pos() for n in c['nodes'])
+        old_max_y = max(n.y_pos() + n.view.height for n in c['nodes'])
+
+        old_cx = old_min_x + (old_max_x - old_min_x) / 2.0
+        old_cy = old_min_y + (old_max_y - old_min_y) / 2.0
+
+        # The Delta
+        move_x = c['x'] - old_cx
+        move_y = c['y'] - old_cy
+
+        # Move every node in the cluster by that delta
+        for node in c['nodes']:
+            node.set_pos(node.x_pos() + move_x, node.y_pos() + move_y)
+
+
+def layout_clusters_shelf(clusters, aspect_ratio=1.77, padding=20.0):
+    """
+    Packs clusters (lists of nodes) into a rectangle with a target aspect ratio.
+    Uses a 'Shelf Packing' algorithm (First-Fit Decreasing Height).
+    """
+    if not clusters:
+        return
+    cluster_boxes = []
+    total_area = 0.0
+    for nodes in clusters:
+        if not nodes:
+            continue
+        # Find the BBox of this cluster
+        min_x = min(n.x_pos() for n in nodes)
+        max_x = max(n.x_pos() + n.view.width for n in nodes)
+        min_y = min(n.y_pos() for n in nodes)
+        max_y = max(n.y_pos() + n.view.height for n in nodes)
+
+        w = max_x - min_x
+        h = max_y - min_y
+        current_x = min_x
+        current_y = min_y
+
+        box_w = w + padding      # Add padding to the size calculation so they don't touch
+        box_h = h + padding
+
+        total_area += box_w * box_h
+
+        cluster_boxes.append({
+            'nodes': nodes,
+            'w': box_w,
+            'h': box_h,
+            'orig_x': current_x,
+            'orig_y': current_y,
+            'final_x': 0.0,
+            'final_y': 0.0
+        })
+
+    if not cluster_boxes:
+        return
+
+    cluster_boxes.sort(key=lambda b: b['h'], reverse=True)
+    target_width = math.sqrt(total_area * aspect_ratio)
+    max_cluster_width = max(b['w'] for b in cluster_boxes)
+    target_width = max(target_width, max_cluster_width)
+    current_x, current_y, current_row_height = 0.0, 0.0, 0.0
+    for box in cluster_boxes:           # Check if this box fits on the current shelf
+        if current_x + box['w'] > target_width:
+            current_x = 0.0             # New Shelf! Move X back to start
+            current_y += current_row_height     # Move Y down by the height of the row we just finished
+            current_row_height = 0.0        # Reset row height for the new row
+        box['final_x'] = current_x
+        box['final_y'] = current_y
+        if box['h'] > current_row_height:
+            current_row_height = box['h']
+        current_x += box['w']
+    for box in cluster_boxes:
+        # Calculate Delta (How far to move from original position)
+        move_x = box['final_x'] - box['orig_x']
+        move_y = box['final_y'] - box['orig_y']
+
+        for node in box['nodes']:
+            node.set_pos(node.x_pos() + move_x, node.y_pos() + move_y)
+
+
+def get_weakly_connected_components(graph):     # DFS traversal
+    visited, components = set(), []
+
+    all_nodes = graph.all_nodes()
+    grouped_nodes, original_connections = get_groups_and_connections(all_nodes)
+
+    for node in all_nodes:
+        if node in visited:
+            continue
+
+        component_nodes, stack = [], [node]
+        while stack:
+            current_node = stack.pop()
+            if current_node in visited:
+                continue
+            visited.add(current_node)
+            component_nodes.append(current_node)
+            neighbors = []
+            if isinstance(current_node, BaseNode):
+                input_conn = current_node.connected_input_nodes()
+                for connected_list in input_conn.values():
+                    neighbors.extend(connected_list)
+                output_conn = current_node.connected_output_nodes()
+                for connected_list in output_conn.values():
+                    neighbors.extend(connected_list)
+            for neighbor in neighbors:                      # Add unvisited neighbors to the stack
+                if neighbor not in visited:
+                    stack.append(neighbor)
+        components.append(component_nodes)
+    return components, original_connections
+
+
+def get_groups_and_connections(node_subset):
+    original_connections, grouped_nodes = [], defaultdict(list)
+    for node in node_subset:
+        table_name = node.get_property('table_name')
+        if table_name and table_name not in ['GameEffectCustom', 'ReqEffectCustom']:
+            grouped_nodes[table_name].append(node)
+        for port_name, port_obj in node.outputs().items():
+            for connected_port in port_obj.connected_ports():
+                conn_tuple = (node.id, port_name, connected_port.node().id, connected_port.name())
+                original_connections.append(conn_tuple)
+
+    return grouped_nodes, original_connections
+
+
+def layout_with_spring(graph):
+    layout_force_directed(graph, iterations=100, repulsion_strength=100.0,
+                          spring_stiffness=0.5, gravity=0.01, flow_bias=0.8)
+    all_nodes = graph.all_nodes()
+    arrange_leaves(all_nodes)
+
+
+def layout_shelf_clusters(graph):
+    clusters, unused_connections = get_weakly_connected_components(graph)
+    decent_clusters = [i for i in clusters if len(i) > 1]
+    all_nodes = graph.all_nodes()
+    orphans = pack_orphans(all_nodes)
+    if orphans:
+        decent_clusters.append(orphans)
+    layout_clusters_shelf(decent_clusters)
+

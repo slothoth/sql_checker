@@ -26,7 +26,9 @@ def get_unique_rows(data, key_columns):
     return unique_data
 
 
-def gather_effects(db_dict, metadata, database_spec):
+def gather_effects(alchemy_instance, database_spec):
+    db_dict = alchemy_instance.engine_dict
+    metadata = alchemy_instance.metadata
     collection_types = []
     with db_dict['AGE_ANTIQUITY'].connect() as conn:
         result = conn.execute(text("SELECT Type FROM Types WHERE Kind='KIND_COLLECTION'"))
@@ -50,6 +52,7 @@ def gather_effects(db_dict, metadata, database_spec):
     mine_requirements(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap, database_spec)
     update_loc_spec(db_dict, database_spec)
     update_possible_vals_spec(db_dict, metadata, database_spec)
+    get_table_type_kinds(alchemy_instance)
 
 
 def mine_effects(db_dict, manual_collection_classification, mod_tables, TableOwnerObjectMap, database_spec):
@@ -1113,3 +1116,55 @@ def add_to_aggregator(data_list, req_key, obj_key, requirement_to_objects):
                 requirement_to_objects[req].update(obj)
             else:
                 requirement_to_objects[req].add(obj)
+
+
+def get_table_type_kinds(alchemy_instance):
+    # get the values of every table that has a types reference, as a dict of Table: [Types]
+    # iterate over dict, getting the Kind of each
+    tables_with_type_reference = {k1: v1 for k1, v1 in {k: {key: val for key, val in v.items() if val == 'Types'}
+                                                        for k, v in alchemy_instance.fk_to_tbl_map.items()}.items()
+                                  if len(v1) > 0}
+    table_type_values = defaultdict(lambda: defaultdict(list))
+    for table_name, type_cols in tables_with_type_reference.items():
+        for type_col in type_cols:
+            query = f" SELECT {type_col} FROM {table_name} dm;"
+            for db_name, engine in alchemy_instance.engine_dict.items():
+                with engine.connect() as conn:
+                    result = conn.execute(text(query))
+                    table_type_values[table_name][type_col].extend([i[0] for i in result if i[0] is not None])
+
+    type_kind_mapper = {}
+    kind_type_mapper = {}
+    for db_name, engine in alchemy_instance.engine_dict.items():
+        with engine.connect() as conn:
+            result = conn.execute(text("SELECT Type, Kind FROM Types;"))
+            type_map = {i[0]: i[1] for i in result}
+            type_kind_mapper.update(type_map)
+            type_map = defaultdict(list)
+            for a, b in result:
+                type_map[b].append(a)
+            kind_type_mapper[db_name] = type_map
+
+    table_type_kinds = defaultdict(dict)
+    for table_name, type_cols in table_type_values.items():
+        for type_col, type_values in type_cols.items():
+            if len(type_values) > 0:
+                kinds = [type_kind_mapper.get(i) for i in type_values]
+                unique_kinds = set(kinds)
+                if None in unique_kinds:
+                    unique_kinds.remove(None)
+                if len(unique_kinds) == 0:
+                    log.info(f'couldnt find any kinds for {table_name}: {type_col}')
+                else:
+                    table_type_kinds[table_name][type_col] = list(unique_kinds)
+
+    missed = {table_name: type_cols for table_name, type_cols in table_type_kinds.items()
+              if any(len(v) == 0 or any(i is None for i in v) for k, v in type_cols.items())}
+    if len(missed) > 0:
+        log.info(f"missed assigning types for tables {[i for i in missed]}")
+
+    with open(LocalFilePaths.app_data_path_form('db_spec/KindTypeMap.json'), 'w') as f:
+        json.dump(kind_type_mapper, f, separators=(',', ':'), sort_keys=True)
+
+    with open(LocalFilePaths.app_data_path_form('db_spec/TableTypes.json'), 'w') as f:
+        json.dump(dict(table_type_kinds), f, separators=(',', ':'), sort_keys=True)

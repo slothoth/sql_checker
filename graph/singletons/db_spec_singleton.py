@@ -71,6 +71,8 @@ class ResourceLoader:
             'requirement_argument_info': self.appdata_path('RequirementInfo.json'),
             'req_type_arg_map': self.appdata_path('RequirementArgumentTypes.json'),
             'req_arg_database_types': self.appdata_path('RequirementArgumentDatabaseTypes.json'),
+            'kind_type_map': self.appdata_path('KindTypeMap.json'),
+            'table_type_map': self.appdata_path('TableTypes.json'),
         }
 
         if new_patch_occurred:
@@ -102,6 +104,8 @@ class ResourceLoader:
         self.req_argument_list = set()
         [self.req_argument_list.update(list(v.keys())) for k, v in self.req_type_arg_map.items()]
         self.dlc_mod_ids = self._read_file(self._files['dlc_mod_ids'])
+        self.kind_type_map = self._read_file(self._files['kind_type_map'])
+        self.table_type_map = self._read_file(self._files['table_type_map'])
 
     @staticmethod
     def _read_file(path):
@@ -195,7 +199,7 @@ class ResourceLoader:
         possible_vals, all_possible_vals = db.dump_unique_pks(db_paths)
         self.update_possible_vals(possible_vals)
         self.update_all_vals(all_possible_vals)
-        gather_effects(SQLValidator.engine_dict, SQLValidator.metadata, self)
+        gather_effects(SQLValidator, self)
 
     @staticmethod
     def full_resource_path(relative_path):
@@ -326,9 +330,7 @@ class BaseDB:
             if len(pk_list) == 1:  # single key
                 pk = pk_list[0]
                 if ensure_text_column(conn, table, pk):  # filter unique pks to remove number vals
-                    if pk not in unique_pks:
-                        unique_pks[pk] = []
-                    unique_pks[pk].append(table)
+                    unique_pks.setdefault(pk, []).append(table)
 
         count_potential_fks = 0
         for table in self.tables:
@@ -346,14 +348,17 @@ class BaseDB:
                         viol = fk_violations(conn, table, col, pk_tbl, pk_col)
                         all_fk_present_in_tbl = self.fk_matches(conn, table, col, pk_tbl, pk_col)
                         if len(viol) == 0 and uniques > 0 and all_fk_present_in_tbl:
-                            if col not in potential_fks:
-                                potential_fks[col] = []
-                            potential_fks[col].append({'table': pk_tbl, 'col': pk_col})
+                            potential_fks.setdefault(col, []).append({'table': pk_tbl, 'col': pk_col})
                             count_potential_fks += 1
                             log.debug(f'Table {table} has added foreign key reference on col {col}: referencing'
                                       f' table {pk_tbl}.{pk_col}')
 
-            self.table_data[table]['possible_fks'] = potential_fks      # still misses a few, like Ability -> Type
+            self.table_data[table]['possible_fks'] = potential_fks
+        # still misses a few, like Ability -> Type, so adding in
+        for table, col in [("GreatWorks", "GreatWorkType"), ("Traditions", "TraditionType"),
+                           ("UnitAbilities", "UnitAbilityType"), ("ProgressionTreeNodes", "ProgressionTreeNodeType"),
+                           ("NarrativeStories", "NarrativeStoryType"), ("UniqueQuarters", "UniqueQuarterType")]:
+            self.table_data[table].setdefault('possible_fks', {}).setdefault(col, []).append({"col": "Type", "table": "Types"})
 
         # THEN we need to recursively work back to deal with "origin" PK that arent actually origin
         # for example Unit_TransitionShadows has Tag as a Primary Key. and no foreign key.
@@ -369,9 +374,7 @@ class BaseDB:
                     if len(fk_info_list) == 1:
                         ref_col = fk_info_list[0]['col']
                         ref_table = fk_info_list[0]['table']
-                        if 'extra_fks' not in self.table_data[key]:
-                            self.table_data[key]['extra_fks'] = {}
-                        self.table_data[key]['extra_fks'][fk_col] = {'ref_column': ref_col, 'ref_table': ref_table}
+                        self.table_data[key].setdefault('extra_fks', {}) [fk_col] = {'ref_column': ref_col, 'ref_table': ref_table}
 
         for key, val in self.table_data.items():  # now deal with plural sources
             if val.get('possible_fks', False):
@@ -396,10 +399,8 @@ class BaseDB:
                                                         if "ref_column" in v]
                             non_types_fks = {k: v for k, v in ref_table_info['foreign_keys'].items() if v != 'Types'}
                             if ref_pk not in non_types_fks and not_in_ref:
-                                if 'extra_fks' not in self.table_data[key]:
-                                    self.table_data[key]['extra_fks'] = {}
-
-                                self.table_data[key]['extra_fks'][fk_col] = {'ref_column': ref_pk, 'ref_table': table}
+                                self.table_data[key].setdefault('extra_fks', {})[fk_col] = {'ref_column': ref_pk,
+                                                                                            'ref_table': table}
 
         conn.close()
 
@@ -407,9 +408,7 @@ class BaseDB:
             if 'extra_fks' in val:
                 for col, ref_info in val['extra_fks'].items():
                     ref_table = ref_info['ref_table']
-                    if 'extra_backlinks' not in self.table_data[ref_table]:
-                        self.table_data[ref_table]['extra_backlinks'] = {}
-                    self.table_data[ref_table]['extra_backlinks'][original_table] = col
+                    self.table_data[ref_table].setdefault('extra_backlinks', {})[original_table] = col
 
         # now we want to work back to get all origin tables, as it helps update things faster in app
         def resolve_origin(table_data, table, col, stop_tables):

@@ -21,7 +21,8 @@ def test_effects_harvest():
         new_path = LocalFilePaths.app_data_path_form(f'gameplay-base_{age_type}.sqlite')
         engine = create_engine(f"sqlite:///{new_path}")  # already built
         SQLValidator.engine_dict[age_type] = engine
-    gather_effects(SQLValidator.engine_dict, SQLValidator.metadata, db_spec)
+
+    gather_effects(SQLValidator, db_spec)
 
 
 def test_setup_all_unique_nodes(qtbot):
@@ -70,4 +71,3 @@ def test_possible_vals_harvest():
         new_path = LocalFilePaths.app_data_path_form(f'gameplay-base_{age_type}.sqlite')
         engine = create_engine(f"sqlite:///{new_path}")
         SQLValidator.engine_dict[age_type] = engine
-

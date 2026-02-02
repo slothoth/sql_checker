@@ -20,8 +20,9 @@ from graph.mod_conversion import extract_state_test
 from graph.utils import LogPusher, auto_layout_nodes_minimise_crossing
 from graph.hotkey_support import (write_sql, write_loc_sql, ConfigTestWorker, node_tracker,
                                   turn_off_viewer, turn_on_viewer)
-from graph.layouts import (group_nodes_by_table_with_connections, group_leaf_trees, strip_transient_widgets,
-                           process_and_group_islands, collate_flowering_trees)
+from graph.layouts import layout_with_spring, layout_shelf_clusters
+from graph.groupings import (group_nodes_by_table_with_connections, group_leaf_trees, strip_transient_widgets,
+                             process_and_group_islands, collate_flowering_trees)
 
 log = logging.getLogger(__name__)
 
@@ -127,6 +128,7 @@ def import_session(graph):
     file_path = graph.load_dialog(current)
     if file_path:
         import_session_set_params(graph, file_path)
+        graph._viewer.zoom_to_nodes([n.view for n in graph.all_nodes()])
 
 
 def import_session_set_params(graph, file_path):
@@ -516,9 +518,7 @@ def import_mod(graph):
             if time_taken is not None:
                 layout_graph_down(graph)
                 graph.auto_layout_nodes()           # layout centre
-                graph.select_all()
-                graph.fit_to_selection()
-                graph.clear_selection()
+                graph._viewer.zoom_to_nodes([n.view for n in graph.all_nodes()])
                 t = Toast('Finished loading Mod')
                 t.show_at_bottom_right()
             else:
@@ -637,6 +637,7 @@ def switch_to_grouped_leafs(graph):         # best method so far
     graph.end_undo()
     end_time = time()
     LogPusher.push_to_log(f'Finished grouping nodes by grouped leafs name in {end_time - start_time} seconds', log)
+    graph._viewer.zoom_to_nodes([n.view for n in graph.all_nodes()])
 
 
 def switch_to_single_tab(graph):
@@ -671,3 +672,23 @@ def hide_types_and_kinds(graph):
 def show_types_and_kinds(graph):
     set_nodes_visible_by_type(graph, 'db.table.types.TypesNode', True)
     set_nodes_visible_by_type(graph, 'db.table.kinds.KindsNode', True)
+
+
+def spring_layout(graph):
+    prev_mode = turn_off_viewer(graph)
+    start_time = time()
+    layout_with_spring(graph)
+    turn_on_viewer(graph, prev_mode)
+    end_time = time()
+    log.info(f'time taken for spring-layout: {end_time - start_time}', )
+    graph._viewer.zoom_to_nodes([n.view for n in graph.all_nodes()])
+
+
+def shelf_layout(graph):
+    prev_mode = turn_off_viewer(graph)
+    start_time = time()
+    layout_shelf_clusters(graph)
+    turn_on_viewer(graph, prev_mode)
+    end_time = time()
+    log.info(f'time taken for spring-layout: {end_time - start_time}', )
+    graph._viewer.zoom_to_nodes([n.view for n in graph.all_nodes()])

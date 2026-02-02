@@ -128,9 +128,9 @@ class BaseEffectNode(BasicDBNode):
             # get db type and use dropdownlinedit database_arg_map
             arg_table = self.get_param_arg_table(arg)
 
-            metadata = self.get_root_graph()
+            metadata = self.get_root_graph().property('meta')
 
-            base_vals = db_spec.possible_vals[metadata.property('meta')['Age']].get(arg_table, {}).get('_PK_VALS') or []
+            base_vals = db_spec.possible_vals[metadata['Age']].get(arg_table, {}).get('_PK_VALS') or []
 
             self.add_custom_widget(DropDownLineEdit(parent=self.view, label=arg, name=arg, text='',
                                                     suggestions=base_vals), tab='fields')

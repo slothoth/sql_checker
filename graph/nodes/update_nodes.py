@@ -76,7 +76,7 @@ class WhereNode(BaseNode):
     def apply_and_populate(self):
         sql = self.get_widget("sql_form").get_value()
         try:
-            metadata = self.get_root_graph().property('metadata')
+            metadata = self.get_root_graph().property('meta')
             column_output_tuples = update_delete_transform(sql, age=metadata.get('Age', 'AGE_ANTIQUITY'))
         except (TypeError, KeyError, ValueError, sqlite3.Warning) as e:
             self.sql_output_triggerable = False
@@ -143,8 +143,8 @@ class WhereNode(BaseNode):
             self.set_color(*self._default_color)        # Restore original color
             self.test_error = False
 
-    def get_root_meta(self):
+    def get_root_graph(self):
         current_graph = self.graph
         while not current_graph.is_root:
             current_graph = current_graph.parent_graph
-        return current_graph.get_property('meta')
+        return current_graph

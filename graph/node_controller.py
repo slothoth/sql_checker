@@ -88,7 +88,7 @@ class NodeEditorWindow(QMainWindow):
             if isinstance(node, GroupNode):
                 sub_graph = node.expand()  # This creates the tab and navigation TODO fails on transient widgets like GameEffects
                 auto_layout_nodes_minimise_crossing(sub_graph)
-                sub_graph.center_on(sub_graph.all_nodes())
+                sub_graph._viewer.zoom_to_nodes([n.view for n in sub_graph.all_nodes()])
             else:
                 if not properties_bin.isVisible():
                     properties_bin.show()

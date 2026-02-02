@@ -69,7 +69,7 @@ def test_write_effect_and_req_connected_graph_after_change_to_mod(qtbot):     # 
     qtbot.addWidget(window)
     effect_node, req_node = setup_effect_req(window, qtbot)
     req_input_port = req_node.inputs()['ReqSet']              # connect req and effect
-    req_output_port = effect_node.outputs()['SubjectReq']
+    req_output_port = effect_node.inputs()['SubjectReq']
     req_output_port.connect_to(req_input_port)
     mod_output_check(window, 'test_effects_and_reqs.sql')
 
@@ -89,7 +89,7 @@ def test_write_effect_and_req_nested(qtbot):            # this version has a req
     reqset_reqs.set_property('RequirementSetId', 'TEST_REQSET_1')
 
     req_input_port = req_node.inputs()['ReqSet']           # connect req and effect
-    req_output_port = effect_node.outputs()['SubjectReq']
+    req_output_port = effect_node.inputs()['SubjectReq']
     req_output_port.connect_to(req_input_port)
     assert req_output_port in req_input_port.connected_ports()
 

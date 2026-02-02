@@ -351,14 +351,21 @@
         "shortcut":"Ctrl+L"
       },
       {
-        "type":"separator"
+        "type":"command",
+        "label":"Auto Layout Spring",
+        "file":"./hotkey_functions.py",
+        "function_name":"spring_layout",
+        "shortcut":"Ctrl+R"
       },
       {
         "type":"command",
-        "label":"Expand Group Node",
+        "label":"Auto Layout Shelf Clusters",
         "file":"./hotkey_functions.py",
-        "function_name":"expand_group_node",
-        "shortcut":"Alt+Enter"
+        "function_name":"shelf_layout",
+        "shortcut":"Ctrl+K"
+      },
+      {
+        "type":"separator"
       },
       {
         "type":"command",
